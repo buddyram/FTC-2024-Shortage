@@ -43,19 +43,16 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
-@TeleOp(name = "Sensor: digital channel", group = "Sensor")
-public class SensorDigitalTouch extends LinearOpMode {
-    DigitalChannel digitalTouch;  // Digital channel Object
-    //DcMotor motor;
+@TeleOp(name = "Linear Sliding", group = "Sensor")
+public class LinearSlideTest extends LinearOpMode {
+    DcMotor motor;
     @Override
     public void runOpMode() {
 
         // get a reference to our touchSensor object.
-        //motor = hardwareMap.get(DcMotor.class, "motor");
-        digitalTouch = hardwareMap.get(DigitalChannel.class, "touch");
+        motor = hardwareMap.get(DcMotor.class, "motor");
 
-        digitalTouch.setMode(DigitalChannel.Mode.INPUT);
-        telemetry.addData("DigitalTouchSensorExample", "Press start to continue...");
+        //digitalTouch.setMode(DigitalChannel.Mode.INPUT);
         telemetry.update();
 
         // wait for the start button to be pressed.
@@ -67,15 +64,17 @@ public class SensorDigitalTouch extends LinearOpMode {
 
             // button is pressed if value returned is LOW or false.
             // send the info back to driver station using telemetry function.
-            if (digitalTouch.getState() == false) {
-                //motor.setPower(1);
-                telemetry.addData("Button", "PRESSED");
+            if (gamepad1.y) {
+                motor.setPower(1);
+            } else if (gamepad1.a) {
+                motor.setPower(-1);
             } else {
-                //motor.setPower(0);
-                telemetry.addData("Button", "NOT PRESSED");
+                motor.setPower(0);
             }
 
             telemetry.update();
         }
     }
+
+//     public calc
 }

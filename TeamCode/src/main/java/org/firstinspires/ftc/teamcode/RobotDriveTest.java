@@ -25,6 +25,8 @@ public class RobotDriveTest extends LinearOpMode {
         DcMotor motorFL = hardwareMap.get(DcMotor.class, "motorFL");
         DcMotor motorBR = hardwareMap.get(DcMotor.class, "motorBR");
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
+        DcMotor motor = hardwareMap.get(DcMotor.class, "armext");
+
         BaseRobot robot = new BaseRobot(motorFL, motorFR, motorBL, motorBR);
         robot.setErrorCorrectionMultipliers(new double[]{1, 1, 1, -1});
         //telemetry.update();
@@ -39,6 +41,7 @@ public class RobotDriveTest extends LinearOpMode {
             //robot.setRobotDirection(360 - dir);
             robot.setDirection(dir);
             robot.update();
+            motor.setPower(Math.sin(dir * 2 * Math.PI / 180));
         }
         robot.setSpeed(0);
         robot.update();

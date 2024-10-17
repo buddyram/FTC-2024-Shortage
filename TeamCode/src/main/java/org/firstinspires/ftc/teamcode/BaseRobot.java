@@ -39,8 +39,8 @@ public class BaseRobot {
 
     public void update() {
         this.setPowers(Math.sin(Math.toRadians(this.movementDirection) + Math.PI / 4) * this.speed, Math.sin(Math.toRadians(this.movementDirection) - Math.PI / 4) * this.speed);
-        this.rightSideChange = this.robotSpinSpeed;
-        this.leftSideChange = -this.robotSpinSpeed;
+        this.rightSideChange = -this.robotSpinSpeed;
+        this.leftSideChange = this.robotSpinSpeed;
         this.updateMotors();
     }
 

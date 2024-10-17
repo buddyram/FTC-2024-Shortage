@@ -43,39 +43,42 @@ import com.qualcomm.robotcore.hardware.DcMotor;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
-@TeleOp(name = "Sensor: digital channel", group = "Sensor")
-public class SensorDigitalTouch extends LinearOpMode {
-    DigitalChannel digitalTouch;  // Digital channel Object
-    //DcMotor motor;
+@TeleOp(name = "Motor Testing", group = "Sensor")
+public class MotorTest extends LinearOpMode {
     @Override
     public void runOpMode() {
 
         // get a reference to our touchSensor object.
-        //motor = hardwareMap.get(DcMotor.class, "motor");
-        digitalTouch = hardwareMap.get(DigitalChannel.class, "touch");
-
-        digitalTouch.setMode(DigitalChannel.Mode.INPUT);
-        telemetry.addData("DigitalTouchSensorExample", "Press start to continue...");
+        DcMotor motorFR = hardwareMap.get(DcMotor.class, "motorFR");
+        DcMotor motorFL = hardwareMap.get(DcMotor.class, "motorFL");
+        DcMotor motorBR = hardwareMap.get(DcMotor.class, "motorBR");
+        DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
+        //digitalTouch.setMode(DigitalChannel.Mode.INPUT);
         telemetry.update();
-
+        DcMotor motor = motorFR;
         // wait for the start button to be pressed.
         waitForStart();
 
         // while the OpMode is active, loop and read the digital channel.
         // Note we use opModeIsActive() as our loop condition because it is an interruptible method.
         while (opModeIsActive()) {
-
+            if (gamepad1.x) {
+                motor = motorFL; 
+            } else if (gamepad1.y) {
+                motor = motorFR; 
+            } else if (gamepad1.a) {
+                motor = motorBL; 
+            } else if (gamepad1.b) {
+                motor = motorBR; 
+            }
             // button is pressed if value returned is LOW or false.
             // send the info back to driver station using telemetry function.
-            if (digitalTouch.getState() == false) {
-                //motor.setPower(1);
-                telemetry.addData("Button", "PRESSED");
-            } else {
-                //motor.setPower(0);
-                telemetry.addData("Button", "NOT PRESSED");
-            }
+            motor.setPower(gamepad1.left_stick_y);
+            
 
             telemetry.update();
         }
     }
+
+//     public calc
 }
