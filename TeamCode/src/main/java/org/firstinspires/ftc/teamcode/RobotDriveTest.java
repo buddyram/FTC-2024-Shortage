@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
@@ -27,7 +25,7 @@ public class RobotDriveTest extends LinearOpMode {
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
         DcMotor motor = hardwareMap.get(DcMotor.class, "armext");
 
-        BaseRobot robot = new BaseRobot(motorFL, motorFR, motorBL, motorBR);
+        MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
         robot.setErrorCorrectionMultipliers(new double[]{1, 1, 1, -1});
         //telemetry.update();
 

@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
-public class BaseRobot {
+public class MecanumBaseChassis {
 
     double speed = 0;
     double movementDirection = 0;
@@ -21,7 +21,7 @@ public class BaseRobot {
      * @param bl back left motor
      * @param br back right motor
      */
-    public BaseRobot(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br) {
+    public MecanumBaseChassis(DcMotor fl, DcMotor fr, DcMotor bl, DcMotor br) {
         this.motors = new DcMotor[] {fl, fr, bl, br};
     }
 

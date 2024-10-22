@@ -15,7 +15,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
 @TeleOp(name = "Robot Drive", group = "Sensor")
-public class RobotDrive extends LinearOpMode {
+public class MecanumTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -24,13 +24,13 @@ public class RobotDrive extends LinearOpMode {
         DcMotor motorFL = hardwareMap.get(DcMotor.class, "motorFL");
         DcMotor motorBR = hardwareMap.get(DcMotor.class, "motorBR");
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
-        DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
-        DcMotor armrot = hardwareMap.get(DcMotor.class, "armrot");
-        Servo claw = hardwareMap.get(Servo.class, "claw");
-        Servo wrist = hardwareMap.get(Servo.class, "wrist");
+//        DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
+//        DcMotor armrot = hardwareMap.get(DcMotor.class, "armrot");
+//        Servo claw = hardwareMap.get(Servo.class, "claw");
+//        Servo wrist = hardwareMap.get(Servo.class, "wrist");
 
         MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
-        robot.setErrorCorrectionMultipliers(new double[]{1, 1, 1, -1});
+        robot.setErrorCorrectionMultipliers(new double[]{-1, 1, -1, 1});
         //telemetry.update();
 
         waitForStart();
@@ -42,13 +42,13 @@ public class RobotDrive extends LinearOpMode {
         double targetWristAngle = 0;
         int targetArmExt = 0;
         int mode = 1;
-        armrot.setTargetPosition(0);
-        armext.setTargetPosition(0);
-        armrot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armext.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armrot.setPower(0.5);
-        armext.setPower(1);
-        claw.setPosition(0);
+//        armrot.setTargetPosition(0);
+//        armext.setTargetPosition(0);
+//        armrot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        armext.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        armrot.setPower(0.5);
+//        armext.setPower(1);
+//        claw.setPosition(0);
 
         while (opModeIsActive()) {
             xl = gamepad1.left_stick_x;
@@ -93,11 +93,11 @@ public class RobotDrive extends LinearOpMode {
             } else if (gamepad1.start) {
                 mode = 0;
             }
-            if (gamepad1.right_bumper) {
-                claw.setPosition(1);
-            } else if (gamepad1.left_bumper) {
-                claw.setPosition(0);
-            }
+//            if (gamepad1.right_bumper) {
+//                claw.setPosition(1);
+//            } else if (gamepad1.left_bumper) {
+//                claw.setPosition(0);
+//            }
             if (gamepad1.dpad_left) {
                 targetWristAngle -= 0.01;
             } else if (gamepad1.dpad_right) {
@@ -109,14 +109,14 @@ public class RobotDrive extends LinearOpMode {
             if (targetWristAngle > 1) {
                 targetWristAngle = 1;
             }
-            wrist.setPosition(targetWristAngle);
-            
-            telemetry.addData("arm rotation motor position: ", armrot.getCurrentPosition());
-            telemetry.addData("target: ", targetangle);
-            armrot.setTargetPosition(targetangle);
-            armext.setTargetPosition(targetArmExt);
-            telemetry.addData("armext: ", armext.getTargetPosition());
-            telemetry.addData("armext is busy: ", armext.isBusy());
+//            wrist.setPosition(targetWristAngle);
+//
+//            telemetry.addData("arm rotation motor position: ", armrot.getCurrentPosition());
+//            telemetry.addData("target: ", targetangle);
+//            armrot.setTargetPosition(targetangle);
+//            armext.setTargetPosition(targetArmExt);
+//            telemetry.addData("armext: ", armext.getTargetPosition());
+//            telemetry.addData("armext is busy: ", armext.isBusy());
             telemetry.addData("targetArmExt: ", targetArmExt);
             telemetry.update();
             robot.update();
