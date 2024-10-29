@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 
 
 /*
@@ -15,7 +14,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
 @TeleOp(name = "Robot Drive", group = "Sensor")
-public class MecanumTest extends LinearOpMode {
+public class MecanumTestAuton extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -54,8 +53,8 @@ public class MecanumTest extends LinearOpMode {
             xl = gamepad1.left_stick_x;
             yl = gamepad1.left_stick_y;
             angle = (Math.atan2(-yl, xl) * 180 / Math.PI);
-            turnamnt = gamepad1.right_stick_x *0.2;
-            robot.setSpeed(Math.sqrt(xl * xl + yl * yl) * 0.8);
+            turnamnt = gamepad1.right_stick_x * 1;
+            robot.setSpeed(Math.sqrt(xl * xl + yl * yl) * 1);
             robot.setDirection(angle);
             robot.setRobotDirection(turnamnt);
             telemetry.addData("RobotDrive", "" + robot.FlBrSpeed + robot.FrBlSpeed);
