@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
-@TeleOp(name = "Robot Drive", group = "Sensor")
+@TeleOp(name = "A: Robot Drive main", group = "Sensor")
 public class RobotDrive extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -25,7 +25,8 @@ public class RobotDrive extends LinearOpMode {
         DcMotor motorBR = hardwareMap.get(DcMotor.class, "motorBR");
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
         DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
-        DcMotor armrot = hardwareMap.get(DcMotor.class, "armrot");
+        DcMotor armrotL = hardwareMap.get(DcMotor.class, "armrotL");
+        DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
         Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
 
@@ -42,11 +43,14 @@ public class RobotDrive extends LinearOpMode {
         double targetWristAngle = 0;
         int targetArmExt = 0;
         int mode = 1;
-        armrot.setTargetPosition(0);
+        armrotL.setTargetPosition(0);
+        armrotR.setTargetPosition(0);
         armext.setTargetPosition(0);
-        armrot.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armrotL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armrotR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armext.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armrot.setPower(0.5);
+        armrotL.setPower(0.5);
+        armrotR.setPower(0.5);
         armext.setPower(1);
         claw.setPosition(0);
 
@@ -111,9 +115,10 @@ public class RobotDrive extends LinearOpMode {
             }
             wrist.setPosition(targetWristAngle);
             
-            telemetry.addData("arm rotation motor position: ", armrot.getCurrentPosition());
+            telemetry.addData("arm rotation motor position: ", armrotL.getCurrentPosition());
             telemetry.addData("target: ", targetangle);
-            armrot.setTargetPosition(targetangle);
+            armrotL.setTargetPosition(targetangle);
+            armrotR.setTargetPosition(-targetangle);
             armext.setTargetPosition(targetArmExt);
             telemetry.addData("armext: ", armext.getTargetPosition());
             telemetry.addData("armext is busy: ", armext.isBusy());

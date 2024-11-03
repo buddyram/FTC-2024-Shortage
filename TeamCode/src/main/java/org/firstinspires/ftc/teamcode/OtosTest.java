@@ -38,7 +38,7 @@ public class OtosTest extends LinearOpMode {
 
         // All the configuration for the OTOS is done in this helper method, check it out!
         configureOtos();
-        int startOffsetX = 48;
+        int startOffsetX = 24;
         int startOffsetY = 9;
         // Wait for the start button to be pressed
         waitForStart();

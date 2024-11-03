@@ -3,19 +3,24 @@
 
     Copyright (c) 2024 SparkFun Electronics
 */
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.robotcontroller.external.samples;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.MecanumBaseChassis;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Sensor: SparkFun OTOSsdffadfzdgds", group = "Sensor")
+@Autonomous(name = "Sensor: SparkFun OTOSy", group = "Sensor")
 public class OtosTesty extends LinearOpMode {
     // Create an instance of the sensor
     SparkFunOTOS myOtos;
@@ -33,23 +38,35 @@ public class OtosTesty extends LinearOpMode {
 
         // All the configuration for the OTOS is done in this helper method, check it out!
         configureOtos();
-
+        int startOffsetX = 24;
+        int startOffsetY = 9;
         // Wait for the start button to be pressed
         waitForStart();
         ArrayList<double[]> positions = new ArrayList<double[]>();
-        positions.add(new double[]{0, 0, 0});
-        positions.add(new double[]{0, 24, 0});
-        positions.add(new double[]{0, 24, 90});
-        positions.add(new double[]{24, 24, 0});
-        positions.add(new double[]{24, 0, 0});
-        positions.add(new double[]{0, 0, 0});
+        positions.add(new double[]{48 - startOffsetX, 9 - startOffsetY, 0, 1});
+        positions.add(new double[]{36 - startOffsetX, 12 - startOffsetY, 0, 1});
+        positions.add(new double[]{36 - startOffsetX, 68 - startOffsetY, 0, 1});
+        positions.add(new double[]{24 - startOffsetX, 68 - startOffsetY, 0, 1});
+        positions.add(new double[]{24 - startOffsetX, 68 - startOffsetY, -90, 0});
+        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, -90, 1});
+        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, -135, 0});
+        positions.add(new double[]{20 - startOffsetX, 20 - startOffsetY, -135, 1});
+        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, -135, 1});
+        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, 0, 0});
+        positions.add(new double[]{24 - startOffsetX, 68 - startOffsetY, 0, 1});
+        positions.add(new double[]{12 - startOffsetX, 68 - startOffsetY, 0, 1});
+        positions.add(new double[]{12 - startOffsetX, 68 - startOffsetY, -90, 0});
+        positions.add(new double[]{12 - startOffsetX, 24 - startOffsetY, -90, 1});
+        positions.add(new double[]{12 - startOffsetX, 24 - startOffsetY, -135, 0});
+        positions.add(new double[]{20 - startOffsetX, 20 - startOffsetY, -135, 1});
         // Loop until the OpMode ends
         double targetX = 0;
         double targetY = 0;
         double targetAngle = 0;
         double angle;
+        double mode = 1;
         boolean reachedPosition = false;
-        while (opModeIsActive()) {
+        while (opModeIsActive() && positions.isEmpty()) {
             // Get the latest position, which includes the x and y coordinates, plus the
             // heading angle
             SparkFunOTOS.Pose2D pos = myOtos.getPosition();
@@ -57,22 +74,33 @@ public class OtosTesty extends LinearOpMode {
             telemetry.addData("X coordinate", pos.x);
             telemetry.addData("Y coordinate", pos.y);
             telemetry.addData("Heading angle", pos.h);
-            angle = Math.toDegrees(Math.atan2(pos.y - targetY, pos.x - targetX));
-            robot.setDirection(angle);
-            robot.setSpeed(0.5);
+            if (mode == 1) {
+                angle = Math.toDegrees(Math.atan2(pos.y - targetY, pos.x - targetX)) - pos.h;
+                robot.setDirection(angle);
+                robot.setSpeed(1);
+            } else {
+                robot.setSpeed(0);
+            }
             telemetry.addData("targetx", targetX);
             telemetry.addData("targety", targetY);
+            telemetry.addData("targetang", targetAngle);
             // Update the telemetry on the driver station
             telemetry.update();
-            reachedPosition = Math.sqrt(Math.pow(targetX - pos.x, 2) + Math.pow(targetY - pos.y, 2)) < 0.2 && Math.abs(pos.h - targetAngle) < 1;
+
+            reachedPosition = (Math.sqrt(Math.pow(targetX - pos.x, 2) + Math.pow(targetY - pos.y, 2)) < 0.2 || mode == 0) && Math.abs(pos.h - targetAngle) < 5;
             if (reachedPosition) {
                 positions.remove(0);
                 targetX = positions.get(0)[0];
                 targetY = positions.get(0)[1];
-                targetAngle = positions.get(0)[1];
+                targetAngle = positions.get(0)[2];
+                mode = (positions.get(0)[3]);
             }
-            if (Math.abs(pos.h - targetAngle) >= 10) {
-                robot.setRobotDirection(0.1);
+            if (Math.abs(pos.h - targetAngle) >= 5) {
+                if (targetAngle - pos.h > 0) {
+                    robot.setRobotDirection(1);
+                } else {
+                    robot.setRobotDirection(-1);
+                }
             } else {
                 robot.setRobotDirection(0);
             }
