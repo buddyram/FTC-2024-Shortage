@@ -31,7 +31,7 @@ public class RobotDrive extends LinearOpMode {
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
 
         MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
-        robot.setErrorCorrectionMultipliers(new double[]{1, 1, 1, -1});
+        robot.setErrorCorrectionMultipliers(new double[]{-1, -1, -1, 1});
         //telemetry.update();
 
         waitForStart();

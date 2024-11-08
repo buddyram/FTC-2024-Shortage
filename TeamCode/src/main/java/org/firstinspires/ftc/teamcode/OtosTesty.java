@@ -5,6 +5,10 @@
 */
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
+import com.buddyram.rframe.Odometry;
+import com.buddyram.rframe.Pose3D;
+import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -22,8 +26,7 @@ import java.util.ArrayList;
 
 @Autonomous(name = "Sensor: SparkFun OTOSy", group = "Sensor")
 public class OtosTesty extends LinearOpMode {
-    // Create an instance of the sensor
-    SparkFunOTOS myOtos;
+    Odometry<Pose3D> odometry;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -33,32 +36,28 @@ public class OtosTesty extends LinearOpMode {
         DcMotor motorBR = hardwareMap.get(DcMotor.class, "motorBR");
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
         MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
-        robot.setErrorCorrectionMultipliers(new double[]{1, -1, 1, -1});
-        myOtos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        robot.setErrorCorrectionMultipliers(new double[]{-1, -1, 1, -1});
+        this.odometry = new SparkFunOTOSOdometry(hardwareMap.get(SparkFunOTOS.class, "otos"), new Pose3D(new Vector3D(24, 9, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0)));
+        this.odometry.init();
 
-        // All the configuration for the OTOS is done in this helper method, check it out!
-        configureOtos();
-        int startOffsetX = 24;
-        int startOffsetY = 9;
-        // Wait for the start button to be pressed
         waitForStart();
         ArrayList<double[]> positions = new ArrayList<double[]>();
-        positions.add(new double[]{48 - startOffsetX, 9 - startOffsetY, 0, 1});
-        positions.add(new double[]{36 - startOffsetX, 12 - startOffsetY, 0, 1});
-        positions.add(new double[]{36 - startOffsetX, 68 - startOffsetY, 0, 1});
-        positions.add(new double[]{24 - startOffsetX, 68 - startOffsetY, 0, 1});
-        positions.add(new double[]{24 - startOffsetX, 68 - startOffsetY, -90, 0});
-        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, -90, 1});
-        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, -135, 0});
-        positions.add(new double[]{20 - startOffsetX, 20 - startOffsetY, -135, 1});
-        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, -135, 1});
-        positions.add(new double[]{24 - startOffsetX, 24 - startOffsetY, 0, 0});
-        positions.add(new double[]{24 - startOffsetX, 68 - startOffsetY, 0, 1});
-        positions.add(new double[]{12 - startOffsetX, 68 - startOffsetY, 0, 1});
-        positions.add(new double[]{12 - startOffsetX, 68 - startOffsetY, -90, 0});
-        positions.add(new double[]{12 - startOffsetX, 24 - startOffsetY, -90, 1});
-        positions.add(new double[]{12 - startOffsetX, 24 - startOffsetY, -135, 0});
-        positions.add(new double[]{20 - startOffsetX, 20 - startOffsetY, -135, 1});
+        positions.add(new double[]{48, 9, 0, 1});
+        positions.add(new double[]{36, 12, 0, 1});
+        positions.add(new double[]{36, 68, 0, 1});
+        positions.add(new double[]{24, 68, 0, 1});
+        positions.add(new double[]{24, 68, -90, 0});
+        positions.add(new double[]{24, 24, -90, 1});
+        positions.add(new double[]{24, 24, -135, 0});
+        positions.add(new double[]{20, 20, -135, 1});
+        positions.add(new double[]{24, 24, -135, 1});
+        positions.add(new double[]{24, 24, 0, 0});
+        positions.add(new double[]{24, 68, 0, 1});
+        positions.add(new double[]{12, 68, 0, 1});
+        positions.add(new double[]{12, 68, -90, 0});
+        positions.add(new double[]{12, 24, -90, 1});
+        positions.add(new double[]{12, 24, -135, 0});
+        positions.add(new double[]{20, 20, -135, 1});
         // Loop until the OpMode ends
         double targetX = 0;
         double targetY = 0;
@@ -66,28 +65,29 @@ public class OtosTesty extends LinearOpMode {
         double angle;
         double mode = 1;
         boolean reachedPosition = false;
-        while (opModeIsActive() && positions.isEmpty()) {
+        while (opModeIsActive() && !positions.isEmpty()) {
             // Get the latest position, which includes the x and y coordinates, plus the
             // heading angle
-            SparkFunOTOS.Pose2D pos = myOtos.getPosition();
+            Pose3D pos = odometry.get();
+
             // Log the position to the telemetry
-            telemetry.addData("X coordinate", pos.x);
-            telemetry.addData("Y coordinate", pos.y);
-            telemetry.addData("Heading angle", pos.h);
             if (mode == 1) {
-                angle = Math.toDegrees(Math.atan2(pos.y - targetY, pos.x - targetX)) - pos.h;
+                angle = Math.toDegrees(Math.atan2(pos.position.x - targetY, pos.position.x - targetX)) - pos.rotation.z;
                 robot.setDirection(angle);
-                robot.setSpeed(1);
+                robot.setSpeed(0.2);
             } else {
                 robot.setSpeed(0);
             }
             telemetry.addData("targetx", targetX);
             telemetry.addData("targety", targetY);
             telemetry.addData("targetang", targetAngle);
+            telemetry.addData("x", pos.position.x);
+            telemetry.addData("y", pos.position.y);
+            telemetry.addData("z", pos.rotation.z);
             // Update the telemetry on the driver station
             telemetry.update();
 
-            reachedPosition = (Math.sqrt(Math.pow(targetX - pos.x, 2) + Math.pow(targetY - pos.y, 2)) < 0.2 || mode == 0) && Math.abs(pos.h - targetAngle) < 5;
+            reachedPosition = (Math.sqrt(Math.pow(targetX - pos.position.x, 2) + Math.pow(targetY - pos.position.y, 2)) < 0.2 || mode == 0) && Math.abs(pos.rotation.z - targetAngle) < 5;
             if (reachedPosition) {
                 positions.remove(0);
                 targetX = positions.get(0)[0];
@@ -95,8 +95,8 @@ public class OtosTesty extends LinearOpMode {
                 targetAngle = positions.get(0)[2];
                 mode = (positions.get(0)[3]);
             }
-            if (Math.abs(pos.h - targetAngle) >= 5) {
-                if (targetAngle - pos.h > 0) {
+            if (Math.abs(pos.rotation.z - targetAngle) >= 5) {
+                if (targetAngle - pos.rotation.z > 0) {
                     robot.setRobotDirection(1);
                 } else {
                     robot.setRobotDirection(-1);
@@ -106,45 +106,5 @@ public class OtosTesty extends LinearOpMode {
             }
             //robot.update();
         }
-    }
-
-    private void configureOtos() {
-        telemetry.addLine("Configuring OTOS...");
-        telemetry.update();
-
-        // myOtos.setLinearUnit(DistanceUnit.METER);
-        myOtos.setLinearUnit(DistanceUnit.INCH);
-        // myOtos.setAngularUnit(AnguleUnit.RADIANS);
-        myOtos.setAngularUnit(AngleUnit.DEGREES);
-
-        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(3, 5, 0);
-        myOtos.setOffset(offset);
-
-        myOtos.setLinearScalar(1.9538461538);
-        myOtos.setAngularScalar(1.0);
-
-        myOtos.calibrateImu();
-
-        // Reset the tracking algorithm - this resets the position to the origin,
-        // but can also be used to recover from some rare tracking errors
-        myOtos.resetTracking();
-
-        // After resetting the tracking, the OTOS will report that the robot is at
-        // the origin. If your robot does not start at the origin, or you have
-        // another source of location information (eg. vision odometry), you can set
-        // the OTOS location to match and it will continue to track from there.
-        SparkFunOTOS.Pose2D currentPosition = new SparkFunOTOS.Pose2D(0, 0, 0);
-        myOtos.setPosition(currentPosition);
-
-        // Get the hardware and firmware version
-        SparkFunOTOS.Version hwVersion = new SparkFunOTOS.Version();
-        SparkFunOTOS.Version fwVersion = new SparkFunOTOS.Version();
-        myOtos.getVersionInfo(hwVersion, fwVersion);
-
-        telemetry.addLine("OTOS configured! Press start to get position data!");
-        telemetry.addLine();
-        telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
-        telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
-        telemetry.update();
     }
 }
