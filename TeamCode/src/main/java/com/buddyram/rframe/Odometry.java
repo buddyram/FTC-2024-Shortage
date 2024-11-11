@@ -15,5 +15,5 @@ public interface Odometry<P> {
     /**
      * Initialize the odometry sensor
      */
-    public void init();
+    public boolean init();
 }

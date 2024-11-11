@@ -13,6 +13,11 @@ public class Pose3D {
         this.rotationVelocity = rotationVelocity;
     }
 
+    public Pose3D() {
+        this(new Vector3D(), new Vector3D(), new Vector3D(), new Vector3D());
+    }
+
+
     public Pose3D add(Pose3D other) {
         return new Pose3D(this.position.add(other.position), this.rotation.add(other.rotation), this.positionVelocity.add(other.positionVelocity), this.rotationVelocity.add(other.rotationVelocity));
     }

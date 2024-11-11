@@ -1,5 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.buddyram.rframe.HolonomicDriveInstruction;
+import com.buddyram.rframe.MecanumDriveTrain;
+import com.buddyram.rframe.Pose3D;
+import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.ftc.Motor;
+import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
+import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -14,7 +21,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
  */
-@TeleOp(name = "A: Robot Drive main", group = "Sensor")
+@TeleOp(name = "A: Robot Drive main v1.1.1", group = "Sensor")
 public class RobotDrive extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -29,17 +36,30 @@ public class RobotDrive extends LinearOpMode {
         DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
         Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
-
-        MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
-        robot.setErrorCorrectionMultipliers(new double[]{-1, -1, -1, 1});
-        //telemetry.update();
+        SparkFunOTOSOdometry odometry = new SparkFunOTOSOdometry(
+                hardwareMap.get(SparkFunOTOS.class, "otos"),
+                new Pose3D( // pose
+                        new Vector3D(0, 0, 0), // position
+                        new Vector3D(0, 0, 0), // rotation
+                        new Vector3D(0, 0, 0), // position velocity
+                        new Vector3D(0, 0, 0)) // rotation velocity
+        );
+        if (odometry.init()) {
+            telemetry.addData("initialized", "true");
+            telemetry.update();
+        }
+        MecanumDriveTrain drive = new MecanumDriveTrain(
+                new Motor(motorFL, -1),
+                new Motor(motorFR, -1),
+                new Motor(motorBL, -1),
+                new Motor(motorBR),
+                0.7
+        );
 
         waitForStart();
-        double angle;
         double xl;
         double yl;
-        double turnamnt;
-        int targetangle = 0;
+        int targetAngle = 0;
         double targetWristAngle = 0;
         int targetArmExt = 0;
         int mode = 1;
@@ -55,14 +75,21 @@ public class RobotDrive extends LinearOpMode {
         claw.setPosition(0);
 
         while (opModeIsActive()) {
+
+            Pose3D pos = odometry.get();
+            telemetry.addData("x", pos.position.x);
+            telemetry.addData("y", pos.position.y);
+            telemetry.addData("h", pos.rotation.z);
+
             xl = gamepad1.left_stick_x;
             yl = gamepad1.left_stick_y;
-            angle = (Math.atan2(-yl, xl) * 180 / Math.PI);
-            turnamnt = gamepad1.right_stick_x / 2;
-            robot.setSpeed(Math.sqrt(xl * xl + yl * yl)/2);
-            robot.setDirection(angle);
-            robot.setRobotDirection(turnamnt);
-            telemetry.addData("RobotDrive", "" + robot.FlBrSpeed + robot.FrBlSpeed);
+            HolonomicDriveInstruction instruction = new HolonomicDriveInstruction(
+                    gamepad1.right_stick_x, // rotation
+                    Math.sqrt(xl * xl + yl * yl), // speed
+                    Math.atan2(-yl, xl) * 180 / Math.PI // direction
+            );
+            drive.drive(instruction);
+
             if (mode == 1) {
                 if (gamepad1.y) {
                     targetArmExt -= 4;
@@ -73,9 +100,9 @@ public class RobotDrive extends LinearOpMode {
                     targetArmExt = 0;
                 }
                 if (gamepad1.x) {
-                    targetangle += 1;
+                    targetAngle += 1;
                 } else if (gamepad1.b) {
-                    targetangle -= 1;
+                    targetAngle -= 1;
                 }
             } else {
                 if (gamepad1.y) {
@@ -87,9 +114,9 @@ public class RobotDrive extends LinearOpMode {
                     targetArmExt = 0;
                 }
                 if (gamepad1.x && targetArmExt >= -10) {
-                    targetangle = 720;
+                    targetAngle = 720;
                 } else if (gamepad1.b && targetArmExt >= -10) {
-                    targetangle = 0;
+                    targetAngle = 0;
                 }
             }
             if (gamepad1.back) {
@@ -116,18 +143,14 @@ public class RobotDrive extends LinearOpMode {
             wrist.setPosition(targetWristAngle);
             
             telemetry.addData("arm rotation motor position: ", armrotL.getCurrentPosition());
-            telemetry.addData("target: ", targetangle);
-            armrotL.setTargetPosition(targetangle);
-            armrotR.setTargetPosition(-targetangle);
+            telemetry.addData("target: ", targetAngle);
+            armrotL.setTargetPosition(targetAngle);
+            armrotR.setTargetPosition(-targetAngle);
             armext.setTargetPosition(targetArmExt);
             telemetry.addData("armext: ", armext.getTargetPosition());
             telemetry.addData("armext is busy: ", armext.isBusy());
             telemetry.addData("targetArmExt: ", targetArmExt);
             telemetry.update();
-            robot.update();
-
-
-
         }
     }
 }

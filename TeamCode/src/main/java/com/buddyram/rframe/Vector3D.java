@@ -20,6 +20,13 @@ public class Vector3D {
     }
 
     /**
+     * Create an empty 3d vector, with all coordinates equal to 0.
+     */
+    public Vector3D() {
+        this(0, 0, 0);
+    }
+
+    /**
      * Add this 3d vector to another 3d vector.
      * @param other the other 3d vector
      * @return a new 3d vector, the result of the sum of the vectors
@@ -40,6 +47,10 @@ public class Vector3D {
         );
     }
 
+    public String toString() {
+        return "(" + this.x + ", " + this.y + ", " + this.z + ")";
+    }
+
     /**
      * Check if the two if this 3d vector is equal to another 3d vector.
      * @param other the other 3d vector
@@ -47,5 +58,17 @@ public class Vector3D {
      */
     public boolean equals(Vector3D other) {
         return (this.x == other.x) && (this.y == other.y) && (this.z == other.z);
+    }
+
+    public double dot(Vector3D other) {
+        return this.x * other.x + this.y * other.y + this.z * other.z;
+    }
+
+    public Vector3D calculateRotation(Vector3D target) {
+        return new Vector3D(
+                Math.toDegrees(Math.atan2(target.z - this.z, target.y - this.y)),
+                0,
+                Math.toDegrees(Math.atan2(target.x - this.x, target.y - this.y))
+        );
     }
 }

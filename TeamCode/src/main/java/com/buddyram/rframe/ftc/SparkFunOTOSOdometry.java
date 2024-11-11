@@ -17,21 +17,24 @@ public class SparkFunOTOSOdometry implements Odometry<Pose3D> {
         this.offset = offset;
     }
 
-    public void init() {
+    public boolean init() {
+        if (!this.sensor.calibrateImu()) {
+            return false;
+        }
         this.sensor.setLinearUnit(DistanceUnit.INCH);
         this.sensor.setAngularUnit(AngleUnit.DEGREES);
         // TODO: allow user to pass in offsets
         SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(0.0781, -1.4418, 0);
         this.sensor.setOffset(offset);
-        this.sensor.setLinearScalar(1.9538461538);
-        this.sensor.setAngularScalar(1.0);
-        this.sensor.calibrateImu();
-        this.sensor.resetTracking();
+        this.sensor.setLinearScalar((84 - (16 + 3.0 / 32.0)) / 70.11); // odometry reading after 84 inches forward
+        this.sensor.setAngularScalar(3600.0 / 3623.0); // odometry reading after 10 rotations.
         SparkFunOTOS.Pose2D currentPosition = new SparkFunOTOS.Pose2D(0, 0, 0);
+        this.sensor.resetTracking();
         this.sensor.setPosition(currentPosition);
         SparkFunOTOS.Version hwVersion = new SparkFunOTOS.Version();
         SparkFunOTOS.Version fwVersion = new SparkFunOTOS.Version();
         this.sensor.getVersionInfo(hwVersion, fwVersion);
+        return true;
     }
 
     public Pose3D get() {

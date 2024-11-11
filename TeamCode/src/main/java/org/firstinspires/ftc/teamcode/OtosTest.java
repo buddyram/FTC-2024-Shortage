@@ -24,7 +24,7 @@ import org.firstinspires.ftc.teamcode.MecanumBaseChassis;
 
 import java.util.ArrayList;
 
-@Autonomous(name = "Sensor: SparkFun OTOS", group = "Sensor")
+@Autonomous(name = "1autonomous", group = "Sensor")
 public class OtosTest extends LinearOpMode {
     Odometry<Pose3D> odometry;
 
@@ -37,7 +37,7 @@ public class OtosTest extends LinearOpMode {
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
         MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
         robot.setErrorCorrectionMultipliers(new double[]{-1, -1, 1, -1});
-        this.odometry = new SparkFunOTOSOdometry(hardwareMap.get(SparkFunOTOS.class, "otos"), new Pose3D(new Vector3D(24, 9, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0)));
+        this.odometry = new SparkFunOTOSOdometry(hardwareMap.get(SparkFunOTOS.class, "otos"), new Pose3D(new Vector3D(48, 9, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0)));
         this.odometry.init();
 
         waitForStart();
@@ -64,25 +64,9 @@ public class OtosTest extends LinearOpMode {
         double targetAngle = 0;
         double angle;
         double mode = 1;
-        boolean reachedPosition = false;
+        boolean reachedPosition = true;
         while (opModeIsActive() && !positions.isEmpty()) {
-            // Get the latest position, which includes the x and y coordinates, plus the
-            // heading angle
             Pose3D pos = odometry.get();
-            // Log the position to the telemetry
-            if (mode == 1) {
-                angle = Math.toDegrees(Math.atan2(pos.position.x - targetY, pos.position.x - targetX)) - pos.rotation.z;
-                robot.setDirection(angle);
-                robot.setSpeed(0.1);
-            } else {
-                robot.setSpeed(0);
-            }
-            telemetry.addData("targetx", targetX);
-            telemetry.addData("targety", targetY);
-            telemetry.addData("targetang", targetAngle);
-            // Update the telemetry on the driver station
-            telemetry.update();
-
             reachedPosition = (Math.sqrt(Math.pow(targetX - pos.position.x, 2) + Math.pow(targetY - pos.position.y, 2)) < 0.2 || mode == 0) && Math.abs(pos.rotation.z - targetAngle) < 5;
             if (reachedPosition) {
                 positions.remove(0);
@@ -91,6 +75,21 @@ public class OtosTest extends LinearOpMode {
                 targetAngle = positions.get(0)[2];
                 mode = (positions.get(0)[3]);
             }
+                if (mode == 1) {
+                angle = Math.toDegrees(Math.atan2(pos.position.y - targetY, pos.position.x - targetX)) - pos.rotation.z;
+                robot.setDirection(angle);
+                robot.setSpeed(0.1);
+            } else {
+                robot.setSpeed(0);
+            }
+            telemetry.addData("targetx", targetX);
+            telemetry.addData("targety", targetY);
+            telemetry.addData("targetang", targetAngle);
+            telemetry.addData("x", pos.position.x);
+            telemetry.addData("y", pos.position.y);
+            telemetry.addData("z", pos.rotation.z);
+            // Update the telemetry on the driver station
+            telemetry.update();
             if (Math.abs(pos.rotation.z - targetAngle) >= 5) {
                 if (targetAngle - pos.rotation.z > 0) {
                     robot.setRobotDirection(0.2);

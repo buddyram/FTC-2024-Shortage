@@ -37,7 +37,7 @@ public class OtosTesty extends LinearOpMode {
         DcMotor motorBL = hardwareMap.get(DcMotor.class, "motorBL");
         MecanumBaseChassis robot = new MecanumBaseChassis(motorFL, motorFR, motorBL, motorBR);
         robot.setErrorCorrectionMultipliers(new double[]{-1, -1, 1, -1});
-        this.odometry = new SparkFunOTOSOdometry(hardwareMap.get(SparkFunOTOS.class, "otos"), new Pose3D(new Vector3D(24, 9, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0)));
+        this.odometry = new SparkFunOTOSOdometry(hardwareMap.get(SparkFunOTOS.class, "otos"), new Pose3D(new Vector3D(48, 9, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0), new Vector3D(0, 0, 0)));
         this.odometry.init();
 
         waitForStart();
