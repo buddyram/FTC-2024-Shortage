@@ -66,9 +66,9 @@ public class Vector3D {
 
     public Vector3D calculateRotation(Vector3D target) {
         return new Vector3D(
-                Math.toDegrees(Math.atan2(target.z - this.z, target.y - this.y)),
+                90 - Math.toDegrees(Math.atan2(target.z - this.z, target.y - this.y)),
                 0,
-                Math.toDegrees(Math.atan2(target.x - this.x, target.y - this.y))
+                90 - Math.toDegrees(Math.atan2(target.x - this.x, target.y - this.y))
         );
     }
 }

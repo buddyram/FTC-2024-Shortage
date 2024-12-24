@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.buddyram.rframe.HolonomicDriveInstruction;
+import com.buddyram.rframe.HolonomicPositionDriveAdapter;
 import com.buddyram.rframe.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
@@ -48,13 +49,24 @@ public class RobotDrive extends LinearOpMode {
             telemetry.addData("initialized", "true");
             telemetry.update();
         }
-        MecanumDriveTrain drive = new MecanumDriveTrain(
+        MecanumDriveTrain chassis = new MecanumDriveTrain(
                 new Motor(motorFL, -1),
-                new Motor(motorFR, -1),
+                new Motor(motorFR),
                 new Motor(motorBL, -1),
                 new Motor(motorBR),
-                0.7
+                1
         );
+
+        HolonomicPositionDriveAdapter drive = new HolonomicPositionDriveAdapter(chassis, odometry);
+
+
+        //MecanumDriveTrain drive = new MecanumDriveTrain(
+        //                new Motor(motorFL, -1),
+        //                new Motor(motorFR, -1),
+        //                new Motor(motorBL, -1),
+        //                new Motor(motorBR),
+        //                0.7
+        //        );
 
         waitForStart();
         double xl;
@@ -86,27 +98,27 @@ public class RobotDrive extends LinearOpMode {
             HolonomicDriveInstruction instruction = new HolonomicDriveInstruction(
                     gamepad1.right_stick_x, // rotation
                     Math.sqrt(xl * xl + yl * yl), // speed
-                    Math.atan2(-yl, xl) * 180 / Math.PI // direction
+                    Math.atan2(-yl, xl) * 180 / Math.PI + drive.odometry.get().rotation.z // direction
             );
             drive.drive(instruction);
 
             if (mode == 1) {
                 if (gamepad1.y) {
-                    targetArmExt -= 4;
+                    targetArmExt -= 70;
                 } else if (gamepad1.a) {
-                    targetArmExt += 4;
+                    targetArmExt += 70;
                 }
-                if (targetArmExt > 0) {
-                    targetArmExt = 0;
-                }
+                //if (targetArmExt > 0) {
+                  //1  targetArmExt = 0;
+                //}
                 if (gamepad1.x) {
-                    targetAngle += 1;
+                    targetAngle += 5;
                 } else if (gamepad1.b) {
-                    targetAngle -= 1;
+                    targetAngle -= 5;
                 }
             } else {
                 if (gamepad1.y) {
-                    targetArmExt -= 20;
+                    targetArmExt -= 40;
                 } else if (gamepad1.a) {
                     targetArmExt = 0;
                 }
