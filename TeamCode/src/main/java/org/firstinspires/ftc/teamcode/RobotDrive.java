@@ -13,14 +13,16 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import java.util.HashMap;
+
 
 /*
- * This OpMode demonstrates how to use a digital channel.
- *
- * The OpMode assumes that the digital channel is configured with a name of "digitalTouch".
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list.
+ OFF	0	0	1	Rest
+-671	-3080	0	0.1	High Basket
+-246	0	1	0.06	Far Reaching Pickup Init
+OFF	0	1	0.19	Short Reaching Pickup Init
+-335	0	0	0.35	Specimen Approach
+-165	0	0	0.35	Specimen Hang
  */
 @TeleOp(name = "A: Robot Drive main v1.1.1", group = "Sensor")
 public class RobotDrive extends LinearOpMode {
@@ -40,7 +42,7 @@ public class RobotDrive extends LinearOpMode {
         SparkFunOTOSOdometry odometry = new SparkFunOTOSOdometry(
                 hardwareMap.get(SparkFunOTOS.class, "otos"),
                 new Pose3D( // pose
-                        new Vector3D(0, 0, 0), // position
+                        new Vector3D(96, 8.5, 0), // position
                         new Vector3D(0, 0, 0), // rotation
                         new Vector3D(0, 0, 0), // position velocity
                         new Vector3D(0, 0, 0)) // rotation velocity
@@ -50,9 +52,9 @@ public class RobotDrive extends LinearOpMode {
             telemetry.update();
         }
         MecanumDriveTrain chassis = new MecanumDriveTrain(
-                new Motor(motorFL, -1),
+                new Motor(motorFL),
                 new Motor(motorFR),
-                new Motor(motorBL, -1),
+                new Motor(motorBL),
                 new Motor(motorBR),
                 1
         );
@@ -72,9 +74,8 @@ public class RobotDrive extends LinearOpMode {
         double xl;
         double yl;
         int targetAngle = 0;
-        double targetWristAngle = 0;
+        double targetWristAngle = 0.5;
         int targetArmExt = 0;
-        int mode = 1;
         armrotL.setTargetPosition(0);
         armrotR.setTargetPosition(0);
         armext.setTargetPosition(0);
@@ -82,7 +83,7 @@ public class RobotDrive extends LinearOpMode {
         armrotR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armext.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armrotL.setPower(0.5);
-        armrotR.setPower(0.5);
+        armrotR.setPower(0.5 / 3);
         armext.setPower(1);
         claw.setPosition(0);
 
@@ -101,40 +102,27 @@ public class RobotDrive extends LinearOpMode {
                     Math.atan2(-yl, xl) * 180 / Math.PI + drive.odometry.get().rotation.z // direction
             );
             drive.drive(instruction);
-
-            if (mode == 1) {
-                if (gamepad1.y) {
-                    targetArmExt -= 70;
-                } else if (gamepad1.a) {
-                    targetArmExt += 70;
-                }
-                //if (targetArmExt > 0) {
-                  //1  targetArmExt = 0;
-                //}
-                if (gamepad1.x) {
-                    targetAngle += 5;
-                } else if (gamepad1.b) {
-                    targetAngle -= 5;
-                }
-            } else {
-                if (gamepad1.y) {
-                    targetArmExt -= 40;
-                } else if (gamepad1.a) {
-                    targetArmExt = 0;
-                }
-                if (targetArmExt > 0) {
-                    targetArmExt = 0;
-                }
-                if (gamepad1.x && targetArmExt >= -10) {
-                    targetAngle = 720;
-                } else if (gamepad1.b && targetArmExt >= -10) {
-                    targetAngle = 0;
-                }
+            if (gamepad1.y) {
+                targetArmExt += 70;
+            } else if (gamepad1.a) {
+                targetArmExt -= 70;
             }
-            if (gamepad1.back) {
-                mode = 1;
-            } else if (gamepad1.start) {
-                mode = 0;
+            if (targetArmExt < 0) {
+                targetArmExt = 0;
+            }
+            if (targetArmExt > 3080) {
+                targetArmExt = 3080;
+            }
+            if (targetAngle < -700) {
+                targetAngle = -700;
+            }
+            if (targetAngle > 0) {
+                targetAngle = 0;
+            }
+            if (gamepad1.x) {
+                targetAngle += 5;
+            } else if (gamepad1.b) {
+                targetAngle -= 5;
             }
             if (gamepad1.right_bumper) {
                 claw.setPosition(1);
@@ -142,9 +130,9 @@ public class RobotDrive extends LinearOpMode {
                 claw.setPosition(0);
             }
             if (gamepad1.dpad_left) {
-                targetWristAngle -= 0.01;
+                targetWristAngle -= 0.03;
             } else if (gamepad1.dpad_right) {
-                targetWristAngle += 0.01;
+                targetWristAngle += 0.03;
             }
             if (targetWristAngle < 0) {
                 targetWristAngle = 0;
@@ -154,14 +142,13 @@ public class RobotDrive extends LinearOpMode {
             }
             wrist.setPosition(targetWristAngle);
             
-            telemetry.addData("arm rotation motor position: ", armrotL.getCurrentPosition());
-            telemetry.addData("target: ", targetAngle);
+            telemetry.addData("Angle", armrotL.getCurrentPosition());
             armrotL.setTargetPosition(targetAngle);
-            armrotR.setTargetPosition(-targetAngle);
+            armrotR.setTargetPosition(targetAngle / 3);
             armext.setTargetPosition(targetArmExt);
-            telemetry.addData("armext: ", armext.getTargetPosition());
-            telemetry.addData("armext is busy: ", armext.isBusy());
-            telemetry.addData("targetArmExt: ", targetArmExt);
+            telemetry.addData("Extension", armext.getTargetPosition());
+            telemetry.addData("Claw", claw.getPosition());
+            telemetry.addData("Wrist", wrist.getPosition());
             telemetry.update();
         }
     }

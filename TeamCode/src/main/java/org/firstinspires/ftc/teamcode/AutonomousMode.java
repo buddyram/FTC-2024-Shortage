@@ -5,7 +5,9 @@ import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.ftc.ArmShoulder;
 import com.buddyram.rframe.ftc.Motor;
+import com.buddyram.rframe.ftc.RobotArm;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -41,12 +43,28 @@ public class AutonomousMode extends LinearOpMode {
         SparkFunOTOSOdometry odometry = new SparkFunOTOSOdometry(
                 hardwareMap.get(SparkFunOTOS.class, "otos"),
                 new Pose3D( // pose
-                        new Vector3D(36, 9, 0), // position
+                        new Vector3D(96, 8.5, 0), // position
                         new Vector3D(0, 0, 0), // rotation
                         new Vector3D(0, 0, 0), // position velocity
                         new Vector3D(0, 0, 0)) // rotation velocity
         );
         odometry.init();
+
+
+        DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
+        DcMotor armrotL = hardwareMap.get(DcMotor.class, "armrotL");
+        DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
+        Servo claw = hardwareMap.get(Servo.class, "claw");
+        Servo wrist = hardwareMap.get(Servo.class, "wrist");
+        armrotL.setTargetPosition(0);
+        armrotR.setTargetPosition(0);
+        armrotL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armrotR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armrotL.setPower(0.5);
+        armrotR.setPower(0.5);
+        claw.setPosition(0);
+        RobotArm arm = new RobotArm(claw, wrist, armext, new ArmShoulder(armrotL, armrotR));
+
         Logger logger = new Logger() {
             public void log(String caption, Object value) {
                 telemetry.addData(caption, value);
@@ -64,9 +82,9 @@ public class AutonomousMode extends LinearOpMode {
 //                0.7
 //        );
         MecanumDriveTrain drive = new MecanumDriveTrain(
-                new Motor(motorFL, -1),
+                new Motor(motorFL),
                 new Motor(motorFR),
-                new Motor(motorBL, -1),
+                new Motor(motorBL),
                 new Motor(motorBR),
                 1
         );
@@ -77,26 +95,13 @@ public class AutonomousMode extends LinearOpMode {
         AutonomousDrive autonomous = new AutonomousDrive(
                 logger,
                 adapter,
-                odometry
+                odometry,
+                arm
         ) {
             public boolean isActive() {
                 return opModeIsActive();
             }
         };
-
-
-        DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
-        DcMotor armrotL = hardwareMap.get(DcMotor.class, "armrotL");
-        DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
-        Servo claw = hardwareMap.get(Servo.class, "claw");
-        Servo wrist = hardwareMap.get(Servo.class, "wrist");
-        armrotL.setTargetPosition(0);
-        armrotR.setTargetPosition(0);
-        armrotL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armrotR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armrotL.setPower(0.5);
-        armrotR.setPower(0.5);
-        claw.setPosition(0);
         autonomous.init();
         waitForStart();
         autonomous.run();
