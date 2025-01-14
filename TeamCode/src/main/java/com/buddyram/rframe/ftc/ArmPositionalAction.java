@@ -4,15 +4,17 @@ import com.buddyram.rframe.ftc.intothedeep.BaseArmAction;
 
 public class ArmPositionalAction extends BaseArmAction {
     int claw;
-    private final double wrist;
-    private final int extension;
-    private final int angle;
+    final double wrist;
+    final int extension;
+    final int angle;
+    final double elbow;
 
-    public ArmPositionalAction(int claw, double wrist, int extension, int angle) {
+    public ArmPositionalAction(int claw, double wrist, double elbow, int extension, int angle) {
         this.claw = claw;
         this.wrist = wrist;
         this.extension = extension;
         this.angle = angle;
+        this.elbow = elbow;
     }
 
     @Override
@@ -21,8 +23,7 @@ public class ArmPositionalAction extends BaseArmAction {
         arm.extension.setTargetPosition(this.extension);
         arm.wrist.setPosition(this.wrist);
         arm.claw.setPosition(this.claw);
-        this.waitForCompletion();
-
+        arm.elbow.setPosition(this.elbow);
         return true;
     }
 }

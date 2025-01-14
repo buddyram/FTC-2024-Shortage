@@ -8,11 +8,4 @@ public abstract class BaseArmAction implements ArmAction {
     public boolean run(AutonomousDrive drive) {
         return this.runArm(drive.arm);
     }
-
-    public void waitForCompletion() {
-        try {
-            Thread.sleep(1000);
-        } catch(Exception ex) {}
-    }
-
 }

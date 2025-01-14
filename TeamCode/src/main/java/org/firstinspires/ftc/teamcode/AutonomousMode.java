@@ -5,34 +5,22 @@ import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.ftc.ArmElbow;
 import com.buddyram.rframe.ftc.ArmShoulder;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rframe.ftc.RobotArm;
+import com.buddyram.rframe.ftc.RobotException;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 
 @Autonomous(name = "Autonomous - v1", group = "Sensor")
 public class AutonomousMode extends LinearOpMode {
-
-    public void initializeArm() {
-        DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
-        DcMotor armrotL = hardwareMap.get(DcMotor.class, "armrotL");
-        DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
-        Servo claw = hardwareMap.get(Servo.class, "claw");
-        Servo wrist = hardwareMap.get(Servo.class, "wrist");
-        armrotL.setTargetPosition(0);
-        armrotR.setTargetPosition(0);
-        armrotL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armrotR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armrotL.setPower(0.5);
-        armrotR.setPower(0.5);
-        claw.setPosition(0);
-    }
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -54,8 +42,11 @@ public class AutonomousMode extends LinearOpMode {
         DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
         DcMotor armrotL = hardwareMap.get(DcMotor.class, "armrotL");
         DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
+        Servo armElbowL = hardwareMap.get(Servo.class, "armElbowL");
+        Servo armElbowR = hardwareMap.get(Servo.class, "armElbowR");
         Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
+        DigitalChannel frontBumper = hardwareMap.get(DigitalChannel.class, "bumper");
         armrotL.setTargetPosition(0);
         armrotR.setTargetPosition(0);
         armrotL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -63,7 +54,7 @@ public class AutonomousMode extends LinearOpMode {
         armrotL.setPower(0.5);
         armrotR.setPower(0.5);
         claw.setPosition(0);
-        RobotArm arm = new RobotArm(claw, wrist, armext, new ArmShoulder(armrotL, armrotR));
+        RobotArm arm = new RobotArm(claw, wrist, new ArmElbow(armElbowL, armElbowR), armext, new ArmShoulder(armrotL, armrotR));
 
         Logger logger = new Logger() {
             public void log(String caption, Object value) {
@@ -96,7 +87,8 @@ public class AutonomousMode extends LinearOpMode {
                 logger,
                 adapter,
                 odometry,
-                arm
+                arm,
+                frontBumper
         ) {
             public boolean isActive() {
                 return opModeIsActive();
@@ -104,7 +96,11 @@ public class AutonomousMode extends LinearOpMode {
         };
         autonomous.init();
         waitForStart();
-        autonomous.run();
+        try {
+            autonomous.run();
+        } catch (RobotException e) {
+            throw new RuntimeException(e);
+        }
         armrotL.setTargetPosition(800);
         armrotR.setTargetPosition(-800);
     }

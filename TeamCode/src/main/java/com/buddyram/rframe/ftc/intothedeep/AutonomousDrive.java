@@ -8,19 +8,42 @@ import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.ArmPositionalAction;
+import com.buddyram.rframe.ftc.ConditionalWrapperAction;
+import com.buddyram.rframe.ftc.DriveTowardsAction;
+import com.buddyram.rframe.ftc.FrontBumperCondition;
+import com.buddyram.rframe.ftc.MultiAction;
 import com.buddyram.rframe.ftc.RobotAction;
 import com.buddyram.rframe.ftc.RobotArm;
-import com.buddyram.rframe.ftc.RobotArmActions;
+import com.buddyram.rframe.ftc.RobotActions;
+import com.buddyram.rframe.ftc.RobotException;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class AutonomousDrive {
-    public static final double TARGET_POSITION_THRESHOLD = 0.8;
-    public static final double TARGET_ROTATION_THRESHOLD = 0.1;
-    public static final double SLOW_DISTANCE_THRESHOLD = 5;
+    public static final double TARGET_POSITION_THRESHOLD = 1;
+    public static final double TARGET_ROTATION_THRESHOLD = 1;
+    public static final double SLOW_DISTANCE_THRESHOLD = 7;
     private final Logger logger;
+    private final DigitalChannel frontBumper;
+
+    public DigitalChannel getFrontBumper() {
+        return frontBumper;
+    }
+
     private final HolonomicDriveTrain drive;
+
+    public HolonomicDriveTrain getDrive() {
+        return drive;
+    }
+
+
+    public Odometry<Pose3D> getOdometry() {
+        return odometry;
+    }
+
     private final Odometry<Pose3D> odometry;
     public final RobotArm arm;
 
@@ -44,39 +67,31 @@ public class AutonomousDrive {
 //        main.run();
     }
 
-    public AutonomousDrive(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm) {
+    public AutonomousDrive(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper) {
         this.odometry = odometry;
         this.logger = logger;
         this.drive = drive;
         this.arm = arm;
+        this.frontBumper = frontBumper;
     }
 
-    public void run() {
+    public void run() throws RobotException {
         ArrayList<RobotAction> actions = new ArrayList<RobotAction>();
-        actions.add(RobotArmActions.REST);
-//        actions.add(new DrivePositionAction(new double[]{96, 8.5, 0}));
-//        actions.add(new DrivePositionAction(new double[]{120, 29.5, 180}));
-        actions.add(new DrivePositionAction(new double[]{96, 8.5, 0}));
-        actions.add(new HangSpecimen(81));
-        actions.add(new DrivePositionAction(new double[]{105, 30, 0}));
-        actions.add(new DrivePositionAction(new double[]{105, 50, 0}));
-        actions.add(new DrivePositionAction(new double[]{110, 50, 0}));
-        actions.add(new DrivePositionAction(new double[]{110, 12, 0}));
-        actions.add(new DrivePositionAction(new double[]{96, 24, 270}));
-        actions.add(new DrivePositionAction(new double[]{96, 12, 270}));
-        actions.add(new DrivePositionAction(new double[]{103, 12, 270}));
-        actions.add(RobotArmActions.SHORT_REACHING_PICKUP);
-        actions.add(RobotArmActions.CLOSE_CLAW);
-        // TODO: Add pickup here
-        actions.add(RobotArmActions.REST);
-        actions.add(new HangSpecimen(75));
-        actions.add(new DrivePositionAction(new double[]{103, 12, 270}));
-        actions.add(RobotArmActions.SHORT_REACHING_PICKUP);
-        actions.add(RobotArmActions.CLOSE_CLAW);
-        // TODO: Add pickup here
-        actions.add(RobotArmActions.REST);
-        actions.add(new HangSpecimen(69));
-        actions.add(new DrivePositionAction(new double[]{120, 9, 0}));
+//        actions.add(RobotArmActions.REST);
+//        actions.add(new HangSpecimen(81));
+//        actions.add(new DrivePositionAction(new double[]{105, 30, 0}));
+//        actions.add(new DrivePositionAction(new double[]{105, 60, 0}));
+//        actions.add(new DrivePositionAction(new double[]{117, 60, 0}));
+//        actions.add(new DrivePositionAction(new double[]{117, 12, 0}));
+//        actions.add(new DrivePositionAction(new double[]{96, 24, 0}));
+//        actions.add(new DrivePositionAction(new double[]{96, 24, 180}));
+//        actions.add(new DrivePositionAction(new double[]{96, 12, 180}));
+//        for (int i = 0; i < 5; i++) {
+//            actions.add(new GrabSpecimenFromWall(120));
+//            actions.add(new HangSpecimen(81 - 2 * i));
+//        }
+//        actions.add(new DrivePositionAction(new double[]{120, 9, 0}));
+        actions.add(RobotActions.COLLISION_HANG_RELEASE);
         while (this.isActive() && !actions.isEmpty()) {
             if (actions.get(0).run(this)) {
                 actions.remove(0);
@@ -90,7 +105,22 @@ public class AutonomousDrive {
     }
 
     public void init() {
-}
+    }
+
+    public HolonomicDriveInstruction calculateRelativeDriveInstruction(Vector3D relativeTarget) {
+        return this.calculateDriveInstruction(relativeTarget.add(this.odometry.get().position));
+    }
+
+    public HolonomicDriveInstruction calculateDriveInstruction(Vector3D target) {
+        double rotationInstruction = 0, driveSpeedInstruction = 0, driveAngleInstruction = 0;
+        Pose3D pos = this.odometry.get();
+        double distanceToTarget = pos.position.distance(target);
+        driveSpeedInstruction = distanceToTarget > SLOW_DISTANCE_THRESHOLD ? 1 : 0.6;
+        driveAngleInstruction = pos.position.calculateRotation(target).z;
+
+        return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
+    }
+
     public boolean navigate(double[] position) {
         this.logger.log("active", position);
         this.logger.flush();
@@ -105,16 +135,17 @@ public class AutonomousDrive {
             reachedPosition = (distanceToTarget < TARGET_POSITION_THRESHOLD) && (Math.abs(rotationDiff) <= TARGET_ROTATION_THRESHOLD);
             if (Math.abs(rotationDiff) >= TARGET_ROTATION_THRESHOLD) {
                 if (rotationDiff > 0) {
-                    rotationInstruction = Math.min(1, rotationDiff / 20);
+                    rotationInstruction = Math.min(0.5, rotationDiff / 20);
                 } else {
-                    rotationInstruction = -Math.min(1, Math.abs(rotationDiff) / 20);
+                    rotationInstruction = -Math.min(0.5, Math.abs(rotationDiff) / 20);
                 }
             }
 
             if (distanceToTarget >= TARGET_POSITION_THRESHOLD) {
-                driveSpeedInstruction = distanceToTarget > SLOW_DISTANCE_THRESHOLD ? 1 : 0.5;
+                driveSpeedInstruction = distanceToTarget > SLOW_DISTANCE_THRESHOLD ? 1 : 0.6;
                 driveAngleInstruction = pos.position.calculateRotation(target).z;
             }
+
             drive.drive(new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction));
             this.logger.log("pose", pos);
             this.logger.log("target", "(" + position[0] + ", " + position[1] + ", " + position[2] + ")");
@@ -218,18 +249,31 @@ class DrivePositionAction implements RobotAction {
 class HangSpecimen extends ArmPositionalAction {
     private final double x;
     public HangSpecimen(double x) {
-        super(0, 0, 0, 0);
+        super(0, 0, 0, 0, 0);
         this.x = x;
     }
 
     public boolean run(AutonomousDrive drive) {
-        new DrivePositionAction(new double[]{this.x, 24, 0}).run(drive);
-        RobotArmActions.SPECIMEN_APPROACH.runArm(drive.arm);
-        new DrivePositionAction(new double[]{this.x, 31, 0}).run(drive);
-        RobotArmActions.SPECIMEN_HANG.runArm(drive.arm);
-        new DrivePositionAction(new double[]{this.x, 25, 0}).run(drive);
-        RobotArmActions.RELEASE_CLAW.runArm(drive.arm);
-        RobotArmActions.REST.runArm(drive.arm);
+        RobotActions.SPECIMEN_HANG.runArm(drive.arm);
+        new DrivePositionAction(new double[]{this.x, 39.5, 0}).run(drive);
+        RobotActions.RELEASE_CLAW.runArm(drive.arm);
+        RobotActions.REST.runArm(drive.arm);
+        return true;
+    }
+}
+
+class GrabSpecimenFromWall extends ArmPositionalAction {
+    private final double x;
+    public GrabSpecimenFromWall(double x) {
+        super(0, 0, 0, 0, 0);
+        this.x = x;
+    }
+
+    public boolean run(AutonomousDrive drive) {
+        new DrivePositionAction(new double[]{this.x, 20, 180}).run(drive);
+        RobotActions.GRAB_FROM_WALL.runArm(drive.arm);
+        new DrivePositionAction(new double[]{this.x, 12, 180}).run(drive);
+        RobotActions.CLOSE_CLAW.runArm(drive.arm);
         return true;
     }
 }

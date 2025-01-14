@@ -5,6 +5,8 @@ import com.buddyram.rframe.HolonomicPositionDriveAdapter;
 import com.buddyram.rframe.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.ftc.ArmActionWithRestedAngle;
+import com.buddyram.rframe.ftc.ArmPositionalAction;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
@@ -37,12 +39,14 @@ public class RobotDrive extends LinearOpMode {
         DcMotor armext = hardwareMap.get(DcMotor.class, "armext");
         DcMotor armrotL = hardwareMap.get(DcMotor.class, "armrotL");
         DcMotor armrotR = hardwareMap.get(DcMotor.class, "armrotR");
+        Servo armElbowL = hardwareMap.get(Servo.class, "armElbowL");
+        Servo armElbowR = hardwareMap.get(Servo.class, "armElbowR");
         Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
         SparkFunOTOSOdometry odometry = new SparkFunOTOSOdometry(
                 hardwareMap.get(SparkFunOTOS.class, "otos"),
                 new Pose3D( // pose
-                        new Vector3D(96, 8.5, 0), // position
+                        new Vector3D(0, 0, 0), // position
                         new Vector3D(0, 0, 0), // rotation
                         new Vector3D(0, 0, 0), // position velocity
                         new Vector3D(0, 0, 0)) // rotation velocity
@@ -76,9 +80,12 @@ public class RobotDrive extends LinearOpMode {
         int targetAngle = 0;
         double targetWristAngle = 0.5;
         int targetArmExt = 0;
+        double targetElbowAngle = 0.5;
         armrotL.setTargetPosition(0);
         armrotR.setTargetPosition(0);
         armext.setTargetPosition(0);
+        armElbowL.setPosition(0.5);
+        armElbowR.setPosition(0.5);
         armrotL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armrotR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armext.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -134,13 +141,27 @@ public class RobotDrive extends LinearOpMode {
             } else if (gamepad1.dpad_right) {
                 targetWristAngle += 0.03;
             }
+            if (gamepad1.dpad_up) {
+                targetElbowAngle -= 0.03;
+            } else if (gamepad1.dpad_down) {
+                targetElbowAngle += 0.03;
+            }
             if (targetWristAngle < 0) {
                 targetWristAngle = 0;
             }
             if (targetWristAngle > 1) {
                 targetWristAngle = 1;
             }
+
+            if (targetElbowAngle < 0) {
+                targetElbowAngle = 0;
+            }
+            if (targetElbowAngle > 1) {
+                targetElbowAngle = 1;
+            }
             wrist.setPosition(targetWristAngle);
+            armElbowR.setPosition(targetElbowAngle);
+            armElbowL.setPosition(1 - targetElbowAngle);
             
             telemetry.addData("Angle", armrotL.getCurrentPosition());
             armrotL.setTargetPosition(targetAngle);
@@ -149,6 +170,7 @@ public class RobotDrive extends LinearOpMode {
             telemetry.addData("Extension", armext.getTargetPosition());
             telemetry.addData("Claw", claw.getPosition());
             telemetry.addData("Wrist", wrist.getPosition());
+            telemetry.addData("Elbow", armElbowR.getPosition());
             telemetry.update();
         }
     }

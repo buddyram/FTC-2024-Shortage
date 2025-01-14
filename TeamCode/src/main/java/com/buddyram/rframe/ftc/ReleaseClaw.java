@@ -11,7 +11,6 @@ public class ReleaseClaw extends BaseArmAction {
 
     public boolean runArm(RobotArm arm) {
         arm.claw.setPosition(state);
-        this.waitForCompletion();
         return true;
     }
 }
