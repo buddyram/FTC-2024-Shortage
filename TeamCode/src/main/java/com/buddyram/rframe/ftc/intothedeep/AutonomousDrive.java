@@ -75,7 +75,7 @@ public class AutonomousDrive {
         this.frontBumper = frontBumper;
     }
 
-    public void run() throws RobotException {
+    public void run() throws RobotException, InterruptedException {
         ArrayList<RobotAction> actions = new ArrayList<RobotAction>();
 //        actions.add(RobotArmActions.REST);
 //        actions.add(new HangSpecimen(81));
@@ -98,6 +98,7 @@ public class AutonomousDrive {
                 System.out.println("next!! " + actions.size());
             }
         }
+        Thread.sleep(2000);
     }
 
     public boolean isActive() {
@@ -249,7 +250,7 @@ class DrivePositionAction implements RobotAction {
 class HangSpecimen extends ArmPositionalAction {
     private final double x;
     public HangSpecimen(double x) {
-        super(0, 0, 0, 0, 0);
+        super(0, 0, 0, 0);
         this.x = x;
     }
 
@@ -265,7 +266,7 @@ class HangSpecimen extends ArmPositionalAction {
 class GrabSpecimenFromWall extends ArmPositionalAction {
     private final double x;
     public GrabSpecimenFromWall(double x) {
-        super(0, 0, 0, 0, 0);
+        super(0, 0, 0, 0);
         this.x = x;
     }
 
