@@ -1,6 +1,6 @@
-package com.buddyram.rframe.ftc.intothedeep;
+package com.buddyram.rframe.ftc.intothedeep.arm;
 
-import com.buddyram.rframe.ftc.ArmAction;
+import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
 
 public abstract class BaseArmAction implements ArmAction {
 

@@ -11,6 +11,10 @@ OFF	0	1	0.19	Short Reaching Pickup Init
  */
 
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.ftc.intothedeep.arm.ArmActionWithRestedAngle;
+import com.buddyram.rframe.ftc.intothedeep.arm.ArmPositionalAction;
+import com.buddyram.rframe.ftc.intothedeep.arm.Claw;
+import com.buddyram.rframe.ftc.intothedeep.arm.ReleaseClaw;
 
 import java.util.Arrays;
 
@@ -20,8 +24,8 @@ public class RobotActions {
     public static final ArmActionWithRestedAngle REST = new ArmActionWithRestedAngle(0,1, 0);
     public static final ArmActionWithRestedAngle GRAB_FROM_WALL = new ArmActionWithRestedAngle(0.45,0.25, 0);
     public static final ArmPositionalAction SPECIMEN_HANG = new ArmPositionalAction(0.72, 0.1,0, -380);
-    public static final ReleaseClaw RELEASE_CLAW = new ReleaseClaw(1);
-    public static final ReleaseClaw CLOSE_CLAW = new ReleaseClaw(0);
+    public static final RobotAction RELEASE_CLAW = Claw.moveTo(Claw.OPEN);
+    public static final RobotAction CLOSE_CLAW = Claw.moveTo(Claw.CLOSE);
     public static final ConditionalWrapperAction COLLISION_HANG = new ConditionalWrapperAction(
         new MultiAction(Arrays.asList(DRIVE_FORWARD, SPECIMEN_HANG)), new FrontBumperCondition()
     );
@@ -30,7 +34,7 @@ public class RobotActions {
         (drive) -> drive.getOdometry().get().position.y < -24
     );
     public static final MultiAction COLLISION_HANG_RELEASE = new MultiAction(
-        Arrays.asList(CLOSE_CLAW, COLLISION_HANG, RELEASE_CLAW, new TimeoutWrapperAction(REVERSE_TO_SAFETY, 5000), REST)
+        Arrays.asList(CLOSE_CLAW, COLLISION_HANG, RELEASE_CLAW, new TimeoutWrapperAction(REVERSE_TO_SAFETY, 4000), REST)
     );
 }
 

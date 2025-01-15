@@ -1,4 +1,4 @@
-package com.buddyram.rframe.ftc;
+package com.buddyram.rframe.ftc.intothedeep.arm;
 
 public class ArmActionWithRestedAngle extends ArmPositionalAction {
 

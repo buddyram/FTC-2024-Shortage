@@ -7,20 +7,15 @@ import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
-import com.buddyram.rframe.ftc.ArmPositionalAction;
-import com.buddyram.rframe.ftc.ConditionalWrapperAction;
-import com.buddyram.rframe.ftc.DriveTowardsAction;
-import com.buddyram.rframe.ftc.FrontBumperCondition;
-import com.buddyram.rframe.ftc.MultiAction;
+import com.buddyram.rframe.ftc.intothedeep.arm.ArmPositionalAction;
 import com.buddyram.rframe.ftc.RobotAction;
-import com.buddyram.rframe.ftc.RobotArm;
+import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
 import com.buddyram.rframe.ftc.RobotActions;
 import com.buddyram.rframe.ftc.RobotException;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class AutonomousDrive {
     public static final double TARGET_POSITION_THRESHOLD = 1;
@@ -76,21 +71,7 @@ public class AutonomousDrive {
     }
 
     public void run() throws RobotException, InterruptedException {
-        ArrayList<RobotAction> actions = new ArrayList<RobotAction>();
-//        actions.add(RobotArmActions.REST);
-//        actions.add(new HangSpecimen(81));
-//        actions.add(new DrivePositionAction(new double[]{105, 30, 0}));
-//        actions.add(new DrivePositionAction(new double[]{105, 60, 0}));
-//        actions.add(new DrivePositionAction(new double[]{117, 60, 0}));
-//        actions.add(new DrivePositionAction(new double[]{117, 12, 0}));
-//        actions.add(new DrivePositionAction(new double[]{96, 24, 0}));
-//        actions.add(new DrivePositionAction(new double[]{96, 24, 180}));
-//        actions.add(new DrivePositionAction(new double[]{96, 12, 180}));
-//        for (int i = 0; i < 5; i++) {
-//            actions.add(new GrabSpecimenFromWall(120));
-//            actions.add(new HangSpecimen(81 - 2 * i));
-//        }
-//        actions.add(new DrivePositionAction(new double[]{120, 9, 0}));
+        ArrayList<RobotAction> actions = new ArrayList<>();
         actions.add(RobotActions.COLLISION_HANG_RELEASE);
         while (this.isActive() && !actions.isEmpty()) {
             if (actions.get(0).run(this)) {
@@ -234,82 +215,3 @@ class VirtualOdometrySensor implements Odometry<Pose3D> {
         return true;
     }
 }
-
-class DrivePositionAction implements RobotAction {
-    double[] position;
-
-    public DrivePositionAction(double[] position) {
-        this.position = position;
-    }
-
-    public boolean run(AutonomousDrive drive) {
-        return drive.navigate(this.position);
-    }
-}
-
-class HangSpecimen extends ArmPositionalAction {
-    private final double x;
-    public HangSpecimen(double x) {
-        super(0, 0, 0, 0);
-        this.x = x;
-    }
-
-    public boolean run(AutonomousDrive drive) {
-        RobotActions.SPECIMEN_HANG.runArm(drive.arm);
-        new DrivePositionAction(new double[]{this.x, 39.5, 0}).run(drive);
-        RobotActions.RELEASE_CLAW.runArm(drive.arm);
-        RobotActions.REST.runArm(drive.arm);
-        return true;
-    }
-}
-
-class GrabSpecimenFromWall extends ArmPositionalAction {
-    private final double x;
-    public GrabSpecimenFromWall(double x) {
-        super(0, 0, 0, 0);
-        this.x = x;
-    }
-
-    public boolean run(AutonomousDrive drive) {
-        new DrivePositionAction(new double[]{this.x, 20, 180}).run(drive);
-        RobotActions.GRAB_FROM_WALL.runArm(drive.arm);
-        new DrivePositionAction(new double[]{this.x, 12, 180}).run(drive);
-        RobotActions.CLOSE_CLAW.runArm(drive.arm);
-        return true;
-    }
-}
-
-/*
-positions.add(new double[]{36, 9, 0}); // block 1 start
-        positions.add(new double[]{36, 60, 0});
-        positions.add(new double[]{24, 60, 0});
-        positions.add(new double[]{24, 24, 0});
-        positions.add(new double[]{24, 24, -45});
-        positions.add(new double[]{15, 15, -45}); // block 1 end
-        positions.add(new double[]{24, 24, -45}); // block 2 start
-        positions.add(new double[]{24, 24, 0});
-        positions.add(new double[]{24, 60, 0});
-        positions.add(new double[]{14, 60, 0});
-        positions.add(new double[]{14, 24, 0});
-        positions.add(new double[]{10, 24, 0});
-        positions.add(new double[]{12, 12, 0});
-//        positions.add(new double[]{16, 60, 0}); // block 3 start
-//        positions.add(new double[]{8, 60, 0});
-//        positions.add(new double[]{8, 10, 0}); // block 3 end
-        positions.add(new double[]{12, 24, 0});
-        positions.add(new double[]{36, 60, 90});
-
-//        positions.add(new double[]{48, 9, 0});
-//        positions.add(new double[]{36, 12, 0});
-//        positions.add(new double[]{36, 68, 0});
-//        positions.add(new double[]{24, 68, 90});
-//        positions.add(new double[]{24, 24, 90});
-//        positions.add(new double[]{24, 24, 45});
-//        positions.add(new double[]{15, 15, 45});
-//        positions.add(new double[]{30, 30, 0});
-//        positions.add(new double[]{24, 68, 0});
-//        positions.add(new double[]{12, 68, 0});
-//        positions.add(new double[]{12, 68, 90});
-//        positions.add(new double[]{12, 24, 90});
-//        positions.add(new double[]{20, 20, 0});
- */

@@ -5,13 +5,16 @@ import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
-import com.buddyram.rframe.ftc.ArmElbow;
-import com.buddyram.rframe.ftc.ArmShoulder;
 import com.buddyram.rframe.ftc.Motor;
-import com.buddyram.rframe.ftc.RobotArm;
+import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
 import com.buddyram.rframe.ftc.RobotException;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
+import com.buddyram.rframe.ftc.intothedeep.arm.Claw;
+import com.buddyram.rframe.ftc.intothedeep.arm.Elbow;
+import com.buddyram.rframe.ftc.intothedeep.arm.Extension;
+import com.buddyram.rframe.ftc.intothedeep.arm.Shoulder;
+import com.buddyram.rframe.ftc.intothedeep.arm.Wrist;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
@@ -54,7 +57,7 @@ public class AutonomousMode extends LinearOpMode {
         armrotL.setPower(0.5);
         armrotR.setPower(0.5);
         claw.setPosition(0);
-        RobotArm arm = new RobotArm(claw, wrist, new ArmElbow(armElbowL, armElbowR), armext, new ArmShoulder(armrotL, armrotR));
+        RobotArm arm = new RobotArm(new Claw(claw), new Wrist(wrist), new Elbow(armElbowL, armElbowR), new Extension(armext), new Shoulder(armrotL, armrotR));
 
         Logger logger = new Logger() {
             public void log(String caption, Object value) {

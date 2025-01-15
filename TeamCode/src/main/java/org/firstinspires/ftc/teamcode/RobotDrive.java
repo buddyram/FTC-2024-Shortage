@@ -5,8 +5,6 @@ import com.buddyram.rframe.HolonomicPositionDriveAdapter;
 import com.buddyram.rframe.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
-import com.buddyram.rframe.ftc.ArmActionWithRestedAngle;
-import com.buddyram.rframe.ftc.ArmPositionalAction;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
@@ -14,8 +12,6 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
-
-import java.util.HashMap;
 
 
 /*

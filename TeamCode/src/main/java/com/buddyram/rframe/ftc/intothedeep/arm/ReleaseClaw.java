@@ -1,6 +1,4 @@
-package com.buddyram.rframe.ftc;
-
-import com.buddyram.rframe.ftc.intothedeep.BaseArmAction;
+package com.buddyram.rframe.ftc.intothedeep.arm;
 
 public class ReleaseClaw extends BaseArmAction {
     private final int state;

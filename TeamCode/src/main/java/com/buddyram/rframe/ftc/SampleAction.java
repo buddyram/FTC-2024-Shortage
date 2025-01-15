@@ -2,7 +2,7 @@
 //
 //package com.buddyram.rframe.ftc;
 //
-//import com.buddyram.rframe.ftc.intothedeep.BaseArmAction;
+//import com.buddyram.rframe.ftc.intothedeep.arm.BaseArmAction;
 //import com.qualcomm.robotcore.hardware.DcMotor;
 //import com.qualcomm.robotcore.hardware.Servo;
 //
