@@ -1,8 +1,9 @@
 package com.buddyram.rframe.ftc.intothedeep.arm;
 
-import com.buddyram.rframe.ftc.BaseConditionalAction;
-import com.buddyram.rframe.ftc.ConditionalWrapperAction;
-import com.buddyram.rframe.ftc.RobotAction;
+import com.buddyram.rframe.actions.ConditionalWrapperAction;
+import com.buddyram.rframe.actions.RobotAction;
+import com.buddyram.rframe.ftc.intothedeep.ShortageAction;
+import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 public class Shoulder {
@@ -24,17 +25,17 @@ public class Shoulder {
         return this.angleL.getCurrentPosition();
     }
 
-    public static RobotAction moveTo(int tgt) {
+    public static ShortageAction moveTo(int tgt) {
         return (drive) -> {
             drive.arm.angle.setTargetPosition(tgt);
             return true;
         };
     }
 
-    public static RobotAction moveToAndWait(int tgt) {
-        return new ConditionalWrapperAction(
-            Shoulder.moveTo(tgt),
-            (drive) -> Math.abs(drive.arm.angle.getPosition() - tgt) < POSITION_ERROR_THRESHOLD
+    public static RobotAction<ShortageBot> moveToAndWait(int tgt) {
+        return new ConditionalWrapperAction<>(
+                Shoulder.moveTo(tgt),
+                (drive) -> Math.abs(drive.arm.angle.getPosition() - tgt) < POSITION_ERROR_THRESHOLD
         );
     }
 }

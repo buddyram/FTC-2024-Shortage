@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.buddyram.rframe.Color;
-import com.buddyram.rframe.HolonomicDriveInstruction;
-import com.buddyram.rframe.HolonomicPositionDriveAdapter;
-import com.buddyram.rframe.MecanumDriveTrain;
+import com.buddyram.rframe.drive.HolonomicDriveInstruction;
+import com.buddyram.rframe.drive.HolonomicPositionDriveAdapter;
+import com.buddyram.rframe.drive.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.Motor;

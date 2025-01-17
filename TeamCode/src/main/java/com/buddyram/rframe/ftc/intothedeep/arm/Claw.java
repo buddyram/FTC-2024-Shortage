@@ -1,6 +1,6 @@
 package com.buddyram.rframe.ftc.intothedeep.arm;
 
-import com.buddyram.rframe.ftc.RobotAction;
+import com.buddyram.rframe.ftc.intothedeep.ShortageAction;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Claw {
@@ -16,7 +16,7 @@ public class Claw {
         this.angle.setPosition(tgt);
     }
 
-    public static RobotAction moveTo(double tgt) {
+    public static ShortageAction moveTo(double tgt) {
         return (drive) -> {
             drive.arm.claw.setPosition(tgt);
             return true;

@@ -1,19 +1,21 @@
-package com.buddyram.rframe.ftc;
+package com.buddyram.rframe.actions;
 
-import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
+import com.buddyram.rframe.Robot;
+import com.buddyram.rframe.RobotException;
+
 import java.util.concurrent.*;
 
-public class TimeoutWrapperAction implements RobotAction {
-    private final RobotAction action;
+public class TimeoutWrapperAction<R extends Robot> implements RobotAction<R> {
+    private final RobotAction<R> action;
     private final long timeoutMs;
 
-    public TimeoutWrapperAction(RobotAction action, long timeoutMs) {
+    public TimeoutWrapperAction(RobotAction<R> action, long timeoutMs) {
         this.action = action;
         this.timeoutMs = timeoutMs;
     }
 
     @Override
-    public boolean run(AutonomousDrive drive) throws RobotException {
+    public boolean run(R drive) throws RobotException {
         // inspired by https://stackoverflow.com/questions/19456313/simple-timeout-in-java
 
         ExecutorService executor = Executors.newSingleThreadExecutor();

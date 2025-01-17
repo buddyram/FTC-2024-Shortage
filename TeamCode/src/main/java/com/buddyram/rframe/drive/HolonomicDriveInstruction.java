@@ -1,4 +1,4 @@
-package com.buddyram.rframe;
+package com.buddyram.rframe.drive;
 
 public class HolonomicDriveInstruction {
     public final double rotation;

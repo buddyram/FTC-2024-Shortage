@@ -1,4 +1,7 @@
-package com.buddyram.rframe;
+package com.buddyram.rframe.drive;
+
+import com.buddyram.rframe.Odometry;
+import com.buddyram.rframe.Pose3D;
 
 public class HolonomicPositionDriveAdapter implements HolonomicDriveTrain {
     public final HolonomicDriveTrain driveTrain;

@@ -1,25 +1,27 @@
 package com.buddyram.rframe.ftc.intothedeep;
 
-import com.buddyram.rframe.HolonomicDriveInstruction;
-import com.buddyram.rframe.HolonomicDriveTrain;
+import com.buddyram.rframe.PrintLogger;
+import com.buddyram.rframe.drive.Driveable;
+import com.buddyram.rframe.drive.HolonomicDriveInstruction;
+import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
-import com.buddyram.rframe.ftc.ConditionalWrapperAction;
+import com.buddyram.rframe.drive.VirtualHolonomicDriveTrain;
+import com.buddyram.rframe.drive.VirtualOdometrySensor;
+import com.buddyram.rframe.actions.ConditionalWrapperAction;
 import com.buddyram.rframe.ftc.DriveTowardsAction;
-import com.buddyram.rframe.ftc.RobotAction;
-import com.buddyram.rframe.ftc.TimeoutWrapperAction;
+import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
 import com.buddyram.rframe.ftc.RobotActions;
-import com.buddyram.rframe.ftc.RobotException;
+import com.buddyram.rframe.RobotException;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 
-public class AutonomousDrive {
+public class ShortageBot implements Driveable<HolonomicDriveTrain> {
     public static final double TARGET_POSITION_THRESHOLD = 1;
     public static final double TARGET_ROTATION_THRESHOLD = 1;
     public static final double SLOW_DISTANCE_THRESHOLD = 7;
@@ -64,7 +66,7 @@ public class AutonomousDrive {
 //        main.run();
     }
 
-    public AutonomousDrive(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper) {
+    public ShortageBot(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper) {
         this.odometry = odometry;
         this.logger = logger;
         this.drive = drive;
@@ -73,11 +75,11 @@ public class AutonomousDrive {
     }
 
     public void run() throws RobotException, InterruptedException {
-        ArrayList<RobotAction> actions = new ArrayList<>();
+        ArrayList<RobotAction<ShortageBot>> actions = new ArrayList<>();
 
         // ACTIONS START HERE
 
-        actions.add(new DriveTowardsAction(ConditionalWrapperAction(new Vector3D(-24, 5, 0), true));
+        actions.add(new ConditionalWrapperAction<>(new DriveTowardsAction(new Vector3D(72, 12, 0), false), (drive) -> drive.getOdometry().get().position.x < 75));
         actions.add(RobotActions.COLLISION_HANG_RELEASE);
 
         // ACTIONS END HERE
@@ -149,77 +151,3 @@ public class AutonomousDrive {
     }
 }
 
-class PrintLogger implements Logger {
-    PrintStream out;
-    public PrintLogger(PrintStream out) {
-        this.out = out;
-    }
-    public void log(String caption, Object value) {
-        this.out.print("\r" + caption + ": " + value.toString() + "                  ");
-    }
-
-    public void flush() {
-        //this.out.flush();
-    }
-}
-
-class VirtualHolonomicDriveTrain implements HolonomicDriveTrain {
-    final double maxSpeedInchesPerSecond;
-    final double maxRotationsPerSecond;
-    private HolonomicDriveInstruction lastInstruction;
-    public VirtualHolonomicDriveTrain(double maxSpeedInchesPerSecond, double maxRotationsPerSecond) {
-        this.maxSpeedInchesPerSecond = maxSpeedInchesPerSecond;
-        this.maxRotationsPerSecond = maxRotationsPerSecond;
-        this.lastInstruction = new HolonomicDriveInstruction(0, 0, 0);
-    }
-    public void drive(HolonomicDriveInstruction instruction) {
-        this.lastInstruction = instruction;
-    }
-
-    public HolonomicDriveInstruction getLastInstruction() {
-        return lastInstruction;
-    }
-}
-
-class VirtualOdometrySensor implements Odometry<Pose3D> {
-    private Pose3D pos;
-    private long timestampMs;
-    private final VirtualHolonomicDriveTrain driveTrain;
-    public VirtualOdometrySensor(Pose3D initialPosition, VirtualHolonomicDriveTrain driveTrain) {
-        this.pos = initialPosition;
-        this.driveTrain = driveTrain;
-    }
-
-    public Pose3D get() {
-        HolonomicDriveInstruction instruction = this.driveTrain.getLastInstruction();
-        double seconds_past = (System.currentTimeMillis() - this.timestampMs) / 1000.0;
-        Vector3D deltaPosition = new Vector3D(
-                Math.cos(instruction.direction) * (this.driveTrain.maxSpeedInchesPerSecond * seconds_past * instruction.speed),
-                Math.sin(instruction.direction) * (this.driveTrain.maxSpeedInchesPerSecond * seconds_past * instruction.speed),
-                0
-        );
-        Vector3D deltaRotation = new Vector3D(
-                0,
-                0,
-                360 * driveTrain.maxRotationsPerSecond * seconds_past * instruction.rotation
-
-        );
-        this.pos = new Pose3D(
-                this.pos.position.add(deltaPosition),
-                new Vector3D(
-                        0,
-                        0,
-                        Utils.normalizeAngle(this.pos.rotation.add(deltaRotation).z)
-                ),
-                new Vector3D(),
-                new Vector3D()
-        );
-        this.timestampMs = System.currentTimeMillis();
-        return this.pos;
-    }
-
-    public boolean init() {
-        this.timestampMs = System.currentTimeMillis();
-        return true;
-    }
-}

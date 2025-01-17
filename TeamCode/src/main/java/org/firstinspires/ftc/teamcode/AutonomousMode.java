@@ -1,15 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.buddyram.rframe.HolonomicPositionDriveAdapter;
+import com.buddyram.rframe.drive.HolonomicPositionDriveAdapter;
 import com.buddyram.rframe.Logger;
-import com.buddyram.rframe.MecanumDriveTrain;
+import com.buddyram.rframe.drive.MecanumDriveTrain;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
-import com.buddyram.rframe.ftc.RobotException;
+import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
-import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
+import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
 import com.buddyram.rframe.ftc.intothedeep.arm.Claw;
 import com.buddyram.rframe.ftc.intothedeep.arm.Elbow;
 import com.buddyram.rframe.ftc.intothedeep.arm.Extension;
@@ -86,7 +86,7 @@ public class AutonomousMode extends LinearOpMode {
         HolonomicPositionDriveAdapter adapter = new HolonomicPositionDriveAdapter(drive, odometry);
         adapter.init();
 
-        AutonomousDrive autonomous = new AutonomousDrive(
+        ShortageBot autonomous = new ShortageBot(
                 logger,
                 adapter,
                 odometry,

@@ -1,4 +1,6 @@
-package com.buddyram.rframe;
+package com.buddyram.rframe.drive;
+
+import com.buddyram.rframe.Motor;
 
 public class MecanumDriveTrain implements HolonomicDriveTrain {
     private final Motor fl;
