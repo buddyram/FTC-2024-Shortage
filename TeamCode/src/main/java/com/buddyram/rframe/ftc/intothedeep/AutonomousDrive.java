@@ -7,8 +7,10 @@ import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
-import com.buddyram.rframe.ftc.intothedeep.arm.ArmPositionalAction;
+import com.buddyram.rframe.ftc.ConditionalWrapperAction;
+import com.buddyram.rframe.ftc.DriveTowardsAction;
 import com.buddyram.rframe.ftc.RobotAction;
+import com.buddyram.rframe.ftc.TimeoutWrapperAction;
 import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
 import com.buddyram.rframe.ftc.RobotActions;
 import com.buddyram.rframe.ftc.RobotException;
@@ -72,14 +74,20 @@ public class AutonomousDrive {
 
     public void run() throws RobotException, InterruptedException {
         ArrayList<RobotAction> actions = new ArrayList<>();
+
+        // ACTIONS START HERE
+
+        actions.add(new DriveTowardsAction(ConditionalWrapperAction(new Vector3D(-24, 5, 0), true));
         actions.add(RobotActions.COLLISION_HANG_RELEASE);
+
+        // ACTIONS END HERE
+
         while (this.isActive() && !actions.isEmpty()) {
             if (actions.get(0).run(this)) {
                 actions.remove(0);
                 System.out.println("next!! " + actions.size());
             }
         }
-        Thread.sleep(2000);
     }
 
     public boolean isActive() {

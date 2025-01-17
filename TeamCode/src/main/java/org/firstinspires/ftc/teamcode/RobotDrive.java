@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.buddyram.rframe.Color;
 import com.buddyram.rframe.HolonomicDriveInstruction;
 import com.buddyram.rframe.HolonomicPositionDriveAdapter;
 import com.buddyram.rframe.MecanumDriveTrain;
@@ -7,11 +8,14 @@ import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
+import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
 /*
@@ -24,6 +28,11 @@ OFF	0	1	0.19	Short Reaching Pickup Init
  */
 @TeleOp(name = "A: Robot Drive main v1.1.1", group = "Sensor")
 public class RobotDrive extends LinearOpMode {
+    public final Color YELLOW = new Color(452, 533, 144, 376);
+    public final Color RED = new Color(276, 165, 97, 180);
+    public final Color BLUE = new Color(72, 139, 272, 161);
+    public final Color FLOOR = new Color(62, 106, 91, 86);
+
     @Override
     public void runOpMode() throws InterruptedException {
 
@@ -39,6 +48,7 @@ public class RobotDrive extends LinearOpMode {
         Servo armElbowR = hardwareMap.get(Servo.class, "armElbowR");
         Servo claw = hardwareMap.get(Servo.class, "claw");
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
+        RevColorSensorV3 colorSensor = hardwareMap.get(RevColorSensorV3.class, "color");
         SparkFunOTOSOdometry odometry = new SparkFunOTOSOdometry(
                 hardwareMap.get(SparkFunOTOS.class, "otos"),
                 new Pose3D( // pose
@@ -116,16 +126,16 @@ public class RobotDrive extends LinearOpMode {
             if (targetArmExt > 3080) {
                 targetArmExt = 3080;
             }
-            if (targetAngle < -700) {
-                targetAngle = -700;
+            if (targetAngle < -634) {
+                targetAngle = -634;
             }
             if (targetAngle > 0) {
                 targetAngle = 0;
             }
             if (gamepad1.x) {
-                targetAngle += 5;
+                targetAngle += 2;
             } else if (gamepad1.b) {
-                targetAngle -= 5;
+                targetAngle -= 2;
             }
             if (gamepad1.right_bumper) {
                 claw.setPosition(1);
@@ -167,6 +177,33 @@ public class RobotDrive extends LinearOpMode {
             telemetry.addData("Claw", claw.getPosition());
             telemetry.addData("Wrist", wrist.getPosition());
             telemetry.addData("Elbow", armElbowR.getPosition());
+            telemetry.addData("RGBA", colorSensor.red() + " " + colorSensor.green() + " " + colorSensor.blue() + " " + colorSensor.alpha());
+            double dist = colorSensor.getDistance(DistanceUnit.INCH);
+            Color color = new Color(colorSensor.red() * dist, colorSensor.green() * dist, colorSensor.blue() * dist, colorSensor.alpha() * dist);
+            double redConfidence = 1000 / this.RED.distanceColor(color);
+            double yellowConfidence = 1000 / this.YELLOW.distanceColor(color);
+            double blueConfidence = 1000 / this.BLUE.distanceColor(color);
+            double grayConfidence = 1500 / this.FLOOR.distanceColor(color);
+            telemetry.addData("RED", redConfidence);
+            telemetry.addData("YELLOW", yellowConfidence);
+            telemetry.addData("BLUE", blueConfidence);
+            telemetry.addData("FLOOR", grayConfidence);
+            String guess;
+            if (redConfidence > yellowConfidence && redConfidence > blueConfidence && redConfidence > grayConfidence) {
+                guess = "RED";
+            } else if (yellowConfidence > redConfidence && yellowConfidence > blueConfidence && yellowConfidence > grayConfidence) {
+                guess = "YELLOW";
+            } else if (blueConfidence > yellowConfidence && blueConfidence > redConfidence && blueConfidence > grayConfidence) {
+                guess = "BLUE";
+            } else {
+                guess = "FLOOR";
+            }
+            telemetry.addData("GUESS", guess);
+            boolean pickupReady = !guess.equals("FLOOR") && dist < 1.2;
+            if (pickupReady) {
+                telemetry.addData("PICKUP", "READY");
+            }
+            telemetry.addData("Distance", colorSensor.getDistance(DistanceUnit.INCH));
             telemetry.update();
         }
     }

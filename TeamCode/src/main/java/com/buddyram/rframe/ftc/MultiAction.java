@@ -2,11 +2,15 @@ package com.buddyram.rframe.ftc;
 
 import com.buddyram.rframe.ftc.intothedeep.AutonomousDrive;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 public class MultiAction implements RobotAction {
 
     private final Collection<RobotAction> actions;
+    public MultiAction(RobotAction... actions) {
+        this(Arrays.asList(actions));
+    }
 
     public MultiAction(Collection<RobotAction> actions) {
         this.actions = actions;

@@ -80,7 +80,7 @@ public class AutonomousMode extends LinearOpMode {
                 new Motor(motorFR),
                 new Motor(motorBL),
                 new Motor(motorBR),
-                1
+                0.7
         );
 
         HolonomicPositionDriveAdapter adapter = new HolonomicPositionDriveAdapter(drive, odometry);
