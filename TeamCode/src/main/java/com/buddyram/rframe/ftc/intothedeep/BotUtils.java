@@ -16,11 +16,11 @@ import com.buddyram.rframe.ftc.intothedeep.arm.Wrist;
 public class BotUtils {
 
     public static RobotAction<ShortageBot> positionArm(double wrist, double elbow, int extension, int angle) {
-        return new MultiAction<ShortageBot>(
-            Wrist.moveTo(wrist),
-            Elbow.moveTo(elbow),
-            Extension.moveTo(extension),
-            Shoulder.moveTo(angle)
+        return new MultiAction<>(
+                Wrist.moveTo(wrist),
+                Elbow.moveTo(elbow),
+                Extension.moveTo(extension),
+                Shoulder.moveTo(angle)
         );
     }
 
@@ -40,8 +40,12 @@ public class BotUtils {
     }
 
     public static RobotAction<ShortageBot> driveTo(int x, int y, PositionalCondition condition) {
+        return BotUtils.driveTo(x, y, condition, 1);
+    }
+
+    public static RobotAction<ShortageBot> driveTo(int x, int y, PositionalCondition condition, double speed) {
         return new ConditionalWrapperAction<>(
-            new DriveTowardsAction(new Vector3D(x, y, 0), false),
+            new DriveTowardsAction(new Vector3D(x, y, 0), false, speed),
             (drive) -> condition.isComplete(drive.getOdometry().get().position)
         );
     }

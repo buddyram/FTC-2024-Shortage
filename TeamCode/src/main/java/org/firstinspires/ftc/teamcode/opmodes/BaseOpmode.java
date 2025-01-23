@@ -22,6 +22,7 @@ import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -42,7 +43,7 @@ public abstract class BaseOpmode extends LinearOpMode {
         this.initializeHardware();
         this.waitForStart();
         this.shortageBot.getLogger().track("odometry", () -> this.shortageBot.getOdometry().get(), shortageBot);
-
+        this.shortageBot.getLogger().track("shoulder", () -> this.shortageBot.getArm().angle.getPosition(), shortageBot);
         Thread rememberLastPosition = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted()) {
                 if (opModeIsActive()) {
@@ -97,17 +98,21 @@ public abstract class BaseOpmode extends LinearOpMode {
         armrotL.setPower(0.5);
         armrotR.setPower(0.5);
         claw.setPosition(0);
+        armElbowL.setPosition(0);
+        armElbowR.setPosition(1);
+        wrist.setPosition(0);
         this.shortageBot = new ShortageBot() {
             public boolean isActive() {
                 return opModeIsActive();
             }
         };
+        armrotL.setDirection(DcMotorSimple.Direction.REVERSE);
         RobotArm arm = new RobotArm(
             new Claw(claw, this.shortageBot),
             new Wrist(wrist, this.shortageBot),
             new Elbow(armElbowL, armElbowR, this.shortageBot),
             new Extension(armext, this.shortageBot),
-            new Shoulder(armrotL, armrotR, this.shortageBot),
+            new Shoulder(armrotL, this.shortageBot),
             this.shortageBot
         );
 

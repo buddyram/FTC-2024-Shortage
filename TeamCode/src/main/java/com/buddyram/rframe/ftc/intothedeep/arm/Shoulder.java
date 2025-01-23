@@ -10,18 +10,24 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 public class Shoulder extends BaseComponent<Robot> {
     private final DcMotor angleL;
-    private final DcMotor angleR;
     public static final int POSITION_ERROR_THRESHOLD = 5;
+    public static final int MIN = 0;
+    public static final int MAX = 467;
 
-    public Shoulder(DcMotor angleL, DcMotor angleR, Robot robot) {
+    public Shoulder(DcMotor angleL, Robot robot) {
         super(robot);
         this.angleL = angleL;
-        this.angleR = angleR;
     }
 
     public void setTargetPosition(int tgt) {
+        if (tgt > MAX || tgt < MIN) {
+            return;
+        }
         this.angleL.setTargetPosition(tgt);
-        this.angleR.setTargetPosition(-tgt);
+    }
+
+    public void incrementTargetPosition(int delta) {
+        this.setTargetPosition(this.getPosition() + delta);
     }
 
     public int getPosition() {

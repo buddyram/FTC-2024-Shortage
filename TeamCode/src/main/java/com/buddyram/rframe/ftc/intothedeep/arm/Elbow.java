@@ -15,9 +15,20 @@ public class Elbow extends BaseComponent<Robot> {
         this.angleR = angleR;
     }
 
+    public void incrementTargetPosition(double delta) {
+        this.setPosition(this.getPosition() + delta);
+    }
+
     public void setPosition(double tgt) {
+        if (tgt > 1 || tgt < 0) {
+            return;
+        }
         this.angleL.setPosition(1 - tgt);
         this.angleR.setPosition(tgt);
+    }
+
+    public double getPosition() {
+        return this.angleR.getPosition();
     }
 
     public static ShortageAction moveTo(double tgt) {

@@ -93,27 +93,30 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
         actions.add(BotUtils.driveTo(72, 15, p -> p.x <= 80));
         actions.add(RobotActions.STOP);
         actions.add(new BackwardsClipAction());
-        actions.add(BotUtils.driveTo(112, 34, p -> p.x >= 103));
+//        actions.add(BotUtils.driveTo(106, 34, p -> p.x >= 106));
+        actions.add(BotUtils.driveTo(116, 30, p -> p.x >= 116));
+        actions.add(RobotActions.REST);
+        actions.add(BotUtils.driveTo(126, 30, p -> p.x >= 126, 0.3));
+        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+        actions.add(RobotActions.PICKUP_SHORT);
 //        // Begin Sample 1
-//        actions.add(BotUtils.driveTo(107, 55, p -> p.y >= 55));
-//        actions.add(RobotActions.STOP);
-//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
-//        actions.add(BotUtils.driveTo(114, 55, p -> p.x >= 114)); // Drive above
+//        actions.add(BotUtils.driveTo(106, 55, p -> p.y >= 55)); // SLOW 0.5
+//        actions.add(BotUtils.driveTo(116, 55, p -> p.x >= 114)); // Drive above SLOW 0.5
 //        actions.add(BotUtils.driveTo(116, 23, p -> p.y <= 23));  // Push
 //        // Begin Sample 2
 //        actions.add(BotUtils.driveTo(116, 55, p -> p.y >= 55));
 //        actions.add(RobotActions.STOP);
-//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+//        actions.add(BotUtils.rotateTo(180)); // Adjust angle
 //        actions.add(BotUtils.driveTo(123, 55, p -> p.x >= 123)); // Drive above
 //        actions.add(BotUtils.driveTo(122, 23, p -> p.y <= 23));  // Push
 //        // Begin Sample 3
 //        actions.add(BotUtils.driveTo(124, 55, p -> p.y >= 55));
 //        actions.add(RobotActions.STOP);
-//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+//        actions.add(BotUtils.rotateTo(180)); // Adjust angle
 //        actions.add(BotUtils.driveTo(132, 55, p -> p.x >= 132)); // Drive above
 //        actions.add(BotUtils.driveTo(128, 23, p -> p.y <= 23));  // Push
-//        // Start Specimen hanging
-//        actions.add(BotUtils.driveTo(120, 36, p -> p.y >= 36)); // Position for pickup
+        // Start Specimen hanging
+        actions.add(BotUtils.driveTo(120, 36, p -> p.y >= 36)); // Position for pickup
         actions.add(RobotActions.STOP);
 
         // ACTIONS END HERE
@@ -147,7 +150,7 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
         double rotationInstruction = 0, driveSpeedInstruction = 0, driveAngleInstruction = 0;
         Pose3D pos = this.odometry.get();
         driveSpeedInstruction = speed;
-        driveAngleInstruction = pos.position.calculateRotation(target).z - this.odometry.get().rotation.z;
+        driveAngleInstruction = pos.position.calculateRotation(target).z;
 
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
     }

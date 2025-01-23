@@ -13,6 +13,7 @@ public class HolonomicPositionDriveAdapter implements HolonomicDriveTrain {
     }
 
     public void drive(HolonomicDriveInstruction instruction) {
+        this.heading = this.odometry.get().rotation.z;
         if (instruction.speed == 0) {
             this.driveTrain.drive(instruction);
         } else {
@@ -24,7 +25,6 @@ public class HolonomicPositionDriveAdapter implements HolonomicDriveTrain {
                     )
             );
         }
-        this.heading = this.odometry.get().rotation.z;
     }
 
     public void init() {
