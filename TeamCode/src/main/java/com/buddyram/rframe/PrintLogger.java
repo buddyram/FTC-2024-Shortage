@@ -2,7 +2,7 @@ package com.buddyram.rframe;
 
 import java.io.PrintStream;
 
-public class PrintLogger implements Logger {
+public class PrintLogger extends BaseLogger {
     PrintStream out;
 
     public PrintLogger(PrintStream out) {

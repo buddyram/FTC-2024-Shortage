@@ -1,13 +1,16 @@
 package com.buddyram.rframe.ftc.intothedeep.arm;
 
+import com.buddyram.rframe.BaseComponent;
+import com.buddyram.rframe.Robot;
 import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
 import com.qualcomm.robotcore.hardware.Servo;
 
-public class Wrist {
+public class Wrist extends BaseComponent<Robot> {
     private final Servo angle;
 
-    public Wrist(Servo angle) {
+    public Wrist(Servo angle, Robot robot) {
+        super(robot);
         this.angle = angle;
     }
 
@@ -17,7 +20,7 @@ public class Wrist {
 
     public static RobotAction<ShortageBot> moveTo(double tgt) {
         return (drive) -> {
-            drive.arm.wrist.setPosition(tgt);
+            drive.getArm().wrist.setPosition(tgt);
             return true;
         };
     }

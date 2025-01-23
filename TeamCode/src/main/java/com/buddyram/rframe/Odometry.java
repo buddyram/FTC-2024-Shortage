@@ -16,4 +16,6 @@ public interface Odometry<P> {
      * Initialize the odometry sensor
      */
     public boolean init();
+
+    public void setPosition(Pose3D pos);
 }

@@ -47,4 +47,9 @@ public class VirtualOdometrySensor implements Odometry<Pose3D> {
         this.timestampMs = System.currentTimeMillis();
         return true;
     }
+
+    @Override
+    public void setPosition(Pose3D pos) {
+
+    }
 }

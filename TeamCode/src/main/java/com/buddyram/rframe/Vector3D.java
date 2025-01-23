@@ -1,5 +1,9 @@
 package com.buddyram.rframe;
 
+import android.annotation.SuppressLint;
+
+import androidx.annotation.NonNull;
+
 /**
  * A 3d vector, with x, y, and z coordinates.
  * @author Ram Stewart<ram@buddyram.com>
@@ -47,8 +51,9 @@ public class Vector3D {
         );
     }
 
+    @NonNull
     public String toString() {
-        return "(" + this.x + ", " + this.y + ", " + this.z + ")";
+        return String.format("(%.2f, %.2f, %.2f)", this.x, this.y, this.z);
     }
 
     /**

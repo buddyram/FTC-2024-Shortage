@@ -1,7 +1,6 @@
 package com.buddyram.rframe.ftc.intothedeep;
 
 import com.buddyram.rframe.PrintLogger;
-import com.buddyram.rframe.drive.Driveable;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.Logger;
@@ -9,30 +8,37 @@ import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.drive.VirtualHolonomicDriveTrain;
 import com.buddyram.rframe.drive.VirtualOdometrySensor;
-import com.buddyram.rframe.actions.ConditionalWrapperAction;
-import com.buddyram.rframe.ftc.DriveTowardsAction;
 import com.buddyram.rframe.actions.RobotAction;
+import com.buddyram.rframe.ftc.intothedeep.actions.BackwardsClipAction;
 import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
-import com.buddyram.rframe.ftc.RobotActions;
+import com.buddyram.rframe.ftc.intothedeep.actions.RobotActions;
 import com.buddyram.rframe.RobotException;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import java.util.ArrayList;
 
-public class ShortageBot implements Driveable<HolonomicDriveTrain> {
+public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
     public static final double TARGET_POSITION_THRESHOLD = 1;
     public static final double TARGET_ROTATION_THRESHOLD = 1;
     public static final double SLOW_DISTANCE_THRESHOLD = 7;
-    private final Logger logger;
-    private final DigitalChannel frontBumper;
+    private Logger logger;
+    private DigitalChannel frontBumper;
+
+    public DigitalChannel getBackBumper() {
+        return backBumper;
+    }
+
+    private DigitalChannel backBumper;
+
 
     public DigitalChannel getFrontBumper() {
         return frontBumper;
     }
 
-    private final HolonomicDriveTrain drive;
+    private HolonomicDriveTrain drive;
 
     public HolonomicDriveTrain getDrive() {
         return drive;
@@ -43,8 +49,8 @@ public class ShortageBot implements Driveable<HolonomicDriveTrain> {
         return odometry;
     }
 
-    private final Odometry<Pose3D> odometry;
-    public final RobotArm arm;
+    private Odometry<Pose3D> odometry;
+    private RobotArm arm;
 
     public static void main(String[] args) {
         System.out.println("Starting autonomous simulator v1.1.1 ...");
@@ -53,7 +59,7 @@ public class ShortageBot implements Driveable<HolonomicDriveTrain> {
         VirtualOdometrySensor odometry = new VirtualOdometrySensor(
                 new Pose3D( // pose
                     new Vector3D(96, 8.5, 0), // position
-                    new Vector3D(0, 0, 0), // rotation
+                    new Vector3D(0, 0, 180), // rotation
                     new Vector3D(0, 0, 0), // position velocity
                     new Vector3D(0, 0, 0)
                 ),
@@ -66,21 +72,49 @@ public class ShortageBot implements Driveable<HolonomicDriveTrain> {
 //        main.run();
     }
 
-    public ShortageBot(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper) {
+    public ShortageBot() {
+        this(null, null, null, null, null, null);
+    }
+
+    public ShortageBot(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper, DigitalChannel backBumper) {
         this.odometry = odometry;
         this.logger = logger;
         this.drive = drive;
         this.arm = arm;
         this.frontBumper = frontBumper;
+        this.backBumper = backBumper;
     }
 
-    public void run() throws RobotException, InterruptedException {
+    public void runAutonomous() throws RobotException, InterruptedException {
         ArrayList<RobotAction<ShortageBot>> actions = new ArrayList<>();
 
         // ACTIONS START HERE
 
-        actions.add(new ConditionalWrapperAction<>(new DriveTowardsAction(new Vector3D(72, 12, 0), false), (drive) -> drive.getOdometry().get().position.x < 75));
-        actions.add(RobotActions.COLLISION_HANG_RELEASE);
+        actions.add(BotUtils.driveTo(72, 15, p -> p.x <= 80));
+        actions.add(RobotActions.STOP);
+        actions.add(new BackwardsClipAction());
+        actions.add(BotUtils.driveTo(112, 34, p -> p.x >= 103));
+//        // Begin Sample 1
+//        actions.add(BotUtils.driveTo(107, 55, p -> p.y >= 55));
+//        actions.add(RobotActions.STOP);
+//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+//        actions.add(BotUtils.driveTo(114, 55, p -> p.x >= 114)); // Drive above
+//        actions.add(BotUtils.driveTo(116, 23, p -> p.y <= 23));  // Push
+//        // Begin Sample 2
+//        actions.add(BotUtils.driveTo(116, 55, p -> p.y >= 55));
+//        actions.add(RobotActions.STOP);
+//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+//        actions.add(BotUtils.driveTo(123, 55, p -> p.x >= 123)); // Drive above
+//        actions.add(BotUtils.driveTo(122, 23, p -> p.y <= 23));  // Push
+//        // Begin Sample 3
+//        actions.add(BotUtils.driveTo(124, 55, p -> p.y >= 55));
+//        actions.add(RobotActions.STOP);
+//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+//        actions.add(BotUtils.driveTo(132, 55, p -> p.x >= 132)); // Drive above
+//        actions.add(BotUtils.driveTo(128, 23, p -> p.y <= 23));  // Push
+//        // Start Specimen hanging
+//        actions.add(BotUtils.driveTo(120, 36, p -> p.y >= 36)); // Position for pickup
+        actions.add(RobotActions.STOP);
 
         // ACTIONS END HERE
 
@@ -96,19 +130,24 @@ public class ShortageBot implements Driveable<HolonomicDriveTrain> {
         return true;
     }
 
-    public void init() {
+    public void init(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper, DigitalChannel backBumper) {
+        this.odometry = odometry;
+        this.logger = logger;
+        this.drive = drive;
+        this.arm = arm;
+        this.frontBumper = frontBumper;
+        this.backBumper = backBumper;
     }
 
-    public HolonomicDriveInstruction calculateRelativeDriveInstruction(Vector3D relativeTarget) {
-        return this.calculateDriveInstruction(relativeTarget.add(this.odometry.get().position));
+    public HolonomicDriveInstruction calculateRelativeDriveInstruction(Vector3D relativeTarget, double speed) {
+        return this.calculateDriveInstruction(relativeTarget.add(this.odometry.get().position), speed);
     }
 
-    public HolonomicDriveInstruction calculateDriveInstruction(Vector3D target) {
+    public HolonomicDriveInstruction calculateDriveInstruction(Vector3D target, double speed) {
         double rotationInstruction = 0, driveSpeedInstruction = 0, driveAngleInstruction = 0;
         Pose3D pos = this.odometry.get();
-        double distanceToTarget = pos.position.distance(target);
-        driveSpeedInstruction = distanceToTarget > SLOW_DISTANCE_THRESHOLD ? 1 : 0.6;
-        driveAngleInstruction = pos.position.calculateRotation(target).z;
+        driveSpeedInstruction = speed;
+        driveAngleInstruction = pos.position.calculateRotation(target).z - this.odometry.get().rotation.z;
 
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
     }
@@ -148,6 +187,15 @@ public class ShortageBot implements Driveable<HolonomicDriveTrain> {
             this.logger.flush();
         }
         return reachedPosition;
+    }
+
+    @Override
+    public Logger getLogger() {
+        return this.logger;
+    }
+
+    public RobotArm getArm() {
+        return arm;
     }
 }
 
