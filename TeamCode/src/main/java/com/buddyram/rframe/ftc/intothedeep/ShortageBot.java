@@ -90,23 +90,36 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
 
         // ACTIONS START HERE
 
-        actions.add(BotUtils.driveTo(72, 15, p -> p.x <= 80));
+        actions.add(BotUtils.driveTowardsUntil(72, 15, p -> p.x <= 80));
         actions.add(RobotActions.STOP);
         actions.add(new BackwardsClipAction());
-//        actions.add(BotUtils.driveTo(106, 34, p -> p.x >= 106));
-        actions.add(BotUtils.driveTo(116, 30, p -> p.x >= 116));
+        actions.add(BotUtils.driveTowardsUntil(96, 34, p -> p.x >= 96));
+//        actions.add(BotUtils.driveTo(116, 30, p -> p.x >= 100)); // account for drift
         actions.add(RobotActions.REST);
-        actions.add(BotUtils.driveTo(126, 30, p -> p.x >= 126, 0.3));
-        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+        actions.add(BotUtils.driveTo(new Vector3D(126, 31, 0)));
         actions.add(RobotActions.PICKUP_SHORT);
+        actions.add(BotUtils.wait(300));
+        actions.add(RobotActions.CLOSE_CLAW);
+        actions.add(BotUtils.wait(300));
+        actions.add(BotUtils.rotateTo(180));
+        actions.add(BotUtils.driveTo(new Vector3D(135, 31, 0)));
+
+//        actions.add(BotUtils.driveTo(126, 30, p -> p.x >= 126, 0.3));
+//        actions.add(BotUtils.rotateTo(0)); // Adjust angle
+//        actions.add(BotUtils.rotateTo(180)); -<
+//        actions.add(BotUtils.driveTowardsUntil(106, 34, p -> p.x >= 106, 0.5));
+////        actions.add(RobotActions.PICKUP_SHORT);
 //        // Begin Sample 1
-//        actions.add(BotUtils.driveTo(106, 55, p -> p.y >= 55)); // SLOW 0.5
-//        actions.add(BotUtils.driveTo(116, 55, p -> p.x >= 114)); // Drive above SLOW 0.5
-//        actions.add(BotUtils.driveTo(116, 23, p -> p.y <= 23));  // Push
+//        actions.add(BotUtils.driveTowardsUntil(106, 44, p -> p.y >= 44, 1));
+//        actions.add(BotUtils.driveTowardsUntil(106, 55, p -> p.y >= 55, 0.4)); // SLOW 0.5
+//        actions.add(BotUtils.driveTowardsUntil(116, 55, p -> p.x >= 116, 0.4)); // Drive above SLOW 0.5
+//        actions.add(BotUtils.driveTowardsUntil(116, 35, p -> p.y <= 35));  // Push
+//        actions.add(BotUtils.driveTowardsUntil(116, 30, p -> p.y <= 30, 0.4));  // Push
 //        // Begin Sample 2
-//        actions.add(BotUtils.driveTo(116, 55, p -> p.y >= 55));
-//        actions.add(RobotActions.STOP);
-//        actions.add(BotUtils.rotateTo(180)); // Adjust angle
+//        actions.add(BotUtils.driveTowardsUntil(116, 44, p -> p.y >= 44));
+//        actions.add(BotUtils.driveTowardsUntil(116, 55, p -> p.y >= 55, 0.4));
+////        actions.add(RobotActions.STOP);
+//        actions.add(BotUtils.rotateTo(180)); // Adjust angle -<
 //        actions.add(BotUtils.driveTo(123, 55, p -> p.x >= 123)); // Drive above
 //        actions.add(BotUtils.driveTo(122, 23, p -> p.y <= 23));  // Push
 //        // Begin Sample 3
@@ -116,7 +129,7 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
 //        actions.add(BotUtils.driveTo(132, 55, p -> p.x >= 132)); // Drive above
 //        actions.add(BotUtils.driveTo(128, 23, p -> p.y <= 23));  // Push
         // Start Specimen hanging
-        actions.add(BotUtils.driveTo(120, 36, p -> p.y >= 36)); // Position for pickup
+//        actions.add(BotUtils.driveTo(120, 36, p -> p.x >= 120)); // Position for pickup
         actions.add(RobotActions.STOP);
 
         // ACTIONS END HERE
@@ -153,43 +166,6 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
         driveAngleInstruction = pos.position.calculateRotation(target).z;
 
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
-    }
-
-    public boolean navigate(double[] position) {
-        this.logger.log("active", position);
-        this.logger.flush();
-        boolean reachedPosition = false;
-        Vector3D target = new Vector3D(position[0], position[1], 0);
-
-        while (!reachedPosition && isActive()) {
-            double rotationInstruction = 0, driveSpeedInstruction = 0, driveAngleInstruction = 0;
-            Pose3D pos = this.odometry.get();
-            double distanceToTarget = pos.position.distance(target);
-            double rotationDiff = Utils.angleDifference(pos.rotation.z, position[2]);
-            reachedPosition = (distanceToTarget < TARGET_POSITION_THRESHOLD) && (Math.abs(rotationDiff) <= TARGET_ROTATION_THRESHOLD);
-            if (Math.abs(rotationDiff) >= TARGET_ROTATION_THRESHOLD) {
-                if (rotationDiff > 0) {
-                    rotationInstruction = Math.min(0.5, rotationDiff / 20);
-                } else {
-                    rotationInstruction = -Math.min(0.5, Math.abs(rotationDiff) / 20);
-                }
-            }
-
-            if (distanceToTarget >= TARGET_POSITION_THRESHOLD) {
-                driveSpeedInstruction = distanceToTarget > SLOW_DISTANCE_THRESHOLD ? 1 : 0.6;
-                driveAngleInstruction = pos.position.calculateRotation(target).z;
-            }
-
-            drive.drive(new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction));
-            this.logger.log("pose", pos);
-            this.logger.log("target", "(" + position[0] + ", " + position[1] + ", " + position[2] + ")");
-            this.logger.log("distance to target", distanceToTarget);
-            this.logger.log("drive angle instruction", driveAngleInstruction);
-            this.logger.log("rotation instruction", rotationInstruction);
-            this.logger.log("diff instruction", rotationDiff);
-            this.logger.flush();
-        }
-        return reachedPosition;
     }
 
     @Override

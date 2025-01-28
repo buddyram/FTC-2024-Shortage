@@ -4,11 +4,13 @@ import android.annotation.SuppressLint;
 
 import com.buddyram.rframe.Color;
 import com.buddyram.rframe.RobotException;
+import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.intothedeep.BotUtils;
 import com.buddyram.rframe.ftc.intothedeep.actions.BackwardsClipAction;
 import com.buddyram.rframe.ftc.intothedeep.actions.RobotActions;
+import com.buddyram.rframe.ftc.intothedeep.actions.SpecimenCollectAction;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -45,12 +47,6 @@ public class TeleopMode extends BaseOpmode {
             currentGamepad1.copy(gamepad1);
             currentGamepad2.copy(gamepad2);
             if (mode) {
-                HolonomicDriveInstruction i = shortageBot.calculateRelativeDriveInstruction(
-                    new Vector3D(currentGamepad1.left_stick_x, -currentGamepad1.left_stick_y, 0),
-                    Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(-currentGamepad1.left_stick_y, 2))
-                );
-                shortageBot.getDrive().drive(new HolonomicDriveInstruction(currentGamepad1.right_stick_x, i.speed, i.direction));
-                shortageBot.getLogger().log("speed", i.speed);
                 shortageBot.getLogger().log("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
                 shortageBot.getLogger().log("gamepad1 right stick", currentGamepad1.right_stick_x);
                 shortageBot.getLogger().log("g2 triggers",
@@ -68,15 +64,7 @@ public class TeleopMode extends BaseOpmode {
                 }
 
 
-                if (currentGamepad1.dpad_left) {
-                    BotUtils.rotateTo(-90).run(this.shortageBot);
-                } else if (currentGamepad1.dpad_right) {
-                    BotUtils.rotateTo(90).run(this.shortageBot);
-                } else if (currentGamepad1.dpad_up) {
-                    BotUtils.rotateTo(0).run(this.shortageBot);
-                } else if (currentGamepad1.dpad_down) {
-                    BotUtils.rotateTo(180).run(this.shortageBot);
-                }
+                runDriveControls(currentGamepad1);
 
 
                 this.shortageBot.getArm().angle.incrementTargetPosition(Math.round((currentGamepad2.right_trigger - currentGamepad2.left_trigger) * MAX_SHOULDER_SPEED));
@@ -87,10 +75,72 @@ public class TeleopMode extends BaseOpmode {
                 } else if (currentGamepad1.back) {
                     this.shortageBot.getOdometry().setPosition(BaseOpmode.DEFAULT_POSITION);
                 }
+
+                if (currentGamepad1.x) {
+                    RobotActions.GO_TO_GRAB_FROM_WALL_POSITION.run(this.shortageBot);
+                }
+                if (currentGamepad1.a) {
+                    new SpecimenCollectAction().run(this.shortageBot);
+                }
+
+                if (currentGamepad1.dpad_up) {
+//                    new MultiAction<>(
+//                            BotUtils.driveTo(new Vector3D(117, 58, 0), true),
+//                            BotUtils.driveTo(new Vector3D(117, 58, 0))
+//
+//                    ).run(this.shortageBot);
+                }
+
+                if (currentGamepad1.b) {
+                    RobotActions.REST.run(this.shortageBot);
+                }
+
+                if (currentGamepad1.dpad_down) {
+                    RobotActions.PICKUP_SHORT_SCAN_POSITION.run(this.shortageBot);
+                }
+                if (currentGamepad1.dpad_left) {
+                    RobotActions.PICKUP_SHORT_GRAB_POSITION.run(this.shortageBot);
+                }
             }
             if (currentGamepad1.start && !previousGamepad1.start) {
                 mode = !mode;
             }
+        }
+    }
+
+    private void runDriveControls(Gamepad currentGamepad1) throws RobotException {
+        if (currentGamepad1.x) {
+            BotUtils.rotateTo(90).run(this.shortageBot);
+        } else if (currentGamepad1.b) {
+            BotUtils.rotateTo(-90).run(this.shortageBot);
+        } else if (currentGamepad1.y) {
+            BotUtils.rotateTo(0).run(this.shortageBot);
+        } else if (currentGamepad1.a) {
+            BotUtils.rotateTo(180).run(this.shortageBot);
+        }
+
+        double speed = 0.7;
+
+        if (currentGamepad1.left_bumper) {
+            speed = 1;
+        } else if (currentGamepad1.right_bumper) {
+            speed = 0.5;
+        }
+
+        if (currentGamepad1.dpad_up) {
+            this.shortageBot.getDrive().drive(this.shortageBot.calculateRelativeDriveInstruction(new Vector3D(0, 1, 0), speed));
+        } else if (currentGamepad1.dpad_down) {
+            this.shortageBot.getDrive().drive(this.shortageBot.calculateRelativeDriveInstruction(new Vector3D(0, -1, 0), speed));
+        } else if (currentGamepad1.dpad_right) {
+            this.shortageBot.getDrive().drive(this.shortageBot.calculateRelativeDriveInstruction(new Vector3D(1, 0, 0), speed));
+        } else if (currentGamepad1.dpad_left) {
+            this.shortageBot.getDrive().drive(this.shortageBot.calculateRelativeDriveInstruction(new Vector3D(-1, 0, 0), speed));
+        } else {
+            double speedLevel = Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(currentGamepad1.left_stick_y, 2));
+            HolonomicDriveInstruction i = this.shortageBot.calculateRelativeDriveInstruction(
+                new Vector3D(currentGamepad1.left_stick_x, -currentGamepad1.left_stick_y, 0),
+                speed * speedLevel);
+            shortageBot.getDrive().drive(new HolonomicDriveInstruction(currentGamepad1.right_stick_x, i.speed, i.direction + this.shortageBot.getOdometry().get().rotation.z));
         }
     }
 }

@@ -10,7 +10,7 @@ public class RotateToAction<T extends Navigatable<HolonomicDriveTrain>> implemen
     private final CalculateRotationSpeed speed;
 
     public RotateToAction(double targetAngle, double accuracy) {
-        this(targetAngle, accuracy, angleDifference -> Math.abs(angleDifference) > 90 ? 0.7 : 0.3);
+        this(targetAngle, accuracy, angleDifference -> Math.abs(angleDifference) > 60 ? 1 : Math.abs(angleDifference) > 5 ? 0.3 : 0.15);
     }
 
     public RotateToAction(double targetAngle, double accuracy, CalculateRotationSpeed speed) {
@@ -26,9 +26,11 @@ public class RotateToAction<T extends Navigatable<HolonomicDriveTrain>> implemen
         while (Math.abs(angleDifference) > this.accuracy) {
             new RotateAction(direction, this.speed.calculate(angleDifference)).run(drive);
             Thread.yield();
+            Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
             angleDifference = Utils.angleDifference(drive.getOdometry().get().rotation.z, this.targetAngle);
             direction = angleDifference < 0 ? RotateAction.Direction.COUNTER_CLOCKWISE : RotateAction.Direction.CLOCKWISE;
         }
+        new StopDrivingAction<T>().run(drive);
         return true;
     }
 

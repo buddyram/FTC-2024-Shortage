@@ -1,12 +1,11 @@
 package com.buddyram.rframe.ftc.intothedeep;
 
-import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.actions.ConditionalWrapperAction;
 import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.actions.RobotAction;
-import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.drive.RotateToAction;
+import com.buddyram.rframe.ftc.DriveToAction;
 import com.buddyram.rframe.ftc.DriveTowardsAction;
 import com.buddyram.rframe.ftc.intothedeep.arm.Elbow;
 import com.buddyram.rframe.ftc.intothedeep.arm.Extension;
@@ -39,11 +38,11 @@ public class BotUtils {
         };
     }
 
-    public static RobotAction<ShortageBot> driveTo(int x, int y, PositionalCondition condition) {
-        return BotUtils.driveTo(x, y, condition, 1);
+    public static RobotAction<ShortageBot> driveTowardsUntil(int x, int y, PositionalCondition condition) {
+        return BotUtils.driveTowardsUntil(x, y, condition, 1);
     }
 
-    public static RobotAction<ShortageBot> driveTo(int x, int y, PositionalCondition condition, double speed) {
+    public static RobotAction<ShortageBot> driveTowardsUntil(int x, int y, PositionalCondition condition, double speed) {
         return new ConditionalWrapperAction<>(
             new DriveTowardsAction(new Vector3D(x, y, 0), false, speed),
             (drive) -> condition.isComplete(drive.getOdometry().get().position)
@@ -55,6 +54,14 @@ public class BotUtils {
     }
 
     public static RobotAction<ShortageBot> rotateTo(double targetAngle) {
-        return new RotateToAction<>(targetAngle, 1);
+        return new RotateToAction<>(targetAngle, 0.5);
+    }
+
+    public static RobotAction<ShortageBot> driveTo(Vector3D target, boolean prerotation) {
+        return new DriveToAction<>(target, 0.5, prerotation);
+    }
+
+    public static RobotAction<ShortageBot> driveTo(Vector3D target) {
+        return new DriveToAction<>(target, 0.5);
     }
 }

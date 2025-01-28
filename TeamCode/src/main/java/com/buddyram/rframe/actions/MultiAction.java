@@ -22,7 +22,7 @@ public class MultiAction<R extends Robot> implements RobotAction<R> {
     @Override
     public boolean run(R drive) throws RobotException {
         for (RobotAction<R> action : this.actions) {
-            drive.getLogger().log("MultiAction",  action.getClass().getCanonicalName());
+            drive.getLogger().log("MultiAction", action.getClass().getCanonicalName());
             action.run(drive);
         }
         return true;
