@@ -2,17 +2,20 @@ package org.firstinspires.ftc.teamcode.opmodes;
 
 import android.annotation.SuppressLint;
 
-import com.buddyram.rframe.Color;
+import com.buddyram.rframe.ColorRGB;
 import com.buddyram.rframe.RobotException;
-import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.intothedeep.BotUtils;
+import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
 import com.buddyram.rframe.ftc.intothedeep.actions.BackwardsClipAction;
 import com.buddyram.rframe.ftc.intothedeep.actions.RobotActions;
 import com.buddyram.rframe.ftc.intothedeep.actions.SpecimenCollectAction;
+import com.buddyram.rframe.ftc.intothedeep.arm.Elbow;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
 /*
@@ -27,10 +30,10 @@ OFF	0	1	0.19	Short Reaching Pickup Init
 public class TeleopMode extends BaseOpmode {
     private static final double ELBOW_SPEED = 0.02;
     private static final double WRIST_SPEED = 0.02;
-    public final Color YELLOW = new Color(452, 533, 144, 376);
-    public final Color RED = new Color(276, 165, 97, 180);
-    public final Color BLUE = new Color(72, 139, 272, 161);
-    public final Color FLOOR = new Color(62, 106, 91, 86);
+    public final ColorRGB YELLOW = new ColorRGB(452, 533, 144, 376);
+    public final ColorRGB RED = new ColorRGB(276, 165, 97, 180);
+    public final ColorRGB BLUE = new ColorRGB(72, 139, 272, 161);
+    public final ColorRGB FLOOR = new ColorRGB(62, 106, 91, 86);
     public final int MAX_SHOULDER_SPEED = 30;
 
     @SuppressLint("DefaultLocale")
@@ -41,6 +44,7 @@ public class TeleopMode extends BaseOpmode {
         Gamepad previousGamepad2 = new Gamepad();
         Gamepad currentGamepad2 = new Gamepad();
         boolean mode = true;
+        boolean isIntaking = false;
         while (opModeIsActive()) {
             previousGamepad1.copy(currentGamepad1);
             previousGamepad2.copy(currentGamepad1);
@@ -54,7 +58,30 @@ public class TeleopMode extends BaseOpmode {
                 shortageBot.getLogger().log("shoulder delta", Math.round((currentGamepad2.left_trigger - currentGamepad2.right_trigger) * MAX_SHOULDER_SPEED));
                 shortageBot.getLogger().log("elbow", this.shortageBot.getArm().elbow.getPosition());
                 shortageBot.getLogger().log("wrist", this.shortageBot.getArm().wrist.getPosition());
+                shortageBot.getLogger().log("ext", this.shortageBot.getArm().extension.getPosition());
+
                 this.shortageBot.getArm().angle.incrementTargetPosition(Math.round((currentGamepad2.right_trigger - currentGamepad2.left_trigger) * MAX_SHOULDER_SPEED));
+                if (currentGamepad2.y) {
+                    this.shortageBot.getArm().angle.setTargetPosition(467);
+                    this.shortageBot.getArm().extension.setTargetPosition(3243);
+                } else if (currentGamepad2.a) {
+                    this.shortageBot.getArm().extension.setTargetPosition(0);
+                }
+                if (currentGamepad2.b) {
+                    isIntaking = true;
+                    RobotActions.INTAKE_SAMPLE_POSITION.run(this.shortageBot);
+                } else if (currentGamepad2.x) {
+                    RobotActions.INTAKE_REST_POSITION.run(this.shortageBot);
+                    isIntaking = false;
+                }
+                if (currentGamepad2.right_stick_button) {// || this.shortageBot.getIntake().hasCapturedSampleColor(ShortageBot.SampleColors.RED)) {
+                    this.shortageBot.getIntake().roller.setPosition(1);
+                } else if (this.shortageBot.getIntake().color.getDistance(DistanceUnit.INCH) < 2) {
+                    this.shortageBot.getIntake().roller.setPosition(0);
+                }
+                shortageBot.getLogger().log("hsv", this.shortageBot.getIntake().color.getColorHSV());
+                shortageBot.getLogger().log("distance", this.shortageBot.getIntake().color.getDistance(DistanceUnit.INCH));
+                shortageBot.getLogger().log("intakeext", this.shortageBot.getIntake().extension.getPosition());
                 this.shortageBot.getArm().elbow.incrementTargetPosition(currentGamepad2.dpad_left ? ELBOW_SPEED : currentGamepad2.dpad_right ? -ELBOW_SPEED : 0);
                 this.shortageBot.getArm().wrist.incrementTargetPosition(currentGamepad2.dpad_down ? -WRIST_SPEED : currentGamepad2.dpad_up ? WRIST_SPEED : 0);
                 if (currentGamepad2.left_bumper) {
@@ -68,6 +95,9 @@ public class TeleopMode extends BaseOpmode {
 
 
                 this.shortageBot.getArm().angle.incrementTargetPosition(Math.round((currentGamepad2.right_trigger - currentGamepad2.left_trigger) * MAX_SHOULDER_SPEED));
+                if (currentGamepad2.left_trigger > 0) {
+                    this.shortageBot.getArm().extension.setTargetPosition(0);
+                }
 
             } else {
                 if (currentGamepad1.y) {
@@ -99,11 +129,17 @@ public class TeleopMode extends BaseOpmode {
                     RobotActions.PICKUP_SHORT_SCAN_POSITION.run(this.shortageBot);
                 }
                 if (currentGamepad1.dpad_left) {
-                    RobotActions.PICKUP_SHORT_GRAB_POSITION.run(this.shortageBot);
+                    RobotActions.PICKUP_SHORT_GRAB_POSITION_STAGE_1.run(this.shortageBot);
+                }
+                if (currentGamepad1.dpad_up) {
+                    RobotActions.PICKUP_ARM_UP.run(this.shortageBot);
                 }
             }
             if (currentGamepad1.start && !previousGamepad1.start) {
                 mode = !mode;
+            }
+            if (isIntaking) {
+                Elbow.moveTo(1).run(this.shortageBot);
             }
         }
     }

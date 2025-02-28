@@ -12,7 +12,7 @@ public class SmartLogWrapper extends BaseLogger {
     }
 
     @Override
-    public void log(String caption, Object value) {
+    public synchronized void log(String caption, Object value) {
         this.logs.put(caption, value);
         this.logAllAndFlush();
     }

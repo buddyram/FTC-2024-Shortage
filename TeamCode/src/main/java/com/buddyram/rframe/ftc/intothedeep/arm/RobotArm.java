@@ -11,7 +11,7 @@ public class RobotArm extends BaseComponent<Robot> {
     public final Claw claw;
     public final Elbow elbow;
 
-    public RobotArm(Claw claw, Wrist wrist, Elbow elbow, Extension extension, Shoulder angle, Robot robot) {
+    public RobotArm(Robot robot, Claw claw, Wrist wrist, Elbow elbow, Extension extension, Shoulder angle) {
         super(robot);
         this.claw = claw;
         this.wrist = wrist;

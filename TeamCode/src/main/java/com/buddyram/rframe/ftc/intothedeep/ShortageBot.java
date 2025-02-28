@@ -6,26 +6,33 @@ import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
-import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.drive.VirtualHolonomicDriveTrain;
 import com.buddyram.rframe.drive.VirtualOdometrySensor;
 import com.buddyram.rframe.actions.RobotAction;
+import com.buddyram.rframe.ftc.DriveTowardsAction;
 import com.buddyram.rframe.ftc.intothedeep.actions.BackwardsClipAction;
 import com.buddyram.rframe.ftc.intothedeep.arm.RobotArm;
 import com.buddyram.rframe.ftc.intothedeep.actions.RobotActions;
 import com.buddyram.rframe.RobotException;
+import com.buddyram.rframe.ftc.intothedeep.intake.Intake;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import java.util.ArrayList;
 
 public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
+    public enum SampleColors {
+        RED,
+        BLUE,
+        YELLOW
+    }
     public static final double TARGET_POSITION_THRESHOLD = 1;
     public static final double TARGET_ROTATION_THRESHOLD = 1;
     public static final double SLOW_DISTANCE_THRESHOLD = 7;
     private Logger logger;
     private DigitalChannel frontBumper;
+    private Intake intake;
 
     public DigitalChannel getBackBumper() {
         return backBumper;
@@ -90,19 +97,49 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
 
         // ACTIONS START HERE
 
-        actions.add(BotUtils.driveTowardsUntil(72, 15, p -> p.x <= 80));
+        actions.add(BotUtils.driveTowardsUntil(75, 15, p -> p.x <= 75));
         actions.add(RobotActions.STOP);
         actions.add(new BackwardsClipAction());
-        actions.add(BotUtils.driveTowardsUntil(96, 34, p -> p.x >= 96));
+
+
+//        actions.add(BotUtils.driveTo(new Vector3D(103.8, 25.6, 0)));
+        actions.add(BotUtils.driveTo(new Vector3D(96.8, 25.6, 0)));
+        actions.add(BotUtils.rotateTo(-54));
+        actions.add(RobotActions.RUN_INTAKE_UNTIL_SAMPLE_COLLECTED);
+        actions.add(RobotActions.LIFT_BASKET);
+        actions.add(BotUtils.wait(500));
+        actions.add(BotUtils.rotateTo(-129.5));
+        actions.add(RobotActions.OUTTAKE_UNTIL_SAMPLE_NOT_DETECTED);
+
+
+//        actions.add(BotUtils.driveTo(new Vector3D(113.42, 23.2, 0)));
+//        actions.add(BotUtils.rotateTo(-53));
+//        actions.add(RobotActions.RUN_INTAKE_UNTIL_SAMPLE_COLLECTED);
+//        actions.add(RobotActions.LIFT_BASKET);
+//        actions.add(BotUtils.wait(500));
+//        actions.add(BotUtils.rotateTo(-127));
+//        actions.add(RobotActions.OUTTAKE_UNTIL_SAMPLE_NOT_DETECTED);
+//
+//
+//        actions.add(BotUtils.driveTo(new Vector3D(120.8, 22.8, 0)));
+//        actions.add(BotUtils.rotateTo(-58));
+//        actions.add(RobotActions.RUN_INTAKE_UNTIL_SAMPLE_COLLECTED);
+//        actions.add(RobotActions.LIFT_BASKET);
+//        actions.add(BotUtils.wait(500));
+//        actions.add(BotUtils.rotateTo(-148.5));
+//        actions.add(RobotActions.OUTTAKE_UNTIL_SAMPLE_NOT_DETECTED);
+
+
+
 //        actions.add(BotUtils.driveTo(116, 30, p -> p.x >= 100)); // account for drift
-        actions.add(RobotActions.REST);
-        actions.add(BotUtils.driveTo(new Vector3D(126, 31, 0)));
-        actions.add(RobotActions.PICKUP_SHORT);
-        actions.add(BotUtils.wait(300));
-        actions.add(RobotActions.CLOSE_CLAW);
-        actions.add(BotUtils.wait(300));
-        actions.add(BotUtils.rotateTo(180));
-        actions.add(BotUtils.driveTo(new Vector3D(135, 31, 0)));
+//        actions.add(RobotActions.REST);
+//        actions.add(BotUtils.driveTo(new Vector3D(126, 31, 0)));
+//        actions.add(RobotActions.PICKUP_SHORT);
+//        actions.add(BotUtils.wait(300));
+//        actions.add(RobotActions.CLOSE_CLAW);
+//        actions.add(BotUtils.wait(300));
+//        actions.add(BotUtils.rotateTo(180));
+//        actions.add(BotUtils.driveTo(new Vector3D(135, 31, 0)));
 
 //        actions.add(BotUtils.driveTo(126, 30, p -> p.x >= 126, 0.3));
 //        actions.add(BotUtils.rotateTo(0)); // Adjust angle
@@ -146,13 +183,14 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
         return true;
     }
 
-    public void init(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper, DigitalChannel backBumper) {
+    public void init(Logger logger, HolonomicDriveTrain drive, Odometry<Pose3D> odometry, RobotArm arm, DigitalChannel frontBumper, DigitalChannel backBumper, Intake intake) {
         this.odometry = odometry;
         this.logger = logger;
         this.drive = drive;
         this.arm = arm;
         this.frontBumper = frontBumper;
         this.backBumper = backBumper;
+        this.intake = intake;
     }
 
     public HolonomicDriveInstruction calculateRelativeDriveInstruction(Vector3D relativeTarget, double speed) {
@@ -175,6 +213,10 @@ public class ShortageBot implements Navigatable<HolonomicDriveTrain> {
 
     public RobotArm getArm() {
         return arm;
+    }
+
+    public Intake getIntake() {
+        return intake;
     }
 }
 

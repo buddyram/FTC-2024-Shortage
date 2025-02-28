@@ -11,6 +11,8 @@ import com.buddyram.rframe.ftc.intothedeep.arm.Elbow;
 import com.buddyram.rframe.ftc.intothedeep.arm.Extension;
 import com.buddyram.rframe.ftc.intothedeep.arm.Shoulder;
 import com.buddyram.rframe.ftc.intothedeep.arm.Wrist;
+import com.buddyram.rframe.ftc.intothedeep.intake.Roller;
+import com.buddyram.rframe.ftc.intothedeep.intake.VirtualFourBar;
 
 public class BotUtils {
 
@@ -20,6 +22,14 @@ public class BotUtils {
                 Elbow.moveTo(elbow),
                 Extension.moveTo(extension),
                 Shoulder.moveTo(angle)
+        );
+    }
+
+    public static RobotAction<ShortageBot> positionIntake(double virtualFourBar, double rollerSpeed, int extension) {
+        return new MultiAction<>(
+                VirtualFourBar.moveTo(virtualFourBar),
+                Roller.moveTo(rollerSpeed),
+                com.buddyram.rframe.ftc.intothedeep.intake.Extension.moveTo(extension)
         );
     }
 

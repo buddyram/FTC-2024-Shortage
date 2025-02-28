@@ -9,7 +9,7 @@ public class Elbow extends BaseComponent<Robot> {
     private final Servo angleL;
     private final Servo angleR;
 
-    public Elbow(Servo angleL, Servo angleR, Robot robot) {
+    public Elbow(Robot robot, Servo angleL, Servo angleR) {
         super(robot);
         this.angleL = angleL;
         this.angleR = angleR;

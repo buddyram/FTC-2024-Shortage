@@ -1,6 +1,7 @@
 package com.buddyram.rframe;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class DefaultBroadcaster<DataType> implements Broadcaster<DataType> {
     private ArrayList<MessageListener<DataType>> listeners;
@@ -9,19 +10,31 @@ public class DefaultBroadcaster<DataType> implements Broadcaster<DataType> {
         this.listeners = new ArrayList<MessageListener<DataType>>();
     }
 
-    public void addListener(MessageListener<DataType> listener) {
+    public synchronized void addListener(MessageListener<DataType> listener) {
         if (!this.listeners.contains(listener)) {
             this.listeners.add(listener);
         }
     }
 
-    public void removeListener(MessageListener<DataType> listener) {
+    public synchronized void removeListener(MessageListener<DataType> listener) {
         this.listeners.remove(listener);
     }
 
-    public void broadcast(DataType data) {
+    public synchronized void broadcast(DataType data) {
         for (MessageListener<DataType> listener: listeners) {
-            listener.handleMessage(new Message<DataType>(this, data, System.currentTimeMillis()));
+            listener.handleMessage(new Message<>(this, data, System.currentTimeMillis()));
+        }
+    }
+
+    @Override
+    public void clearListeners() {
+        listeners.clear();
+    }
+
+    @Override
+    public synchronized void removeAll(Collection<MessageListener<DataType>> messageListeners) {
+        for (MessageListener<DataType> listener : messageListeners) {
+            this.removeListener(listener);
         }
     }
 }

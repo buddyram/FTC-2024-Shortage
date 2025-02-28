@@ -10,7 +10,7 @@ public class Claw extends BaseComponent<Robot> {
     public static final double OPEN = 1;
     public static final double CLOSE = 0;
 
-    public Claw(Servo angle, Robot robot) {
+    public Claw(Robot robot, Servo angle) {
         super(robot);
         this.angle = angle;
     }
