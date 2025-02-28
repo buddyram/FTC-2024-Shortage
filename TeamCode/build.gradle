@@ -26,3 +26,10 @@ android {
 dependencies {
     implementation project(':FtcRobotController')
 }
+
+configurations {
+  all {
+    exclude group: 'org.slf4j', module: 'slf4j-api'
+    exclude group: 'com.google.code.gson', module: 'gson'
+  }
+}

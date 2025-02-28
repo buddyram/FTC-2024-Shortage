@@ -103,7 +103,7 @@ public class ManualOp extends LinearOpMode {
         this.rosebot = new Rosebot();
         System.out.println("attempting to start");
         this.networkCommunicator = new NetworkCommunicator(
-                new InetSocketAddress("0.0.0.0", 2222),
+                REDIS_HOST,
                 this.broadcaster,
                 (a) -> this.rosebot.handleAction(a)
         );

@@ -1,50 +1,44 @@
 package com.buddyram.rosebot;
 
 import com.buddyram.rframe.Broadcaster;
+import com.buddyram.rframe.JsonSerde;
+import com.buddyram.rframe.Message;
 import com.buddyram.rframe.MessageListener;
+import com.buddyram.rframe.Robot;
+import com.buddyram.rframe.RobotException;
+import com.buddyram.rframe.actions.RobotAction;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class NetworkCommunicator {
-    private final InetSocketAddress address;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPubSub;
+
+public class NetworkCommunicator implements MessageListener<BotMessage> {
+    public static final String MOTOR_CONTROL_IN_CHANNEL = "motor.in";
+    public static final String MOTOR_CONTROL_OUT_CHANNEL = "motor.out";
+
+    private final String address;
     private final NetworkRemoteController.ActionHandler actionHandler;
     private boolean isRunning = true;
-    private ServerSocket serverSocket;
+    private Jedis jedis;
     private final Broadcaster<BotMessage> broadcaster;
     private final ArrayList<MessageListener<BotMessage>> listenersAdded = new ArrayList<>();
 
-    public NetworkCommunicator(InetSocketAddress address, Broadcaster<BotMessage> broadcaster, NetworkRemoteController.ActionHandler actionHandler) {
+    public NetworkCommunicator(String address, Broadcaster<BotMessage> broadcaster, NetworkRemoteController.ActionHandler actionHandler) {
         this.broadcaster = broadcaster;
         this.address = address;
         this.actionHandler = actionHandler;
     }
 
-    public void reset(int msWaitTime) {
-        this.cleanup();
-        try {
-            this.serverSocket = new ServerSocket();
-            this.serverSocket.bind(this.address);
-            Thread.sleep(msWaitTime);
-        } catch (IOException | InterruptedException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     public synchronized void cleanup() {
-        try {
-            this.broadcaster.removeAll(this.listenersAdded);
-            this.listenersAdded.clear();
-            if (serverSocket != null) {
-                this.serverSocket.close();
-            }
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        this.broadcaster.removeListener(this);
+        if (jedis != null) {
+            this.jedis.close();
         }
+
     }
 
     public void stop() {
@@ -52,27 +46,43 @@ public class NetworkCommunicator {
     }
 
     public void start() {
+        this.broadcaster.addListener(this);
         new Thread(() -> {
-            System.out.println("thread start!");
-            this.reset(0);
-            while (this.isRunning) {
-                try {
-                    while (!this.serverSocket.isClosed()) {
-                        Socket socket = this.serverSocket.accept();
-                        System.out.println("accept!!");
-
-                        RemoteBotMessageListener listener = new RemoteBotMessageListener(socket);
-                        new Thread(new NetworkRemoteController(socket, this.actionHandler)).start();
-                        this.broadcaster.addListener(listener);
-                        this.listenersAdded.add(listener);
+            try {
+                JedisPubSub pubSub = new JedisPubSub() {
+                    @Override
+                    public void onMessage(String channel, String message) {
+                        JsonSerde serde = new JsonSerde();
+                        Object obj = serde.parseJson(message);
+                        if (obj instanceof RobotAction) {
+                            try {
+                                actionHandler.handle((RobotAction<Robot>) obj);
+                            } catch (RobotException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
                     }
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                } finally {
-                    this.reset(2000);
-                }
+                };
+                jedis.subscribe(pubSub);
+//                System.out.println("thread start!");
+//                while (this.isRunning) {
+//                    try {
+//                        while (this.jedis.isConnected()) {
+//                        }
+//                    } catch (IOException ex) {
+//                        ex.printStackTrace();
+//                    } finally {
+//                        this.reset(2000);
+//                    }
+//                }
+            } finally {
+                this.cleanup();
             }
-            this.cleanup();
         }).start();
+    }
+
+    @Override
+    public void handleMessage(Message<BotMessage> message) {
+        this.jedis.publish(MOTOR_CONTROL_OUT_CHANNEL, message.data.toJson());
     }
 }
