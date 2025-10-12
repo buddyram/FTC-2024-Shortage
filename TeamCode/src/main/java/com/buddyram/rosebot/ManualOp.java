@@ -6,13 +6,18 @@ import com.buddyram.rframe.DefaultBroadcaster;
 import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.Message;
 import com.buddyram.rframe.MessageListener;
+import com.buddyram.rframe.Odometry;
+import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.SmartLogWrapper;
+import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.KiwiDriveTrain;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rosebot.head.Extension;
 import com.buddyram.rosebot.head.Head;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.providers.MultiClusterPooledConnectionProvider;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -20,6 +25,7 @@ import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+
 
 
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
@@ -51,9 +57,25 @@ public class ManualOp extends LinearOpMode {
         DcMotor headMotor = hardwareMap.get(DcMotor.class, "hm");
         headMotor.setTargetPosition(0);
         headMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        headMotor.setPower(1);
+        headMotor.setPower(0.5);
 
-        this.rosebot.init(drive, new Head(this.rosebot, new Extension(this.rosebot, headMotor)), this.logger);
+        this.rosebot.init(drive, new Head(this.rosebot, new Extension(this.rosebot, headMotor)), this.logger, new Odometry<Pose3D>() {
+            @Override
+            public Pose3D get() {
+                Orientation rpy = imu.getAngularOrientation();
+                return new Pose3D(new Vector3D(), new Vector3D(Math.toDegrees(rpy.thirdAngle), Math.toDegrees(rpy.secondAngle), Math.toDegrees(rpy.firstAngle)), new Vector3D(), new Vector3D());
+            }
+
+            @Override
+            public boolean init() {
+                return false;
+            }
+
+            @Override
+            public void setPosition(Pose3D pos) {
+
+            }
+        });
         Gson gson = new GsonBuilder().create();
 
         waitForStart();
@@ -77,28 +99,29 @@ public class ManualOp extends LinearOpMode {
                 put("p", Math.toDegrees(rpy.secondAngle));
                 put("y", Math.toDegrees(rpy.thirdAngle));
             }};
-            Type type =  new TypeToken<HashMap<String, Double>>(){}.getType();
+            Type type = new TypeToken<HashMap<String, Double>>() {
+            }.getType();
             String json = gson.toJson(map, type);
             broadcaster.broadcast(() -> json);
-
-            //this.rosebot.getDrive().drive(new HolonomicDriveInstruction(gamepad1.right_stick_x, speed, angle));
+            if (gamepad1.right_trigger > 0.2) {
+                this.rosebot.getDrive().drive(new HolonomicDriveInstruction(gamepad1.right_stick_x, speed, angle));
+            }
             telemetry.update();
         }
-        networkCommunicator.stop();
     }
 
     @Override
     public void runOpMode() throws InterruptedException {
         this.logger = new SmartLogWrapper(
-            new BaseLogger() {
-                public void log(String caption, Object value) {
-                    telemetry.addData(caption, value);
-                }
+                new BaseLogger() {
+                    public void log(String caption, Object value) {
+                        telemetry.addData(caption, value);
+                    }
 
-                public void flush() {
-                    telemetry.update();
+                    public void flush() {
+                        telemetry.update();
+                    }
                 }
-            }
         );
         this.rosebot = new Rosebot();
         System.out.println("attempting to start");
@@ -110,7 +133,10 @@ public class ManualOp extends LinearOpMode {
         try {
             networkCommunicator.start();
             this.run();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         } finally {
+            System.out.println("stopping network communicator");
             this.networkCommunicator.stop();
         }
     }

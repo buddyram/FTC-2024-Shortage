@@ -3,7 +3,7 @@ package com.buddyram.rframe.ftc;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 public class Motor implements com.buddyram.rframe.Motor {
-    private final DcMotor motor;
+    protected final DcMotor motor;
     private double errorCorrection;
 
     public Motor(DcMotor motor) {

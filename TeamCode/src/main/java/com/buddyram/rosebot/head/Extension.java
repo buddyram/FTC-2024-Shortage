@@ -7,6 +7,7 @@ import com.buddyram.rframe.actions.ConditionalWrapperAction;
 import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
 import com.buddyram.rframe.ftc.intothedeep.actions.ShortageAction;
+import com.buddyram.rosebot.Rosebot;
 import com.buddyram.rosebot.RosebotAction;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
@@ -42,10 +43,10 @@ public class Extension extends BaseComponent<Robot> {
         };
     }
 
-    public static RobotAction<ShortageBot> moveToAndWait(int tgt) {
+    public static RobotAction<Rosebot> moveToAndWait(int tgt) {
         return new ConditionalWrapperAction<>(
-                com.buddyram.rframe.ftc.intothedeep.arm.Extension.moveTo(tgt),
-                (drive) -> Math.abs(drive.getArm().extension.getPosition() - tgt) < POSITION_ERROR_THRESHOLD
+                com.buddyram.rosebot.head.Extension.moveTo(tgt),
+                (drive) -> Math.abs(drive.getHead().extension.getPosition() - tgt) < POSITION_ERROR_THRESHOLD
         );
     }
 }
