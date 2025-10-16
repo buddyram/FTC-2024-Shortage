@@ -7,12 +7,19 @@ import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
+import com.buddyram.rframe.ftc.decode.intake.Intake;
 import com.buddyram.rframe.ftc.decode.launcher.Launcher;
 
 public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     public Logger logger;
     public Odometry<Pose3D> odometry;
     public HolonomicDriveTrain drive;
+
+    public Intake getIntake() {
+        return intake;
+    }
+
+    public Intake intake;
 
     public Launcher getLauncher() {
         return launcher;
@@ -21,14 +28,18 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     public Launcher launcher;
 
     public DecodeBot() {
-        this(null, null, null, null);
+        this(null, null, null, null, null);
     }
-    public DecodeBot(Logger logger, Odometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher) {
+    public DecodeBot(Logger logger, Odometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake) {
+        this.init(logger, odometry, drive, launcher, intake);
+    }
+
+    public void init(Logger logger, Odometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake) {
         this.logger = logger;
         this.odometry = odometry;
         this.drive = drive;
         this.launcher = launcher;
-
+        this.intake = intake;
     }
 
     @Override
@@ -63,4 +74,5 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
     }
+
 }

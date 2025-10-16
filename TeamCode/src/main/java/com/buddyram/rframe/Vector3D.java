@@ -40,6 +40,15 @@ public class Vector3D {
     }
 
     /**
+     * Subtract another 3d vector from this 3d vector.
+     * @param other the other 3d vector
+     * @return a new 3d vector, the result of the subtraction of the vectors
+     */
+    public Vector3D sub(Vector3D other) {
+        return new Vector3D(this.x - other.x, this.y - other.y, this.z - other.z);
+    }
+
+    /**
      * Find the distance between this 3d vector and another 3d vector.
      * @param other the other 3d vector
      * @return a double, the distance between the two 3d vectors
