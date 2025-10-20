@@ -34,10 +34,6 @@ public class Teleop extends BaseOpmode {
     private double dist;
 
     private AprilTagProcessor aprilTag;
-
-    /**
-     * The variable to store our instance of the vision portal.
-     */
     private VisionPortal visionPortal;
 
     @Override
@@ -49,8 +45,16 @@ public class Teleop extends BaseOpmode {
             telemetry.addData("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
             telemetry.addData("gamepad1 right stick", currentGamepad1.right_stick_x);
             telemetry.update();
+            if (this.decodeBot.getLauncher().wheel.isReady()) {
+                gamepad1.setLedColor(0, 255 ,0, 100);
+            } else {
+                gamepad1.rumble(100);
+
+                gamepad1.setLedColor(255, 0 ,0, 100);
+            }
 
             if (currentGamepad1.right_bumper) {
+                gamepad1.setLedColor(0, 255 ,255, 1000);
                 new ShootAction().run(this.decodeBot);
             }
             if (currentGamepad1.x) {
@@ -108,9 +112,7 @@ public class Teleop extends BaseOpmode {
     private void initAprilTag() {
 
         AprilTagLibrary.Builder myAprilTagLibraryBuilder;
-        AprilTagProcessor.Builder myAprilTagProcessorBuilder;
         AprilTagLibrary myAprilTagLibrary;
-        AprilTagProcessor myAprilTagProcessor;
 
         myAprilTagLibraryBuilder = new AprilTagLibrary.Builder();
         myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
@@ -151,7 +153,10 @@ public class Teleop extends BaseOpmode {
                         detection.robotPose.getOrientation().getYaw(AngleUnit.DEGREES)));
                 double x = detection.robotPose.getPosition().x;
                 double z = detection.robotPose.getPosition().z;
+                telemetry.addData("Predict_Pos", (12 - detection.robotPose.getPosition().x) + " " + (132 + detection.robotPose.getPosition().z));
+                telemetry.addData("Actual_Pos", (this.decodeBot.odometry.get().position.x + " " + this.decodeBot.odometry.get().position.y));
                 this.dist = Math.sqrt(Math.pow(x, 2) + Math.pow(z, 2));
+
             } else {
                 telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
                 telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));

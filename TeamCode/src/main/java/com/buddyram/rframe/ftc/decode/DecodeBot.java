@@ -3,12 +3,21 @@ package com.buddyram.rframe.ftc.decode;
 import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
+import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
+import com.buddyram.rframe.ftc.decode.action.ShootAction;
 import com.buddyram.rframe.ftc.decode.intake.Intake;
+import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
 import com.buddyram.rframe.ftc.decode.launcher.Launcher;
+import com.buddyram.rframe.ftc.decode.launcher.Sweeper;
+import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
+import com.buddyram.rframe.ftc.intothedeep.actions.RobotActions;
+
+import java.util.ArrayList;
 
 public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     public Logger logger;
@@ -73,6 +82,44 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
         driveAngleInstruction = pos.position.calculateRotation(target).z;
 
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
+    }
+
+    public void runAutonomous() throws RobotException, InterruptedException {
+        ArrayList<RobotAction<DecodeBot>> actions = new ArrayList<>();
+        actions.add(Sweeper.moveTo(-1));
+        actions.add(Flywheel.setRPMTo(3100));
+        actions.add(BotUtils.wait(600));
+        actions.add(BotUtils.rotateTo(45));
+        actions.add(new ShootAction());
+        actions.add(BotUtils.rotateTo(90));
+        actions.add(BotUtils.driveTo(new Vector3D(29.95366666666666, 88.38416666666666, 0), false));
+        actions.add(BotUtils.wait(600));
+        actions.add(BotUtils.driveTo(new Vector3D(60, 84, 0), false));
+        actions.add(BotUtils.rotateTo(45));
+        actions.add(new ShootAction());
+        actions.add(BotUtils.rotateTo(90));
+        actions.add(BotUtils.driveTo(new Vector3D(45, 64.38416666666666, 0), false));
+        actions.add(BotUtils.driveTo(new Vector3D(29.95366666666666, 64.38416666666666, 0), false));
+        actions.add(BotUtils.wait(600));
+        actions.add(BotUtils.driveTo(new Vector3D(60, 84, 0), false));
+        actions.add(BotUtils.rotateTo(45));
+        actions.add(new ShootAction());
+        actions.add(BotUtils.rotateTo(90));
+        actions.add(BotUtils.driveTo(new Vector3D(45, 40.38416666666666, 0), false));
+        actions.add(BotUtils.driveTo(new Vector3D(29.95366666666666, 40.38416666666666, 0), false));
+        actions.add(BotUtils.wait(600));
+        actions.add(BotUtils.driveTo(new Vector3D(60, 84, 0), false));
+        actions.add(BotUtils.rotateTo(45));
+        actions.add(Flywheel.setRPMTo(3100));
+        actions.add(new ShootAction());
+        actions.add(BotUtils.rotateTo(0));
+
+        while (this.isActive() && !actions.isEmpty()) {
+            if (actions.get(0).run(this)) {
+                actions.remove(0);
+                System.out.println("next!! " + actions.size());
+            }
+        }
     }
 
 }
