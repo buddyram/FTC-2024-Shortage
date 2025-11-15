@@ -78,6 +78,15 @@ public class Vector3D {
         return this.x * other.x + this.y * other.y + this.z * other.z;
     }
 
+    public Vector3D mul(double other) {
+        return new Vector3D(this.x * other, this.y * other, this.z * other);
+    }
+
+    public double magnitude() {
+        return this.distance(new Vector3D());
+    }
+
+
     public Vector3D calculateRotation(Vector3D target) {
         return new Vector3D(
                 90 - Math.toDegrees(Math.atan2(target.z - this.z, target.y - this.y)),

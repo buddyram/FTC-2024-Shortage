@@ -8,6 +8,6 @@ public class AutonomousMode extends BaseOpmode {
 
     @Override
     public void execute() throws RobotException, InterruptedException {
-        this.decodeBot.runAutonomous();
+//        this.decodeBot.runAutonomous();
     }
 }

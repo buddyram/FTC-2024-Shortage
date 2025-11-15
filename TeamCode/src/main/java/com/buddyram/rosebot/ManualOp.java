@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -35,7 +36,7 @@ import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-
+@Disabled
 @TeleOp(name = "manual", group = "Rosebot")
 public class ManualOp extends LinearOpMode {
     public static final String REDIS_HOST = "redis://192.168.45.102:6379";

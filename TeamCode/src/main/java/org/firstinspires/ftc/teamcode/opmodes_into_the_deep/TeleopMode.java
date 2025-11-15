@@ -11,6 +11,7 @@ import com.buddyram.rframe.ftc.intothedeep.actions.BackwardsClipAction;
 import com.buddyram.rframe.ftc.intothedeep.actions.RobotActions;
 import com.buddyram.rframe.ftc.intothedeep.actions.SpecimenCollectAction;
 import com.buddyram.rframe.ftc.intothedeep.arm.Elbow;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -25,6 +26,7 @@ OFF	0	1	0.19	Short Reaching Pickup Init
 -335	0	0	0.35	Specimen Approach
 -165	0	0	0.35	Specimen Hang
  */
+@Disabled
 @TeleOp(name = "Teleop", group = "Comp")
 public class TeleopMode extends BaseOpmode {
     private static final double ELBOW_SPEED = 0.02;
