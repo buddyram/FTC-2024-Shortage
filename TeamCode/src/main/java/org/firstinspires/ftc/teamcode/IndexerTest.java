@@ -24,6 +24,8 @@ package org.firstinspires.ftc.teamcode;
 
 import android.graphics.Color;
 
+import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
+import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -40,11 +42,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp(name="Servo Extended Example", group="Concept")
 public class IndexerTest extends LinearOpMode {
-    public enum ColorMatch {
-        MATCH_GREEN,
-        MATCH_PURPLE,
-        NONE
-    }
     public final int GREEN_HUE = 145;
     public final int PURPLE_HUE = 175;
     public final int BLANK_HUE = 123;
@@ -60,15 +57,16 @@ public class IndexerTest extends LinearOpMode {
 
 
         motor = hardwareMap.get(DcMotor.class, "idx");
-        CRServo servo = hardwareMap.get(CRServo.class, "servo");
-        CRServo servo2 = hardwareMap.get(CRServo.class, "servo2");
+        CRServo servo = hardwareMap.get(CRServo.class, "ints1");
+        CRServo servo2 = hardwareMap.get(CRServo.class, "ints2");
         RevColorSensorV3 distanceSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
         distanceSensor.initialize();
+        ColorSensor sensor = new ColorSensor(null, distanceSensor);
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setTargetPosition(0);
         motor.setPower(0.5);
         motor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        ColorMatch[] slots = new ColorMatch[3];
+        Indexer indexer = new Indexer(null, motor,  28 * 2.89 * 5.23, new ColorSensor.ColorMatch[]{ColorSensor.ColorMatch.NONE, ColorSensor.ColorMatch.NONE, ColorSensor.ColorMatch.NONE}, sensor);
 
 
         waitForStart();
@@ -77,13 +75,12 @@ public class IndexerTest extends LinearOpMode {
         int currentSlot = 0;
 
         while (opModeIsActive()) {
-            k = currentSlot * 120;
             int m = (int) Math.floor(k / 360.0 * 28 * 2.89 * 5.23);
-            if (currentSlot == 4) {
+            if (indexer.isFull()) {
                 servo.setPower(0.5);
                 servo2.setPower(-0.25);
             } else {
-                if (Math.abs(motor.getCurrentPosition() - m) < 20) {
+                if (indexer.isReady()) {
                     servo.setPower(1);
                     servo2.setPower(1);
                 }
@@ -93,66 +90,66 @@ public class IndexerTest extends LinearOpMode {
                 }
             }
 
-
-            motor.setTargetPosition(m);
-//            Thread.sleep(1000 / 8);
-            if (gamepad1.dpad_up) {
-                currentSlot++;
-                while (gamepad1.dpad_up);
+            telemetry.addData("color", sensor.indexerBall());
+            try {
+                indexer.ifFullGoToNext();
+            } catch (Exception e) {
+                stop();
             }
-            if (gamepad1.dpad_down) {
-                currentSlot--;
-                while (gamepad1.dpad_down);
-            }
-            if (distanceSensor.getDistance(DistanceUnit.INCH) < 1) {
-                telemetry.addLine("ready!");
-            }
-            ColorMatch currentColor = null;
-            float[] hsv = new float[3];
-
-            Color.RGBToHSV(
-                    distanceSensor.red(),
-                    distanceSensor.green(),
-                    distanceSensor.blue(),
-                    hsv
-            );
-            if (distanceSensor.getDistance(DistanceUnit.INCH) < 2) {
-                float best = 3232;
-                float score = Math.abs(PURPLE_HUE - hsv[0]);
-                if (score < best) {
-                    currentColor = ColorMatch.MATCH_PURPLE;
-                    best = score;
-                }
-                score = Math.abs(GREEN_HUE - hsv[0]);
-                if (Math.abs(GREEN_HUE - hsv[0]) < best) {
-                    currentColor = ColorMatch.MATCH_GREEN;
-                    best = score;
-                }
-                score = Math.abs(BLANK_HUE - hsv[0]);
-                if (Math.abs(BLANK_HUE - hsv[0]) < best) {
-                    currentColor = ColorMatch.NONE;
-                    best = score;
-                }
-            } else {
-                currentColor = ColorMatch.NONE;
-            }
-            if (Math.abs(motor.getCurrentPosition() - m) < 3 && currentColor != ColorMatch.NONE) {
-                slots[currentSlot % 3] = currentColor;
-                currentSlot = 4;
-                for (int i = 0; i < 3; i++) {
-                    if (slots[i] == null) {
-                        currentSlot = i;
-                        break;
-                    }
-                }
-            }
+//            ColorSensor.ColorMatch currentColor = null;
+//            float[] hsv = new float[3];
+//
+//            Color.RGBToHSV(
+//                    distanceSensor.red(),
+//                    distanceSensor.green(),
+//                    distanceSensor.blue(),
+//                    hsv
+//            );
+//            if (distanceSensor.getDistance(DistanceUnit.INCH) < 2) {
+//                float best = 3232;
+//                float score = Math.abs(PURPLE_HUE - hsv[0]);
+//                if (score < best) {
+//                    currentColor = ColorSensor.ColorMatch.MATCH_PURPLE;
+//                    best = score;
+//                }
+//                score = Math.abs(GREEN_HUE - hsv[0]);
+//                if (Math.abs(GREEN_HUE - hsv[0]) < best) {
+//                    currentColor = ColorSensor.ColorMatch.MATCH_GREEN;
+//                    best = score;
+//                }
+//                score = Math.abs(BLANK_HUE - hsv[0]);
+//                if (Math.abs(BLANK_HUE - hsv[0]) < best) {
+//                    currentColor = ColorSensor.ColorMatch.NONE;
+//                    best = score;
+//                }
+//            } else {
+//                currentColor = ColorSensor.ColorMatch.NONE;
+//            }
+//            if (Math.abs(motor.getCurrentPosition() - m) < 3 && currentColor != ColorSensor.ColorMatch.NONE) {
+//                indexer.fillSlot(currentColor);
+//                if (indexer.isFull()) {
+//                    stop();
+//                } else {
+//                    try {
+//                        int nearest = indexer.getNearestEmpty();
+//                        indexer.goToSlot(nearest);
+//                    } catch (Exception e) {
+//                        throw new RuntimeException(e);
+//                    }
+//
+//                }
+//            }
             telemetry.addData("currentslot", currentSlot);
-            telemetry.addData("c", currentColor);
-            telemetry.addData("ac[0]", hsv[0]);
-            telemetry.addData("ac[1]", hsv[1]);
-            telemetry.addData("ac[2]", hsv[2]);
+//            telemetry.addData("c", currentColor);
+//            telemetry.addData("ac[0]", hsv[0]);
+//            telemetry.addData("ac[1]", hsv[1]);
+//            telemetry.addData("ac[2]", hsv[2]);
+            try {
+                telemetry.addData("getnearestempty", indexer.getNearestEmpty());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             telemetry.addData("distance", distanceSensor.getDistance(DistanceUnit.INCH));
-            telemetry.addData("slots", slots[0] + "," + slots[1] + "," + slots[2]);
             telemetry.update();
         }
     }

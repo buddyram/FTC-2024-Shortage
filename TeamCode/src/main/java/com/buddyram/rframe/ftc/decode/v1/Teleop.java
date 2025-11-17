@@ -37,6 +37,12 @@ public class Teleop extends BaseOpmode {
             }
             this.decodeBot.adjustFlywheelSpeed();
             this.decodeBot.controlIntake();
+
+            try {
+                decodeBot.indexer.ifFullGoToNext();
+            } catch (Exception e) {
+                stop();
+            }
 //            if (currentGamepad1.left_bumper) {
 //                this.decodeBot.getIntake().sweeper.setPower(-1);
 //            } else if (currentGamepad1.left_trigger > 0) {

@@ -13,7 +13,7 @@ public class FeederTest extends LinearOpMode {
 
     @Override
     public void runOpMode() throws InterruptedException {
-        ServoImplEx feed = hardwareMap.get(ServoImplEx.class, "feed");
+        ServoImplEx feed = hardwareMap.get(ServoImplEx.class, "LFeed");
         feed.setPwmRange(new PwmControl.PwmRange(500, 2500));
         waitForStart();
         double d = 0;

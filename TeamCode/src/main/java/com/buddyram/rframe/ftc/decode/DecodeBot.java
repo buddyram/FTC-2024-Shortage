@@ -13,6 +13,7 @@ import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.ftc.ApriltagOdometry;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
+import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.buddyram.rframe.ftc.decode.intake.Intake;
 import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
 import com.buddyram.rframe.ftc.decode.launcher.Launcher;
@@ -35,6 +36,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 
     public Odometry<Pose3D> apriltagOdometry;
     public HolonomicDriveTrain drive;
+    public Indexer indexer;
 
 
     public Intake getIntake() {
@@ -52,13 +54,13 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     public Vector3D targetGoal;
 
     public DecodeBot() {
-        this(null, null, null, null, null, null, false);
+        this(null, null, null, null, null, null, false, null);
     }
-    public DecodeBot(Logger logger, GroundingOdometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake, Odometry<Pose3D> apriltagOdometry, boolean isRed) {
-        this.init(logger, odometry, drive, launcher, intake, apriltagOdometry, isRed);
+    public DecodeBot(Logger logger, GroundingOdometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake, Odometry<Pose3D> apriltagOdometry, boolean isRed, Indexer indexer) {
+        this.init(logger, odometry, drive, launcher, intake, apriltagOdometry, isRed, indexer);
     }
 
-    public void init(Logger logger, GroundingOdometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake, Odometry<Pose3D> apriltagOdometry, boolean isRed) {
+    public void init(Logger logger, GroundingOdometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake, Odometry<Pose3D> apriltagOdometry, boolean isRed, Indexer indexer) {
         this.logger = logger;
         this.odometry = odometry;
         this.drive = drive;
@@ -67,6 +69,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
         this.apriltagOdometry = apriltagOdometry;
         this.isRed = isRed;
         this.targetGoal = isRed ? RED_GOAL : BLUE_GOAL;
+        this.indexer = indexer;
     }
 
     @Override
@@ -131,7 +134,16 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void controlIntake() {
-        this.intake.enableMode(Intake.Modes.INTAKING);
+        if (indexer.isFull()) {
+            this.intake.enableMode(Intake.Modes.IDLE);
+        } else {
+            if (indexer.isReady()) {
+                this.intake.enableMode(Intake.Modes.INTAKING);
+            }
+            else {
+                this.intake.enableMode(Intake.Modes.WAITING);
+            }
+        }
     }
 
 

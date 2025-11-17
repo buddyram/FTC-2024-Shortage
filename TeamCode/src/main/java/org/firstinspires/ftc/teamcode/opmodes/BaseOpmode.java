@@ -181,7 +181,7 @@ public abstract class BaseOpmode extends LinearOpMode {
         );
         Intake intake = new Intake(this.decodeBot, new Sweeper(this.decodeBot, servoInt));
 
-        this.decodeBot.init(logger, groundingOdometry, adapter, launcher, intake, apriltagOdometry, isRed == 1);
+        this.decodeBot.init(logger, groundingOdometry, adapter, launcher, intake, apriltagOdometry, isRed == 1, null);
         while (! this.isStarted()) {
             telemetry.addData("POS", groundingOdometry.get());
             telemetry.update();

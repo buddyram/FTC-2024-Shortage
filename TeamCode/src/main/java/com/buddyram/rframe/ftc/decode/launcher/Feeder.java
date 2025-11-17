@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 public class Feeder extends BaseComponent<Robot> {
     private final Servo servo;
-    public static final double OPEN = 1;
-    public static final double CLOSE = 0;
+    public static final double OPEN = 0.439;
+    public static final double CLOSE = 0.403;
 
     public Feeder(Robot robot, Servo servo) {
         super(robot);
@@ -18,6 +18,9 @@ public class Feeder extends BaseComponent<Robot> {
     }
 
     public void setPosition(double newPosition) {
+        if (newPosition > OPEN || newPosition < CLOSE) {
+            return;
+        }
         this.servo.setPosition(newPosition);
     }
 

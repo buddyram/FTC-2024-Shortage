@@ -17,6 +17,7 @@ import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
+import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.buddyram.rframe.ftc.decode.intake.Intake;
 import com.buddyram.rframe.ftc.decode.intake.TwoStageSweeper;
 import com.buddyram.rframe.ftc.decode.launcher.Feeder;
@@ -32,7 +33,9 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -154,12 +157,12 @@ public abstract class BaseOpmode extends LinearOpMode {
             @Override
             public void adjustFlywheelSpeed() {
                 double dist = this.odometry.get().position.distance(this.targetGoal);
-                this.getLauncher().wheel.setRPM(0);
+                this.getLauncher().wheel.setRPM(2700 + Math.pow(dist, 1.3));
             }
             @Override
             public void autoAim() throws RobotException {
                 Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
-                launcher.turret.setAngle(this.odometry.get().rotation.z - (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90));
+                launcher.turret.setAngle(-(this.odometry.get().rotation.z - (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90)));
             }
         };
         MecanumDriveTrain drive = new MecanumDriveTrain(
@@ -169,6 +172,16 @@ public abstract class BaseOpmode extends LinearOpMode {
                 new Motor(motorBR, 1),
                 1
         );
+
+        DcMotor indexMotor = hardwareMap.get(DcMotor.class, "idx");
+        RevColorSensorV3 distanceSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
+        distanceSensor.initialize();
+        ColorSensor sensor = new ColorSensor(null, distanceSensor);
+        indexMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        indexMotor.setTargetPosition(0);
+        indexMotor.setPower(0.5);
+        indexMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        Indexer indexer = new Indexer(null, indexMotor,  28 * 2.89 * 5.23, new ColorSensor.ColorMatch[]{ColorSensor.ColorMatch.NONE, ColorSensor.ColorMatch.NONE, ColorSensor.ColorMatch.NONE}, sensor);
 
 
 
@@ -183,8 +196,8 @@ public abstract class BaseOpmode extends LinearOpMode {
         motorFly.setDirection(DcMotorSimple.Direction.REVERSE);
         motorFly.setVelocity(0);
 
-        Servo servoFeed = hardwareMap.get(Servo.class, "LFeed");
-        servoFeed.setPosition(0);
+        ServoImplEx servoFeed = hardwareMap.get(ServoImplEx.class, "LFeed");
+        servoFeed.setPwmRange(new PwmControl.PwmRange(500, 2500));
         CRServo servoInt1 = hardwareMap.get(CRServo.class, "ints1");
         CRServo servoInt2 = hardwareMap.get(CRServo.class, "ints2");
         servoInt1.setPower(0);
@@ -205,6 +218,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                 new ColorSensor(this.decodeBot, colorSensor),
                 new Turret(this.decodeBot, turret)
         );
+        launcher.feeder.setPosition(Feeder.CLOSE);
         Logger logger = new SmartLogWrapper(
                 new BaseLogger() {
                     public void log(String caption, Object value) {
@@ -216,9 +230,9 @@ public abstract class BaseOpmode extends LinearOpMode {
                     }
                 }
         );
-        Intake intake = new Intake(this.decodeBot, new TwoStageSweeper(this.decodeBot, servoInt1, servoInt2));
+        Intake intake = new Intake(this.decodeBot, new TwoStageSweeper(this.decodeBot, servoInt2, servoInt1));
 
-        this.decodeBot.init(logger, groundingOdometry, adapter, launcher, intake, limelight, isRed == 1);
+        this.decodeBot.init(logger, groundingOdometry, adapter, launcher, intake, limelight, isRed == 1, indexer);
         while (! this.isStarted()) {
             telemetry.addData("POS", groundingOdometry.get());
             telemetry.update();
