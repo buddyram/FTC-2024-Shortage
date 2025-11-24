@@ -81,4 +81,9 @@ public class ApriltagOdometry implements Odometry<Pose3D> {
     public void setPosition(Pose3D pos) {
         throw new UnsupportedOperationException("setPosition not supported for ApriltagOdometry");
     }
+
+    @Override
+    public void cleanup() {
+
+    }
 }

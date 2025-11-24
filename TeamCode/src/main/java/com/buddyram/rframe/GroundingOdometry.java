@@ -50,6 +50,13 @@ public class GroundingOdometry<P> implements Odometry<P> {
     public void setPosition(P pos) {
         this.relative.setPosition(pos);
     }
+
+    @Override
+    public void cleanup() {
+        this.absolute.cleanup();
+        this.relative.cleanup();
+    }
+
     public interface GroundingCondition<P> {
         boolean canSync();
     }

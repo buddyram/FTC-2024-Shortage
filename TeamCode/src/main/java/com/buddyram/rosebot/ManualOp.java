@@ -76,6 +76,11 @@ public class ManualOp extends LinearOpMode {
             public void setPosition(Pose3D pos) {
 
             }
+
+            @Override
+            public void cleanup() {
+
+            }
         });
         Gson gson = new GsonBuilder().create();
 

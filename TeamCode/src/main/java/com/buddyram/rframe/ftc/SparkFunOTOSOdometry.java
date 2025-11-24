@@ -32,10 +32,12 @@ public class SparkFunOTOSOdometry implements Odometry<Pose3D> {
 //        this.sensor.setLinearScalar(96 / 91.1082 * 48 / 50.8346);
 //        this.sensor.setAngularScalar(3600 / 3608.5);
 
-        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-0.1, -0.4, 0);
+        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-1.0813 / 2, -0.1201 / 2, 0);
         this.sensor.setOffset(offset);
-        this.sensor.setLinearScalar(60 / 72.5);
-        this.sensor.setAngularScalar(3565.4 / 3600);
+        this.sensor.setLinearScalar(48 / 45.3558);
+        this.sensor.setAngularScalar(3600 / 3635.0354);
+//        this.sensor.setLinearScalar(60 / 72.5);
+//        this.sensor.setAngularScalar(3565.4 / 3600);
 //        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(0, 0, 0);
 //        this.sensor.setOffset(offset);
 //        this.sensor.setLinearScalar(48.0 / 42.0); // 48.0 / 42.0
@@ -55,6 +57,10 @@ public class SparkFunOTOSOdometry implements Odometry<Pose3D> {
 
     public void setPosition(Pose3D pos) {
         this.sensor.setPosition(new SparkFunOTOS.Pose2D(pos.position.x, pos.position.y, pos.rotation.z));
+    }
+
+    @Override
+    public void cleanup() {
     }
 
     public Pose3D get() {

@@ -81,11 +81,24 @@ public abstract class BaseOpmode extends LinearOpMode {
         } finally {
             rememberLastPosition.interrupt();
             rememberLastPosition.join();
+            this.decodeBot.odometry.cleanup();
         }
 
     }
     public abstract void execute() throws RobotException, InterruptedException;
     public void initializeHardware() throws InterruptedException {
+
+        Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");
+
+        LimelightOdometry limelight = new LimelightOdometry(limelightDEVICE);
+
+        /*
+         * Starts polling for data.
+         */
+        limelight.init();
+
+
+
         DcMotor motorFR = hardwareMap.get(DcMotor.class, "dfr");
         DcMotor motorFL = hardwareMap.get(DcMotor.class, "dfl");
         DcMotor motorBR = hardwareMap.get(DcMotor.class, "dbr");
@@ -114,6 +127,7 @@ public abstract class BaseOpmode extends LinearOpMode {
         if (!otosOdometry.init()) {
             telemetry.addData("OTOS", "Failed");
         }
+        otosOdometry.setPosition(limelight.get());
         telemetry.addData("OTOS", "Yay!!s");
         telemetry.update();
 
@@ -134,16 +148,11 @@ public abstract class BaseOpmode extends LinearOpMode {
 //                aprilTagProcessor,
 //                positionalTags
 //        );
-        Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");
-
-        LimelightOdometry limelight = new LimelightOdometry(limelightDEVICE);
-
-        /*
-         * Starts polling for data.
-         */
-        limelight.init();
         GroundingOdometry<Pose3D> groundingOdometry = new GroundingOdometry<>(limelight, otosOdometry, () -> {
             Pose3D res = otosOdometry.get();
+            double otosYaw = res.rotation.z;
+            double limelightYaw = otosYaw <= 0 ? otosYaw + 180 : otosYaw - 180;
+            limelight.updateOrientation(limelightYaw);
             System.out.println("res: " + res + " \nmagnitude: " + res.positionVelocity.magnitude());
             return res.positionVelocity.magnitude() + res.rotationVelocity.magnitude() < 0.7;
         });

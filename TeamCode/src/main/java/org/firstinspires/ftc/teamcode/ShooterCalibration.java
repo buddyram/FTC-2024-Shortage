@@ -23,6 +23,7 @@ public class ShooterCalibration extends LinearOpMode {
         waitForStart();
 
         double k = 0;
+        //
 
         while (opModeIsActive()) {
             telemetry.addData("p", motor.getCurrentPosition());

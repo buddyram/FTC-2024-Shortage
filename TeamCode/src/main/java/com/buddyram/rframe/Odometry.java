@@ -18,4 +18,6 @@ public interface Odometry<P> {
     public boolean init();
 
     public void setPosition(P pos);
+
+    public void cleanup();
 }
