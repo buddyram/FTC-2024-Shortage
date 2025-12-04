@@ -1,5 +1,6 @@
 package com.buddyram.rframe.ftc.decode.v1;
 
+import com.buddyram.rframe.CachedOdometry;
 import com.buddyram.rframe.BaseLogger;
 import com.buddyram.rframe.GroundingOdometry;
 import com.buddyram.rframe.Logger;
@@ -9,7 +10,6 @@ import com.buddyram.rframe.SmartLogWrapper;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicPositionDriveAdapter;
 import com.buddyram.rframe.drive.MecanumDriveTrain;
-import com.buddyram.rframe.ftc.ApriltagOdometry;
 import com.buddyram.rframe.ftc.LimelightOdometry;
 import com.buddyram.rframe.ftc.Motor;
 import com.buddyram.rframe.ftc.RPMMotor;
@@ -17,13 +17,13 @@ import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
+import com.buddyram.rframe.ftc.decode.indexer.DoubleSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.buddyram.rframe.ftc.decode.intake.Intake;
 import com.buddyram.rframe.ftc.decode.intake.TwoStageSweeper;
 import com.buddyram.rframe.ftc.decode.launcher.Feeder;
 import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
 import com.buddyram.rframe.ftc.decode.launcher.Launcher;
-import com.buddyram.rframe.ftc.decode.intake.Sweeper;
 import com.buddyram.rframe.ftc.decode.launcher.Turret;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
@@ -37,19 +37,10 @@ import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Position;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
-
-import java.util.HashSet;
-
 public abstract class BaseOpmode extends LinearOpMode {
     DecodeBot decodeBot;
+    CachedOdometry<Pose3D> cachedOdometry;
+
     public static final Pose3D DEFAULT_POSITION = new Pose3D( // pose
             new Vector3D(0, 0, 0), //            new Vector3D(0, 9, 0), // position
             new Vector3D(0, 0, 0), // rotation
@@ -60,18 +51,24 @@ public abstract class BaseOpmode extends LinearOpMode {
     public static Pose3D currentPosition = DEFAULT_POSITION;
     public void runOpMode() throws InterruptedException {
         this.initializeHardware();
-        this.waitForStart();
-
         Thread rememberLastPosition = new Thread(() -> {
             while(!Thread.currentThread().isInterrupted()) {
                 if (opModeIsActive()) {
-                    this.currentPosition = this.decodeBot.getOdometry().get();
+                    this.cachedOdometry.refresh();
+                    try {
+                        if (decodeBot.indexer.getCurrentMode() == Indexer.Mode.INTAKING) {
+                            decodeBot.indexer.ifFullGoToNext();
+                        }
+                    } catch (Exception e) {
+                        stop();
+                    }
                     Thread.yield();
                 }
             }
         });
         rememberLastPosition.setPriority(Thread.MIN_PRIORITY);
         rememberLastPosition.start();
+        this.waitForStart();
 
 
         try {
@@ -81,7 +78,10 @@ public abstract class BaseOpmode extends LinearOpMode {
         } finally {
             rememberLastPosition.interrupt();
             rememberLastPosition.join();
-            this.decodeBot.odometry.cleanup();
+            this.decodeBot.launcher.turret.setAngle(0);
+            this.cachedOdometry.cleanup();
+            Thread.sleep(100);
+
         }
 
     }
@@ -163,16 +163,16 @@ public abstract class BaseOpmode extends LinearOpMode {
             public boolean isActive() {
                 return opModeIsActive();
             }
-            @Override
-            public void adjustFlywheelSpeed() {
-                double dist = this.odometry.get().position.distance(this.targetGoal);
-                this.getLauncher().wheel.setRPM(2700 + Math.pow(dist, 1.3));
-            }
-            @Override
-            public void autoAim() throws RobotException {
-                Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
-                launcher.turret.setAngle(-(this.odometry.get().rotation.z - (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90)));
-            }
+//            @Override
+//            public void adjustFlywheelSpeed() {
+//                double dist = this.odometry.get().position.distance(this.targetGoal);
+//                this.getLauncher().wheel.setRPM(2700 + Math.pow(dist, 1.3));
+//            }
+//            @Override
+//            public void autoAim() throws RobotException {
+//                Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
+//                launcher.turret.setAngle(-(this.odometry.get().rotation.z - (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90)));
+//            }
         };
         MecanumDriveTrain drive = new MecanumDriveTrain(
                 new Motor(motorFL, -1),
@@ -183,9 +183,17 @@ public abstract class BaseOpmode extends LinearOpMode {
         );
 
         DcMotor indexMotor = hardwareMap.get(DcMotor.class, "idx");
-        RevColorSensorV3 distanceSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
-        distanceSensor.initialize();
-        ColorSensor sensor = new ColorSensor(null, distanceSensor);
+        RevColorSensorV3 colorSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
+        RevColorSensorV3 colorSensor2 = hardwareMap.get(RevColorSensorV3.class, "CSens2");
+        colorSensor.initialize();
+        colorSensor2.initialize();
+        ColorSensor sensor = new DoubleSensor(
+                null,
+                colorSensor,
+                1.2,
+                new int[]{123, 145, 175},
+                new ColorSensor(null, colorSensor2, 0.9, new int[]{138, 145, 170})
+        );
         indexMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         indexMotor.setTargetPosition(0);
         indexMotor.setPower(0.5);
@@ -194,26 +202,21 @@ public abstract class BaseOpmode extends LinearOpMode {
 
 
 
-
-        HolonomicPositionDriveAdapter adapter = new HolonomicPositionDriveAdapter(drive, groundingOdometry);
+        this.cachedOdometry = new CachedOdometry<>(groundingOdometry);
+        HolonomicPositionDriveAdapter adapter = new HolonomicPositionDriveAdapter(drive, this.cachedOdometry);
         adapter.init();
 
 
 
         DcMotorEx motorFly = hardwareMap.get(DcMotorEx.class, "LFly");
         motorFly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        motorFly.setDirection(DcMotorSimple.Direction.REVERSE);
         motorFly.setVelocity(0);
 
-        ServoImplEx servoFeed = hardwareMap.get(ServoImplEx.class, "LFeed");
-        servoFeed.setPwmRange(new PwmControl.PwmRange(500, 2500));
+        Servo servoFeed = hardwareMap.get(Servo.class, "LFeed");
         CRServo servoInt1 = hardwareMap.get(CRServo.class, "ints1");
         CRServo servoInt2 = hardwareMap.get(CRServo.class, "ints2");
         servoInt1.setPower(0);
         servoInt2.setPower(0);
-
-        RevColorSensorV3 colorSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
-        colorSensor.initialize();
         telemetry.addData("Status", "Initialized");
         DcMotor turret = hardwareMap.get(DcMotor.class, "turret");
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -224,7 +227,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                 this.decodeBot,
                 new Flywheel(this.decodeBot, new RPMMotor(motorFly, 28)),
                 new Feeder(this.decodeBot, servoFeed),
-                new ColorSensor(this.decodeBot, colorSensor),
+                sensor,
                 new Turret(this.decodeBot, turret)
         );
         launcher.feeder.setPosition(Feeder.CLOSE);
@@ -240,8 +243,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                 }
         );
         Intake intake = new Intake(this.decodeBot, new TwoStageSweeper(this.decodeBot, servoInt2, servoInt1));
-
-        this.decodeBot.init(logger, groundingOdometry, adapter, launcher, intake, limelight, isRed == 1, indexer);
+        this.decodeBot.init(logger, new CachedOdometry<>(groundingOdometry), adapter, launcher, intake, limelight, isRed == 1, indexer);
         while (! this.isStarted()) {
             telemetry.addData("POS", groundingOdometry.get());
             telemetry.update();

@@ -9,7 +9,7 @@ import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 public class LimelightOdometry implements Odometry<Pose3D> {
-    public static final int INIT_SAMPLE_COUNT = 100000;
+    public static final int INIT_SAMPLE_COUNT = 10000;
     Limelight3A limelight;
 
     Double yaw = null;

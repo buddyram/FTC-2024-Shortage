@@ -25,6 +25,7 @@ package org.firstinspires.ftc.teamcode;
 import android.graphics.Color;
 
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
+import com.buddyram.rframe.ftc.decode.indexer.DoubleSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -59,9 +60,20 @@ public class IndexerTest extends LinearOpMode {
         motor = hardwareMap.get(DcMotor.class, "idx");
         CRServo servo = hardwareMap.get(CRServo.class, "ints1");
         CRServo servo2 = hardwareMap.get(CRServo.class, "ints2");
-        RevColorSensorV3 distanceSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
-        distanceSensor.initialize();
-        ColorSensor sensor = new ColorSensor(null, distanceSensor);
+        RevColorSensorV3 colorSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
+        RevColorSensorV3 colorSensor2 = hardwareMap.get(RevColorSensorV3.class, "CSens2");
+        colorSensor.initialize();
+        colorSensor2.initialize();
+//        ColorSensor sensor = new ColorSensor(null, colorSensor);
+//        ColorSensor sensor2 = new ColorSensor(null, colorSensor2, 0.9, new int[]{138, 145, 170});
+        ColorSensor sensor = new DoubleSensor(
+            null,
+            colorSensor,
+            1.2,
+            new int[]{123, 145, 175},
+            new ColorSensor(null, colorSensor2, 0.9, new int[]{138, 145, 170})
+        );
+//        new DoubleSensor(null, colorSensor, sensor2);
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setTargetPosition(0);
         motor.setPower(0.5);
@@ -92,7 +104,7 @@ public class IndexerTest extends LinearOpMode {
 
             telemetry.addData("color", sensor.indexerBall());
             try {
-                indexer.ifFullGoToNext();
+//                indexer.ifFullGoToNext();
             } catch (Exception e) {
                 stop();
             }
@@ -149,7 +161,10 @@ public class IndexerTest extends LinearOpMode {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            telemetry.addData("distance", distanceSensor.getDistance(DistanceUnit.INCH));
+            telemetry.addData("sensor1", sensor.getColor());
+//            telemetry.addData("sensor2", sensor2.getColor());
+            telemetry.addData("distance1", colorSensor.getDistance(DistanceUnit.INCH));
+            telemetry.addData("distance2", colorSensor2.getDistance(DistanceUnit.INCH));
             telemetry.update();
         }
     }

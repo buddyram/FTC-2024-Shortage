@@ -8,21 +8,27 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.opencv.core.Mat;
 
 public class ColorSensor extends BaseComponent<DecodeBot> {
     public static final ColorHSV GREEN = new ColorHSV(144,67,53);
     public static final ColorHSV PURPLE = new ColorHSV(281,57,88);
-    private final int BLANK_HUE = 123;
-    private final int GREEN_HUE = 145;
-    private final int PURPLE_HUE = 175;
+    final int BLANK_HUE; // = 123;
+    final int GREEN_HUE; // = 145;
+    final int PURPLE_HUE; // = 175;
+    final double activationDistance;
     public enum ColorMatch {
         MATCH_GREEN,
         MATCH_PURPLE,
         NONE
     }
     public RevColorSensorV3 colorSensor;
-    public ColorSensor(DecodeBot robot, RevColorSensorV3 colorSensor) {
+    public ColorSensor(DecodeBot robot, RevColorSensorV3 colorSensor, double activationDistance, int[] colorMatches) {
         super(robot);
+        BLANK_HUE = colorMatches[0];
+        GREEN_HUE = colorMatches[1];
+        PURPLE_HUE = colorMatches[2];
+        this.activationDistance = activationDistance;
         this.colorSensor = colorSensor;
     }
     public ColorHSV getColor() {
@@ -45,8 +51,8 @@ public class ColorSensor extends BaseComponent<DecodeBot> {
                 colorSensor.blue(),
                 hsv
         );
-        if (colorSensor.getDistance(DistanceUnit.INCH) < 2) {
-            float best = 3232;
+        if (colorSensor.getDistance(DistanceUnit.INCH) < this.activationDistance) {
+            float best = Float.POSITIVE_INFINITY;
             float score = Math.abs(PURPLE_HUE - hsv[0]);
             if (score < best) {
                 currentColor = ColorSensor.ColorMatch.MATCH_PURPLE;

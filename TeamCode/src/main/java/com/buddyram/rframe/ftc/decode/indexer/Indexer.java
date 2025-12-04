@@ -11,6 +11,7 @@ public class Indexer extends BaseComponent<DecodeBot> {
     private int currentSlot = 0;
     private ColorMatch[] slots;
     private ColorSensor colorSensor;
+    private int offset;
 
     public Mode getCurrentMode() {
         return currentMode;
@@ -18,6 +19,11 @@ public class Indexer extends BaseComponent<DecodeBot> {
 
     public void setCurrentMode(Mode currentMode) {
         this.currentMode = currentMode;
+        if (this.currentMode == Mode.INTAKING) {
+            this.motor.setPower(0.5);
+        } else {
+            this.motor.setPower(0.35);
+        }
         this.goToSlot(currentSlot);
     }
 
@@ -37,19 +43,25 @@ public class Indexer extends BaseComponent<DecodeBot> {
     }
 
     private void goToAngle(double angle) {
-        this.motor.setTargetPosition((int) Math.floor(angle / 360.0 * tickPerRotation));
+        this.motor.setTargetPosition((int) Math.floor((angle + this.offset) / 360.0 * tickPerRotation));
     }
 
     public boolean isReady() {
-        return Math.abs(motor.getCurrentPosition() - motor.getTargetPosition()) < 20;
+        return Math.abs(motor.getCurrentPosition() - motor.getTargetPosition()) < 10;
     }
 
     public void goToSlot(int newSlot) {
+        if (this.currentSlot == 0 && newSlot == 2) {
+            offset -= 360;
+        }
+        if (this.currentSlot == 2 && newSlot == 0) {
+            offset += 360;
+        }
         this.currentSlot = newSlot;
         if (this.currentMode == Mode.INTAKING) {
             this.goToAngle(currentSlot * 120);
         } else if (this.currentMode == Mode.OUTTAKING) {
-            this.goToAngle(currentSlot * 120 + 210);
+            this.goToAngle(currentSlot * 120 - 67);
         }
     }
 
@@ -103,7 +115,7 @@ public class Indexer extends BaseComponent<DecodeBot> {
             if (isFull()) {
                 throw new Exception("full!!!");
             } else {
-                fillSlot(this.colorSensor.indexerBall() );
+                fillSlot(this.colorSensor.indexerBall());
                 goToSlot(getNearestEmpty());
             }
         }

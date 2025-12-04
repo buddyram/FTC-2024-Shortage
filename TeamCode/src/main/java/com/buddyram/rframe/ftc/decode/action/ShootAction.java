@@ -13,7 +13,7 @@ import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
 
 public class ShootAction implements RobotAction<DecodeBot> {
     public static final ConditionalWrapperAction<DecodeBot> WAIT_FOR_CORRECT_SPEED = new ConditionalWrapperAction<>(
-            (nothing) -> true, (drive) -> drive.getLauncher().wheel.isReady()
+            (nothing) -> true, (drive) -> drive.indexer.isReady() && drive.getLauncher().wheel.isReady()
     );
 
     public static final RobotAction<DecodeBot> spindexer = drive1 -> {
@@ -33,7 +33,7 @@ public class ShootAction implements RobotAction<DecodeBot> {
             Feeder.moveTo(Feeder.OPEN),
             BotUtils.wait(700),
             Feeder.moveTo(Feeder.CLOSE),
-            BotUtils.wait(700)
+            BotUtils.wait(1000)
     );
     public static final RobotAction<DecodeBot> spindexer2 = (drive) -> {
         try {
@@ -48,12 +48,11 @@ public class ShootAction implements RobotAction<DecodeBot> {
         new MultiAction<>(
                 new StopDrivingAction<>(),
                 spindexer,
+                BotUtils.wait(500),
                 WAIT_FOR_CORRECT_SPEED,
-                FEED,
-                spindexer2
+                FEED
         ).run(drive);
         drive.indexer.emptySlot();
-        drive.indexer.setCurrentMode(Indexer.Mode.INTAKING);
         return true;
     }
 }

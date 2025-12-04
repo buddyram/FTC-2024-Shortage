@@ -5,6 +5,7 @@ import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.RobotException;
+import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.actions.RobotAction;
@@ -25,7 +26,7 @@ import java.util.ArrayList;
 
 public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     public Logger logger;
-    public GroundingOdometry<Pose3D> odometry;
+    public Odometry<Pose3D> odometry;
     private static final Vector3D BLUE_GOAL = new Vector3D(12, 132, 0);
     private static final Vector3D RED_GOAL = new Vector3D(132, 132, 0);
     public boolean isRed;
@@ -60,7 +61,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
         this.init(logger, odometry, drive, launcher, intake, apriltagOdometry, isRed, indexer);
     }
 
-    public void init(Logger logger, GroundingOdometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake, Odometry<Pose3D> apriltagOdometry, boolean isRed, Indexer indexer) {
+    public void init(Logger logger, Odometry<Pose3D> odometry, HolonomicDriveTrain drive, Launcher launcher, Intake intake, Odometry<Pose3D> apriltagOdometry, boolean isRed, Indexer indexer) {
         this.logger = logger;
         this.odometry = odometry;
         this.drive = drive;
@@ -104,10 +105,10 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
     public void adjustFlywheelSpeed() {
         double dist = this.odometry.get().position.distance(this.targetGoal);
-        this.getLauncher().wheel.setRPM(2800 + Math.pow(dist, 1.3976));
+        this.getLauncher().wheel.setRPM((2800 + Math.pow(dist, 1.42)) / 2.15);
     }
 
-    public class AutoAimAction implements RobotAction<DecodeBot>  {
+    public static class AutoAimAction implements RobotAction<DecodeBot>  {
         @Override
         public boolean run(DecodeBot drive) throws RobotException {
             drive.autoAim();
@@ -116,7 +117,11 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
     public void autoAim() throws RobotException {
         Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
-        BotUtils.rotateTo(Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90).run(this);
+        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z) % 360;
+        angle = angle > 180 ? angle - 360 : angle;
+
+        this.launcher.turret.setAngle(-angle);
+//        BotUtils.rotateTo(Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90).run(this);
     }
 
     public HolonomicDriveInstruction calculateDriveInstruction(Vector3D target, double speed) {
@@ -128,10 +133,6 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
     }
 
-    public boolean syncOdometry() {
-        this.odometry.sync();
-        return true;
-    }
 
     public void controlIntake() {
         if (indexer.isFull()) {
@@ -241,9 +242,9 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //    }
 //
 //
-//    public void runAutonomous() throws RobotException, InterruptedException {
-//
-//        ArrayList<RobotAction<DecodeBot>> actions = new ArrayList<>();
+    public void runAutonomous() throws RobotException, InterruptedException {
+
+        ArrayList<RobotAction<DecodeBot>> actions = new ArrayList<>();
 //        actions.add(Flywheel.setRPMTo(3400));
 //        actions.add(BotUtils.wait(200));
 //
@@ -259,23 +260,23 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //        actions.add(this.shootClose());
 //        actions.add(this.intake(IntakeLocation.CLOSE, false));
 //        actions.add(this.shootClose());
-//
-//
-////        actions.add(intake1);
-////        actions.add(shootClose);
-////        actions.add(intake2);
-////        actions.add(shootClose);
-////        actions.add(Flywheel.setRPMTo(3800));
-////        actions.add(intake3);
-////        actions.add(shootFar);
-//        actions.add(BotUtils.rotateTo(0));
-//
-//        while (this.isActive() && !actions.isEmpty()) {
-//            if (actions.get(0).run(this)) {
-//                actions.remove(0);
-//                System.out.println("next!! " + actions.size());
-//            }
-//        }
-//    }
+
+
+//        actions.add(intake1);
+//        actions.add(shootClose);
+//        actions.add(intake2);
+//        actions.add(shootClose);
+//        actions.add(Flywheel.setRPMTo(3800));
+//        actions.add(intake3);
+//        actions.add(shootFar);
+        actions.add(BotUtils.rotateTo(0));
+
+        while (this.isActive() && !actions.isEmpty()) {
+            if (actions.get(0).run(this)) {
+                actions.remove(0);
+                System.out.println("next!! " + actions.size());
+            }
+        }
+    }
 
 }

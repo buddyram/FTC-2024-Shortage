@@ -7,6 +7,7 @@ import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
+import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -17,32 +18,41 @@ public class Teleop extends BaseOpmode {
     @Override
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
+        long lastTime = System.currentTimeMillis();
         while (this.decodeBot.isActive()) {
+            telemetry.addData("cycle time 0", System.currentTimeMillis() - lastTime);
+
             currentGamepad1.copy(gamepad1);
             telemetry.addData("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
             telemetry.addData("gamepad1 right stick", currentGamepad1.right_stick_x);
 
-            telemetry.addData("Color", this.decodeBot.getLauncher().sensor.getColor());
-            telemetry.addData("Match", this.decodeBot.getLauncher().sensor.findHueMatch());
-
-            if (currentGamepad1.right_trigger > 0) {
-                this.decodeBot.syncOdometry();
-            }
-
+            telemetry.addData("cycle time 1", System.currentTimeMillis() - lastTime);
             colorRumbleFlywheel(currentGamepad1);
+            telemetry.addData("cycle time 2", System.currentTimeMillis() - lastTime);
 
             if (currentGamepad1.right_bumper) {
                 gamepad1.setLedColor(0, 255 ,255, 1000);
                 new ShootAction().run(this.decodeBot);
+                this.decodeBot.indexer.setCurrentMode(Indexer.Mode.INTAKING);
             }
+            if (currentGamepad1.left_bumper) {
+                gamepad1.setLedColor(0, 255 ,255, 1000);
+                while (!this.decodeBot.indexer.isEmpty()) {
+                    new ShootAction().run(this.decodeBot);
+                }
+                this.decodeBot.indexer.setCurrentMode(Indexer.Mode.INTAKING);
+            }
+            telemetry.addData("cycle time 3", System.currentTimeMillis() - lastTime);
             this.decodeBot.adjustFlywheelSpeed();
+            telemetry.addData("cycle time 4", System.currentTimeMillis() - lastTime);
             this.decodeBot.controlIntake();
-
-            try {
-                decodeBot.indexer.ifFullGoToNext();
-            } catch (Exception e) {
-                stop();
-            }
+            telemetry.addData("cycle time 5", System.currentTimeMillis() - lastTime);
+//            try {
+//                decodeBot.indexer.ifFullGoToNext();
+//            } catch (Exception e) {
+//                stop();
+//            }
+            telemetry.addData("cycle time 6", System.currentTimeMillis() - lastTime);
 //            if (currentGamepad1.left_bumper) {
 //                this.decodeBot.getIntake().sweeper.setPower(-1);
 //            } else if (currentGamepad1.left_trigger > 0) {
@@ -50,18 +60,23 @@ public class Teleop extends BaseOpmode {
 //            } else {
 //                this.decodeBot.getIntake().sweeper.setPower(0);
 //            }
-
-            this.decodeBot.autoAim();
+            telemetry.addData("cycle time 7", System.currentTimeMillis() - lastTime);
+//            this.decodeBot.autoAim();
+            telemetry.addData("cycle time 8", System.currentTimeMillis() - lastTime);
             if (currentGamepad1.square) {
                 BotUtils.rotateTo(90).run(decodeBot);
             }
-
+            this.decodeBot.autoAim();
             runDriveControls(currentGamepad1);
-            telemetry.addData("AprilTag Position", this.decodeBot.getApriltagOdometry().get());
+            telemetry.addData("cycle time 9", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("AprilTag Position", this.decodeBot.getApriltagOdometry().get());
             telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
             telemetry.addData("Key", "(x, y, z), (roll, pitch, yaw), (!!!), (!!!)");
             telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
+            telemetry.addData("cycle time 10", System.currentTimeMillis() - lastTime);
             telemetry.update();
+            telemetry.addData("cycle time 11", System.currentTimeMillis() - lastTime);
+            lastTime = System.currentTimeMillis();
         }
     }
 
@@ -76,8 +91,8 @@ public class Teleop extends BaseOpmode {
     }
 
     private void runDriveControls(Gamepad currentGamepad1) throws RobotException {
-        double speed = 0.3;
-        if (currentGamepad1.left_stick_button) {
+        double speed = 0.8;
+        if (currentGamepad1.left_stick_button || currentGamepad1.right_stick_button) {
             speed = 1;
         }
 

@@ -5,8 +5,8 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 public class Turret extends BaseComponent<DecodeBot> {
-    public static final int MIN_ANGLE = -60;
-    public static final int MAX_ANGLE = 65;
+    public static final int MIN_ANGLE = -180;
+    public static final int MAX_ANGLE = 180;
     private final DcMotor motor;
 
     public Turret(DecodeBot robot, DcMotor motor) {
@@ -15,7 +15,7 @@ public class Turret extends BaseComponent<DecodeBot> {
     }
 
     private void setPosition(double angle) {
-        motor.setTargetPosition((int) Math.floor(angle/((21 / 56.0 * 360)/(-459.0))));
+        motor.setTargetPosition((int) Math.floor(angle / 360.0 * 28 * 3.61 * 5.23 * 67 / 31));
     }
 
     public void setAngle (double newAngle) {

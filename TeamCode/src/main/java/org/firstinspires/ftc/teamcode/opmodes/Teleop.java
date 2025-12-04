@@ -7,6 +7,7 @@ import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -25,7 +26,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
-
+@Disabled
 @TeleOp(name = "Teleop-DECODE", group = "Comp")
 public class Teleop extends BaseOpmode {
     private static final boolean USE_WEBCAM = true;  // true for webcam, false for phone camera
@@ -49,7 +50,7 @@ public class Teleop extends BaseOpmode {
             telemetry.addData("Match", this.decodeBot.getLauncher().sensor.findHueMatch());
 
             if (currentGamepad1.right_trigger > 0) {
-                this.decodeBot.syncOdometry();
+//                this.decodeBot.syncOdometry();
             }
 
             colorRumbleFlywheel(currentGamepad1);

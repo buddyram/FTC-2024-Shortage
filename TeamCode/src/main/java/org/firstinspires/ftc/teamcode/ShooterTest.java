@@ -51,7 +51,7 @@ public class ShooterTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
         telemetry.addData("Status", "Initialized");
-        motor = hardwareMap.get(DcMotor.class, "motor");
+        motor = hardwareMap.get(DcMotor.class, "turret");
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setTargetPosition(0);
         motor.setPower(0.7);
@@ -70,15 +70,19 @@ public class ShooterTest extends LinearOpMode {
 
         while (opModeIsActive()) {
             telemetry.addData("angles ypr", imu.getRobotYawPitchRollAngles().getYaw());
+            telemetry.addData("k", k);
             telemetry.update();
-            k = imu.getRobotYawPitchRollAngles().getYaw();
-            if (k > 90) {
-                k = 90;
+//            k = imu.getRobotYawPitchRollAngles().getYaw();
+            if (gamepad1.triangle) {
+                k += 1;
             }
-            if (k < -90) {
-                k = -90;
+            if (gamepad1.cross) {
+                k -= 1;
             }
-            int m = (int) Math.floor(k / 360.0 * 28 * 2.89 * 5.23 * 56 / 24);
+            k = Math.min(k, 180);
+            k = Math.max(k, -180);
+
+            int m = (int) Math.floor(k / 360.0 * 28 * 3.61 * 5.23 * 67 / 31);
             motor.setTargetPosition(m);
         }
     }

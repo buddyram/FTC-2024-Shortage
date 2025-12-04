@@ -165,7 +165,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                 this.decodeBot,
                 new Flywheel(this.decodeBot, new RPMMotor(motorFly, 28)),
                 new Feeder(this.decodeBot, servoFeed),
-                new ColorSensor(this.decodeBot, colorSensor),
+                new ColorSensor(this.decodeBot, colorSensor, 1.2, new int[3]),
                 null
         );
         Logger logger = new SmartLogWrapper(
