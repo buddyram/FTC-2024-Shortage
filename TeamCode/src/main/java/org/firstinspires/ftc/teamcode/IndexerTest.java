@@ -43,11 +43,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp(name="Servo Extended Example", group="Concept")
 public class IndexerTest extends LinearOpMode {
-    public final int GREEN_HUE = 145;
-    public final int PURPLE_HUE = 175;
-    public final int BLANK_HUE = 123;
-
-
     // Declare OpMode member.
     private DcMotor motor = null;
 
@@ -66,10 +61,10 @@ public class IndexerTest extends LinearOpMode {
         colorSensor2.initialize();
 //        ColorSensor sensor = new ColorSensor(null, colorSensor);
 //        ColorSensor sensor2 = new ColorSensor(null, colorSensor2, 0.9, new int[]{138, 145, 170});
-        ColorSensor sensor = new DoubleSensor(
+        DoubleSensor sensor = new DoubleSensor(
             null,
             colorSensor,
-            1.2,
+            2.5,
             new int[]{123, 145, 175},
             new ColorSensor(null, colorSensor2, 0.9, new int[]{138, 145, 170})
         );
@@ -161,7 +156,8 @@ public class IndexerTest extends LinearOpMode {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            telemetry.addData("sensor1", sensor.getColor());
+            telemetry.addData("sensorCOLOR", sensor.getColor());
+            telemetry.addData("sensor2COLOR", sensor.sensor2.getColor());
 //            telemetry.addData("sensor2", sensor2.getColor());
             telemetry.addData("distance1", colorSensor.getDistance(DistanceUnit.INCH));
             telemetry.addData("distance2", colorSensor2.getDistance(DistanceUnit.INCH));

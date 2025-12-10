@@ -4,16 +4,20 @@ import com.buddyram.rframe.GroundingOdometry;
 import com.buddyram.rframe.Logger;
 import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
+import com.buddyram.rframe.Robot;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.actions.RobotAction;
+import com.buddyram.rframe.actions.TimeoutWrapperAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.ftc.ApriltagOdometry;
+import com.buddyram.rframe.ftc.DriveTowardsAction;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
+import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.buddyram.rframe.ftc.decode.intake.Intake;
 import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
@@ -30,6 +34,9 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     private static final Vector3D BLUE_GOAL = new Vector3D(12, 132, 0);
     private static final Vector3D RED_GOAL = new Vector3D(132, 132, 0);
     public boolean isRed;
+    public ColorSensor.ColorMatch tgt;
+    public double turretOffset = 0;
+    public boolean jamFix = false;
 
     public Odometry<Pose3D> getApriltagOdometry() {
         return apriltagOdometry;
@@ -105,7 +112,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
     public void adjustFlywheelSpeed() {
         double dist = this.odometry.get().position.distance(this.targetGoal);
-        this.getLauncher().wheel.setRPM((2800 + Math.pow(dist, 1.42)) / 2.15);
+        this.getLauncher().wheel.setRPM((2800 + Math.pow(dist, 1.42)) / 2.25);
     }
 
     public static class AutoAimAction implements RobotAction<DecodeBot>  {
@@ -117,7 +124,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
     public void autoAim() throws RobotException {
         Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
-        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z) % 360;
+        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z) % 360 + turretOffset;
         angle = angle > 180 ? angle - 360 : angle;
 
         this.launcher.turret.setAngle(-angle);
@@ -135,6 +142,10 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 
 
     public void controlIntake() {
+        if (jamFix) {
+            this.intake.enableMode(Intake.Modes.IDLE);
+            return;
+        }
         if (indexer.isFull()) {
             this.intake.enableMode(Intake.Modes.IDLE);
         } else {
@@ -243,8 +254,62 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //
 //
     public void runAutonomous() throws RobotException, InterruptedException {
+        RobotAction<DecodeBot> SET_TO_INTAKING = new RobotAction<DecodeBot>() {
+            @Override
+            public boolean run(DecodeBot drive) throws RobotException {
+                drive.indexer.setCurrentMode(Indexer.Mode.INTAKING);
+                return true;
+            }
+        };
+        RobotAction<DecodeBot> SHOOT_ALL = drive -> {
+            while (!drive.indexer.isEmpty()) {
+                if (drive.indexer.getFullNum() == 1) {
+                    new ShootAction(200).run(drive);
+                } else {
+                    new ShootAction().run(drive);
+                }
+            }
+            return true;
+        };
+
 
         ArrayList<RobotAction<DecodeBot>> actions = new ArrayList<>();
+        // 49 88 shoot 49 90 46
+        // 45 83 int 37 83, 31 83, 18 83
+//        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(49, 88, 0), this.isRed), false));
+//        if (isRed) {
+//            actions.add(BotUtils.driveTowardsUntil(95, 88, (p) -> p.y < 108, 1));
+//        } else {
+//            actions.add(BotUtils.driveTowardsUntil(49, 88, (p) -> p.y < 108, 1));
+//        }
+//        actions.add(BotUtils.rotateTo(BotUtils.mirrorIfRed(90, this.isRed)));
+//        actions.add(SHOOT_ALL);
+        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(48, 20, 0), this.isRed), false));
+//        actions.add(SET_TO_INTAKING);
+//        if (isRed) {
+//            actions.add(BotUtils.driveTo(new Vector3D(49, 88, 0), false));
+//        } else {
+//            actions.add(BotUtils.driveTo(new Vector3D(49, 80, 0), false));
+//        }
+//        actions.add(BotUtils.rotateTo(90));
+//        actions.add(new TimeoutWrapperAction<>(BotUtils.driveToSlow(BotUtils.mirrorIfRed(new Vector3D(37, 80, 0), this.isRed), false), 2000));
+//        actions.add(new TimeoutWrapperAction<>(BotUtils.driveToSlow(BotUtils.mirrorIfRed(new Vector3D(31, 80, 0), this.isRed), false), 2000));
+//        actions.add(BotUtils.driveToSlow(BotUtils.mirrorIfRed(new Vector3D(18, 80, 0), this.isRed), false));
+//        if (isRed){
+//            actions.add(BotUtils.driveTowardsUntil(131, 88, (p) -> p.x > 118, 0.3));
+//            actions.add(BotUtils.wait(700));
+//            actions.add(BotUtils.driveTowardsUntil(131, 88, (p) -> p.x > 122, 0.5));
+//        } else {
+//            actions.add(BotUtils.driveTowardsUntil(13, 80, (p) -> p.x < 26, 0.3));
+//            actions.add(BotUtils.wait(700));
+//            actions.add(BotUtils.driveTowardsUntil(13, 80, (p) -> p.x < 22, 0.5));
+//        }
+//        actions.add(BotUtils.wait(1000));
+//        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(60, 108, 0), this.isRed), false));
+////        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(60, 85, 0), this.isRed), false));
+//        actions.add(BotUtils.rotateTo(BotUtils.mirrorIfRed(60, this.isRed)));
+//        actions.add(SHOOT_ALL);
+
 //        actions.add(Flywheel.setRPMTo(3400));
 //        actions.add(BotUtils.wait(200));
 //
@@ -269,14 +334,16 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //        actions.add(Flywheel.setRPMTo(3800));
 //        actions.add(intake3);
 //        actions.add(shootFar);
-        actions.add(BotUtils.rotateTo(0));
 
         while (this.isActive() && !actions.isEmpty()) {
             if (actions.get(0).run(this)) {
-                actions.remove(0);
                 System.out.println("next!! " + actions.size());
             }
+            actions.remove(0);
         }
+        this.launcher.turret.setAngle(0);
+        this.indexer.setCurrentMode(Indexer.Mode.INTAKING);
+        this.indexer.goToSlot(0);
     }
 
 }

@@ -9,21 +9,25 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.buddyram.rframe.ftc.decode.launcher.Feeder;
-import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
 
 public class ShootAction implements RobotAction<DecodeBot> {
+    private final int postFeedWaitTime;
+
+    public ShootAction() {
+        this(500);
+    }
+    public ShootAction(int postFeedWaitTimeMS) {
+        this.postFeedWaitTime = postFeedWaitTimeMS;
+    }
+
     public static final ConditionalWrapperAction<DecodeBot> WAIT_FOR_CORRECT_SPEED = new ConditionalWrapperAction<>(
             (nothing) -> true, (drive) -> drive.indexer.isReady() && drive.getLauncher().wheel.isReady()
     );
 
-    public static final RobotAction<DecodeBot> spindexer = drive1 -> {
+    public static final RobotAction<DecodeBot> PREPARE_SPINDEXER = drive1 -> {
         try {
             drive1.indexer.setCurrentMode(Indexer.Mode.OUTTAKING);
             drive1.indexer.goToSlot(drive1.indexer.getNearestFull());
-            new ConditionalWrapperAction<>(
-                    (m) -> true,
-                    (drive2) -> drive1.indexer.isReady()
-            ).run(drive1);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -32,25 +36,17 @@ public class ShootAction implements RobotAction<DecodeBot> {
     public static final MultiAction<DecodeBot> FEED = new MultiAction<>(
             Feeder.moveTo(Feeder.OPEN),
             BotUtils.wait(700),
-            Feeder.moveTo(Feeder.CLOSE),
-            BotUtils.wait(1000)
+            Feeder.moveTo(Feeder.CLOSE)
     );
-    public static final RobotAction<DecodeBot> spindexer2 = (drive) -> {
-        try {
-            drive.indexer.goToSlot(drive.indexer.getNearestFull());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        return true;
-    };
 
     public boolean run(DecodeBot drive) throws RobotException {
         new MultiAction<>(
                 new StopDrivingAction<>(),
-                spindexer,
+                PREPARE_SPINDEXER,
                 BotUtils.wait(500),
                 WAIT_FOR_CORRECT_SPEED,
-                FEED
+                FEED,
+                BotUtils.wait(postFeedWaitTime)
         ).run(drive);
         drive.indexer.emptySlot();
         return true;

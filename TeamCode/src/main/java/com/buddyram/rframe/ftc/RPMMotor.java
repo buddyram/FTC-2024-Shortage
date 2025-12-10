@@ -1,6 +1,7 @@
 package com.buddyram.rframe.ftc;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 
 
 public class RPMMotor {

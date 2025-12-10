@@ -4,7 +4,7 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 
 public class DoubleSensor extends ColorSensor {
-    private final ColorSensor sensor2;
+    public final ColorSensor sensor2;
     public DoubleSensor(DecodeBot robot, RevColorSensorV3 colorSensor, double activationDistance, int[] colorMatches, ColorSensor sensor2) {
         super(robot, colorSensor, activationDistance, colorMatches);
         this.sensor2 = sensor2;

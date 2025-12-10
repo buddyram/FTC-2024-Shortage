@@ -5,6 +5,8 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor.ColorMatch;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
+import java.util.Arrays;
+
 public class Indexer extends BaseComponent<DecodeBot> {
     private final DcMotor motor;
     private final double tickPerRotation;
@@ -45,6 +47,15 @@ public class Indexer extends BaseComponent<DecodeBot> {
     private void goToAngle(double angle) {
         this.motor.setTargetPosition((int) Math.floor((angle + this.offset) / 360.0 * tickPerRotation));
     }
+    public int getFullNum() {
+        int total = 0;
+        for (ColorMatch k : this.slots) {
+            if (k != ColorMatch.NONE) {
+                total++;
+            }
+        }
+        return total;
+    }
 
     public boolean isReady() {
         return Math.abs(motor.getCurrentPosition() - motor.getTargetPosition()) < 10;
@@ -61,7 +72,7 @@ public class Indexer extends BaseComponent<DecodeBot> {
         if (this.currentMode == Mode.INTAKING) {
             this.goToAngle(currentSlot * 120);
         } else if (this.currentMode == Mode.OUTTAKING) {
-            this.goToAngle(currentSlot * 120 - 67);
+            this.goToAngle(currentSlot * 120 - 75);
         }
     }
 
@@ -94,6 +105,21 @@ public class Indexer extends BaseComponent<DecodeBot> {
             }
         }
         throw new Exception("Error occurred. Indexer is not full, but could not find empty slot.");
+    }
+    public int getNearestBest(ColorMatch tgt) throws Exception {
+        if (this.isEmpty()) {
+            throw new Exception("Indexer is empty");
+        } else {
+            if (slots[0] == tgt) {
+                return 0;
+            } else if (slots[1] == tgt) {
+                return 1;
+            } else if (slots[2] == tgt) {
+                return 2;
+            } else {
+                return getNearestFull();
+            }
+        }
     }
     public int getNearestFull() throws Exception {
         if (this.isEmpty()) {

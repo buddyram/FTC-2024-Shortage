@@ -33,6 +33,8 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PIDCoefficients;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.PwmControl;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
@@ -62,6 +64,13 @@ public abstract class BaseOpmode extends LinearOpMode {
                     } catch (Exception e) {
                         stop();
                     }
+                    this.decodeBot.controlIntake();
+                    try {
+                        this.decodeBot.autoAim();
+                    } catch (RobotException e) {
+                        throw new RuntimeException(e);
+                    }
+                    this.decodeBot.adjustFlywheelSpeed();
                     Thread.yield();
                 }
             }
@@ -87,6 +96,16 @@ public abstract class BaseOpmode extends LinearOpMode {
     }
     public abstract void execute() throws RobotException, InterruptedException;
     public void initializeHardware() throws InterruptedException {
+        Boolean reset = null;
+        telemetry.addData("DID RUN AUTO? YES: SQUARE , NO: TRIANGLE", "");
+        telemetry.update();
+        while (reset == null) {
+            if (gamepad1.square) {
+                reset = false;
+            } else if (gamepad1.triangle) {
+                reset = true;
+            }
+        }
 
         Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");
 
@@ -181,6 +200,9 @@ public abstract class BaseOpmode extends LinearOpMode {
                 new Motor(motorBR, 1),
                 1
         );
+        Servo servoFeed = hardwareMap.get(Servo.class, "LFeed");
+        servoFeed.setPosition(0);
+        Thread.sleep(2000);
 
         DcMotor indexMotor = hardwareMap.get(DcMotor.class, "idx");
         RevColorSensorV3 colorSensor = hardwareMap.get(RevColorSensorV3.class, "CSens");
@@ -190,15 +212,17 @@ public abstract class BaseOpmode extends LinearOpMode {
         ColorSensor sensor = new DoubleSensor(
                 null,
                 colorSensor,
-                1.2,
+                2.5,
                 new int[]{123, 145, 175},
                 new ColorSensor(null, colorSensor2, 0.9, new int[]{138, 145, 170})
         );
-        indexMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if (reset) {
+            indexMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
         indexMotor.setTargetPosition(0);
         indexMotor.setPower(0.5);
         indexMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        Indexer indexer = new Indexer(null, indexMotor,  28 * 2.89 * 5.23, new ColorSensor.ColorMatch[]{ColorSensor.ColorMatch.NONE, ColorSensor.ColorMatch.NONE, ColorSensor.ColorMatch.NONE}, sensor);
+        Indexer indexer = new Indexer(null, indexMotor,  28 * 2.89 * 5.23, new ColorSensor.ColorMatch[]{ColorSensor.ColorMatch.MATCH_PURPLE, ColorSensor.ColorMatch.MATCH_PURPLE, ColorSensor.ColorMatch.MATCH_GREEN}, sensor);
 
 
 
@@ -211,15 +235,18 @@ public abstract class BaseOpmode extends LinearOpMode {
         DcMotorEx motorFly = hardwareMap.get(DcMotorEx.class, "LFly");
         motorFly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorFly.setVelocity(0);
+        PIDFCoefficients pidNew = new PIDFCoefficients(10, 5, 0, 0);
+        motorFly.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidNew);
 
-        Servo servoFeed = hardwareMap.get(Servo.class, "LFeed");
         CRServo servoInt1 = hardwareMap.get(CRServo.class, "ints1");
         CRServo servoInt2 = hardwareMap.get(CRServo.class, "ints2");
         servoInt1.setPower(0);
         servoInt2.setPower(0);
         telemetry.addData("Status", "Initialized");
         DcMotor turret = hardwareMap.get(DcMotor.class, "turret");
-        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        if (reset) {
+            turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        }
         turret.setTargetPosition(0);
         turret.setPower(0.5);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -231,6 +258,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                 new Turret(this.decodeBot, turret)
         );
         launcher.feeder.setPosition(Feeder.CLOSE);
+        PIDFCoefficients pidOrig = motorFly.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
         Logger logger = new SmartLogWrapper(
                 new BaseLogger() {
                     public void log(String caption, Object value) {
@@ -245,6 +273,8 @@ public abstract class BaseOpmode extends LinearOpMode {
         Intake intake = new Intake(this.decodeBot, new TwoStageSweeper(this.decodeBot, servoInt2, servoInt1));
         this.decodeBot.init(logger, new CachedOdometry<>(groundingOdometry), adapter, launcher, intake, limelight, isRed == 1, indexer);
         while (! this.isStarted()) {
+            telemetry.addData("P,I,D (orig)", "%.04f, %.04f, %.0f, %.04f",
+                    pidOrig.p, pidOrig.i, pidOrig.d, pidOrig.f);
             telemetry.addData("POS", groundingOdometry.get());
             telemetry.update();
         }

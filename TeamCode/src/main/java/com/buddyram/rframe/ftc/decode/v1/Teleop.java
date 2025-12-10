@@ -4,10 +4,15 @@ import android.annotation.SuppressLint;
 
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.actions.TimeoutWrapperAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.ftc.decode.BotUtils;
+import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
+import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
+import com.buddyram.rframe.ftc.decode.intake.Intake;
+import com.buddyram.rframe.ftc.decode.launcher.Feeder;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -31,19 +36,27 @@ public class Teleop extends BaseOpmode {
             telemetry.addData("cycle time 2", System.currentTimeMillis() - lastTime);
 
             if (currentGamepad1.right_bumper) {
-                gamepad1.setLedColor(0, 255 ,255, 1000);
-                new ShootAction().run(this.decodeBot);
-                this.decodeBot.indexer.setCurrentMode(Indexer.Mode.INTAKING);
-            }
-            if (currentGamepad1.left_bumper) {
-                gamepad1.setLedColor(0, 255 ,255, 1000);
-                while (!this.decodeBot.indexer.isEmpty()) {
-                    new ShootAction().run(this.decodeBot);
+                try {
+                    gamepad1.setLedColor(0, 255, 255, 1000);
+                    new TimeoutWrapperAction<>(new ShootAction(), 6000).run(this.decodeBot);
+                    this.decodeBot.launcher.feeder.setPosition(Feeder.CLOSE);
+                    Thread.sleep(500);
+                } catch (Exception e) {
+
                 }
                 this.decodeBot.indexer.setCurrentMode(Indexer.Mode.INTAKING);
             }
+//            if (currentGamepad1.left_bumper) {
+//                gamepad1.setLedColor(0, 255 ,255, 1000);
+//                while (!this.decodeBot.indexer.isEmpty()) {
+//                    new ShootAction().run(this.decodeBot);
+//                }
+//                this.decodeBot.indexer.setCurrentMode(Indexer.Mode.INTAKING);
+//            }
             telemetry.addData("cycle time 3", System.currentTimeMillis() - lastTime);
             this.decodeBot.adjustFlywheelSpeed();
+            this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
+            telemetry.addData("turretOffset", this.decodeBot.turretOffset);
             telemetry.addData("cycle time 4", System.currentTimeMillis() - lastTime);
             this.decodeBot.controlIntake();
             telemetry.addData("cycle time 5", System.currentTimeMillis() - lastTime);
@@ -63,9 +76,6 @@ public class Teleop extends BaseOpmode {
             telemetry.addData("cycle time 7", System.currentTimeMillis() - lastTime);
 //            this.decodeBot.autoAim();
             telemetry.addData("cycle time 8", System.currentTimeMillis() - lastTime);
-            if (currentGamepad1.square) {
-                BotUtils.rotateTo(90).run(decodeBot);
-            }
             this.decodeBot.autoAim();
             runDriveControls(currentGamepad1);
             telemetry.addData("cycle time 9", System.currentTimeMillis() - lastTime);
@@ -76,6 +86,7 @@ public class Teleop extends BaseOpmode {
             telemetry.addData("cycle time 10", System.currentTimeMillis() - lastTime);
             telemetry.update();
             telemetry.addData("cycle time 11", System.currentTimeMillis() - lastTime);
+            this.decodeBot.jamFix= gamepad1.left_bumper;
             lastTime = System.currentTimeMillis();
         }
     }

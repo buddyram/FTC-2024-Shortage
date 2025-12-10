@@ -38,7 +38,11 @@ public class BotUtils {
     }
 
     public static RobotAction<DecodeBot> driveTo(Vector3D target, boolean prerotation) {
-        return new DriveToAction<>(target, 0.5, prerotation);
+        return new DriveToAction<>(target, 0.5, (dist) -> dist > 20 ? 1 : 0.3, prerotation);
+    }
+
+    public static RobotAction<DecodeBot> driveToSlow(Vector3D target, boolean prerotation) {
+        return new DriveToAction<>(target, 0.5, (dist) -> 0.25,  prerotation);
     }
 
     public static RobotAction<DecodeBot> driveTowardsUntil(int x, int y, PositionalCondition condition, double speed) {
