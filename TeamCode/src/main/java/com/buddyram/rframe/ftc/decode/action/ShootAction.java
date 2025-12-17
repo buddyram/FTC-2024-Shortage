@@ -21,7 +21,7 @@ public class ShootAction implements RobotAction<DecodeBot> {
     }
 
     public static final ConditionalWrapperAction<DecodeBot> WAIT_FOR_CORRECT_SPEED = new ConditionalWrapperAction<>(
-            (nothing) -> true, (drive) -> drive.indexer.isReady() && drive.getLauncher().wheel.isReady()
+            (nothing) -> true, (drive) -> drive.indexer.isReady() && drive.getLauncher().wheel.isReady() && drive.getLauncher().turret.isReady()
     );
 
     public static final RobotAction<DecodeBot> PREPARE_SPINDEXER = drive1 -> {

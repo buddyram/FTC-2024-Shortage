@@ -139,6 +139,7 @@ public class Indexer extends BaseComponent<DecodeBot> {
     public void ifFullGoToNext() throws Exception {
         if (this.colorSensor.indexerBall() != ColorMatch.NONE && isReady()) {
             if (isFull()) {
+                goToSlot(2);
                 throw new Exception("full!!!");
             } else {
                 fillSlot(this.colorSensor.indexerBall());

@@ -15,6 +15,7 @@ import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.ftc.ApriltagOdometry;
+import com.buddyram.rframe.ftc.DriveToAction;
 import com.buddyram.rframe.ftc.DriveTowardsAction;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
@@ -52,6 +53,8 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public Intake intake;
+
+    public boolean aimOn = false;
 
     public Launcher getLauncher() {
         return launcher;
@@ -112,7 +115,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
     public void adjustFlywheelSpeed() {
         double dist = this.odometry.get().position.distance(this.targetGoal);
-        this.getLauncher().wheel.setRPM((2800 + Math.pow(dist, 1.42)) / 2.25);
+        this.getLauncher().wheel.setRPM((2800 + Math.pow(dist, 1.44)) / 2.25);
     }
 
     public static class AutoAimAction implements RobotAction<DecodeBot>  {
@@ -122,12 +125,16 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
             return true;
         }
     }
-    public void autoAim() throws RobotException {
+    public double autoAim() throws RobotException {
         Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
-        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z) % 360 + turretOffset;
+        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z + turretOffset) % 360;
         angle = angle > 180 ? angle - 360 : angle;
+        if (!aimOn) {
+            angle = 0;
+        }
 
-        this.launcher.turret.setAngle(-angle);
+        this.launcher.turret.setAngle(angle);
+        return angle;
 //        BotUtils.rotateTo(Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90).run(this);
     }
 
@@ -272,6 +279,15 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
             return true;
         };
 
+        RobotAction<DecodeBot> AIM_ON = drive -> {
+            drive.aimOn = true;
+            return true;
+        };
+        RobotAction<DecodeBot> AIM_OFF = drive -> {
+            drive.aimOn = false;
+            return true;
+        };
+
 
         ArrayList<RobotAction<DecodeBot>> actions = new ArrayList<>();
         // 49 88 shoot 49 90 46
@@ -284,7 +300,22 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //        }
 //        actions.add(BotUtils.rotateTo(BotUtils.mirrorIfRed(90, this.isRed)));
 //        actions.add(SHOOT_ALL);
-        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(48, 20, 0), this.isRed), false));
+        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(48, 84, 0), this.isRed), false));
+        actions.add(BotUtils.rotateTo(BotUtils.mirrorIfRed(90, this.isRed)));
+        actions.add(AIM_ON);
+        actions.add(SHOOT_ALL);
+        actions.add(AIM_OFF);
+        actions.add(SET_TO_INTAKING);
+        if (isRed) {
+            actions.add(BotUtils.driveTowardsUntil(144, 84, (p) -> p.x > 121, 0.4));
+        } else {
+            actions.add(BotUtils.driveTowardsUntil(0, 84, (p) -> p.x < 23, 0.4));
+        }
+        actions.add(BotUtils.wait(2000));
+        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(48, 84, 0), this.isRed), false));
+        actions.add(AIM_ON);
+        actions.add(SHOOT_ALL);
+        actions.add(AIM_OFF);
 //        actions.add(SET_TO_INTAKING);
 //        if (isRed) {
 //            actions.add(BotUtils.driveTo(new Vector3D(49, 88, 0), false));
@@ -306,7 +337,7 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //        }
 //        actions.add(BotUtils.wait(1000));
 //        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(60, 108, 0), this.isRed), false));
-////        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(60, 85, 0), this.isRed), false));
+//        actions.add(BotUtils.driveTo(BotUtils.mirrorIfRed(new Vector3D(60, 85, 0), this.isRed), false));
 //        actions.add(BotUtils.rotateTo(BotUtils.mirrorIfRed(60, this.isRed)));
 //        actions.add(SHOOT_ALL);
 

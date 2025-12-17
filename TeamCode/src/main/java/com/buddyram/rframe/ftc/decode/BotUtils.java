@@ -8,6 +8,7 @@ import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.drive.RotateToAction;
 import com.buddyram.rframe.ftc.DriveToAction;
 import com.buddyram.rframe.ftc.DriveToAndRotateAction;
+import com.buddyram.rframe.ftc.DriveToSmoothAction;
 import com.buddyram.rframe.ftc.intothedeep.ShortageBot;
 
 public class BotUtils {
@@ -38,7 +39,11 @@ public class BotUtils {
     }
 
     public static RobotAction<DecodeBot> driveTo(Vector3D target, boolean prerotation) {
-        return new DriveToAction<>(target, 0.5, (dist) -> dist > 20 ? 1 : 0.3, prerotation);
+        return new DriveToAction<>(target, 0.5, (dist) -> dist > 20 ? 1 : 0.2, prerotation);
+    }
+
+    public static RobotAction<DecodeBot> driveToSmooth(Vector3D target, boolean prerotation) {
+        return new DriveToSmoothAction<>(target, 0.5, prerotation);
     }
 
     public static RobotAction<DecodeBot> driveToSlow(Vector3D target, boolean prerotation) {

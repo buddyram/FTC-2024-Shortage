@@ -15,7 +15,11 @@ public class Turret extends BaseComponent<DecodeBot> {
     }
 
     private void setPosition(double angle) {
-        motor.setTargetPosition((int) Math.floor(angle / 360.0 * 28 * 3.61 * 5.23 * 67 / 31));
+        motor.setTargetPosition((int) Math.floor(angle / 360.0 * 28 * 363 / 20));
+    }
+
+    public boolean isReady() {
+        return Math.abs(motor.getTargetPosition() - motor.getCurrentPosition()) < 3;
     }
 
     public void setAngle (double newAngle) {

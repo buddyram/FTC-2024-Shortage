@@ -38,6 +38,7 @@ public class Teleop extends BaseOpmode {
             if (currentGamepad1.right_bumper) {
                 try {
                     gamepad1.setLedColor(0, 255, 255, 1000);
+                    this.decodeBot.aimOn = true;
                     new TimeoutWrapperAction<>(new ShootAction(), 6000).run(this.decodeBot);
                     this.decodeBot.launcher.feeder.setPosition(Feeder.CLOSE);
                     Thread.sleep(500);
@@ -73,20 +74,16 @@ public class Teleop extends BaseOpmode {
 //            } else {
 //                this.decodeBot.getIntake().sweeper.setPower(0);
 //            }
-            telemetry.addData("cycle time 7", System.currentTimeMillis() - lastTime);
 //            this.decodeBot.autoAim();
-            telemetry.addData("cycle time 8", System.currentTimeMillis() - lastTime);
-            this.decodeBot.autoAim();
+            double angle = this.decodeBot.autoAim();
+            telemetry.addData("angle", angle);
             runDriveControls(currentGamepad1);
-            telemetry.addData("cycle time 9", System.currentTimeMillis() - lastTime);
 //            telemetry.addData("AprilTag Position", this.decodeBot.getApriltagOdometry().get());
             telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
             telemetry.addData("Key", "(x, y, z), (roll, pitch, yaw), (!!!), (!!!)");
             telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
-            telemetry.addData("cycle time 10", System.currentTimeMillis() - lastTime);
             telemetry.update();
-            telemetry.addData("cycle time 11", System.currentTimeMillis() - lastTime);
-            this.decodeBot.jamFix= gamepad1.left_bumper;
+            this.decodeBot.jamFix = gamepad1.left_bumper;
             lastTime = System.currentTimeMillis();
         }
     }
@@ -109,19 +106,28 @@ public class Teleop extends BaseOpmode {
 
         if (currentGamepad1.dpad_up) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(0, 1, 0), speed));
+//            this.decodeBot.aimOn = false;
         } else if (currentGamepad1.dpad_down) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(0, -1, 0), speed));
+//            this.decodeBot.aimOn = false;
         } else if (currentGamepad1.dpad_right) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(1, 0, 0), speed));
+//            this.decodeBot.aimOn = false;
         } else if (currentGamepad1.dpad_left) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(-1, 0, 0), speed));
+//            this.decodeBot.aimOn = false;
+
         } else {
             double speedLevel = Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(currentGamepad1.left_stick_y, 2));
+            if (speedLevel > 0) {
+//                this.decodeBot.aimOn = false;
+            }
             decodeBot.getDrive().drive(new HolonomicDriveInstruction(
                     currentGamepad1.right_stick_x * speed,
                     speed * speedLevel,
                     Math.toDegrees(Math.atan2(-currentGamepad1.left_stick_y, currentGamepad1.left_stick_x)) + this.decodeBot.odometry.get().rotation.z
             ));
         }
+        this.decodeBot.aimOn = true;
     }
 }

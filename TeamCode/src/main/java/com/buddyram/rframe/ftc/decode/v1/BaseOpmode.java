@@ -201,7 +201,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                 1
         );
         Servo servoFeed = hardwareMap.get(Servo.class, "LFeed");
-        servoFeed.setPosition(0);
+        servoFeed.setPosition(0.3);
         Thread.sleep(2000);
 
         DcMotor indexMotor = hardwareMap.get(DcMotor.class, "idx");
@@ -235,7 +235,7 @@ public abstract class BaseOpmode extends LinearOpMode {
         DcMotorEx motorFly = hardwareMap.get(DcMotorEx.class, "LFly");
         motorFly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorFly.setVelocity(0);
-        PIDFCoefficients pidNew = new PIDFCoefficients(10, 5, 0, 0);
+        PIDFCoefficients pidNew = new PIDFCoefficients(354, 0, 0, 20);
         motorFly.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidNew);
 
         CRServo servoInt1 = hardwareMap.get(CRServo.class, "ints1");
@@ -248,7 +248,7 @@ public abstract class BaseOpmode extends LinearOpMode {
             turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         }
         turret.setTargetPosition(0);
-        turret.setPower(0.5);
+        turret.setPower(0.2);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Launcher launcher = new Launcher(
                 this.decodeBot,
