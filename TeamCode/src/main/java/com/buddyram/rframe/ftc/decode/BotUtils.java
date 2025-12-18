@@ -39,7 +39,7 @@ public class BotUtils {
     }
 
     public static RobotAction<DecodeBot> driveTo(Vector3D target, boolean prerotation) {
-        return new DriveToAction<>(target, 0.5, (dist) -> dist > 20 ? 1 : 0.2, prerotation);
+        return new DriveToAction<>(target, 0.5, (dist) -> dist > 20 ? 1 : 0.35, prerotation);
     }
 
     public static RobotAction<DecodeBot> driveToSmooth(Vector3D target, boolean prerotation) {

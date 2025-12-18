@@ -58,7 +58,12 @@ public class Indexer extends BaseComponent<DecodeBot> {
     }
 
     public boolean isReady() {
-        return Math.abs(motor.getCurrentPosition() - motor.getTargetPosition()) < 10;
+        return Math.abs(motor.getCurrentPosition() - motor.getTargetPosition()) < (this.currentMode == Mode.INTAKING ? 10 : 3);
+    }
+
+    public void resetOffset() {
+        this.offset = 0;
+        this.goToAngle(0);
     }
 
     public void goToSlot(int newSlot) {
@@ -72,7 +77,7 @@ public class Indexer extends BaseComponent<DecodeBot> {
         if (this.currentMode == Mode.INTAKING) {
             this.goToAngle(currentSlot * 120);
         } else if (this.currentMode == Mode.OUTTAKING) {
-            this.goToAngle(currentSlot * 120 - 75);
+            this.goToAngle(currentSlot * 120 - 68);
         }
     }
 

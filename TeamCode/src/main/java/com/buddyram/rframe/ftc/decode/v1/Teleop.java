@@ -75,6 +75,9 @@ public class Teleop extends BaseOpmode {
 //                this.decodeBot.getIntake().sweeper.setPower(0);
 //            }
 //            this.decodeBot.autoAim();
+            if (gamepad1.left_bumper) {
+                this.decodeBot.indexer.resetOffset();
+            }
             double angle = this.decodeBot.autoAim();
             telemetry.addData("angle", angle);
             runDriveControls(currentGamepad1);
