@@ -11,6 +11,11 @@ public class Indexer extends BaseComponent<DecodeBot> {
     private final DcMotor motor;
     private final double tickPerRotation;
     private int currentSlot = 0;
+
+    public ColorMatch[] getSlots() {
+        return slots;
+    }
+
     private ColorMatch[] slots;
     private ColorSensor colorSensor;
     private int offset;

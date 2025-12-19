@@ -16,6 +16,7 @@ import com.buddyram.rframe.ftc.RPMMotor;
 import com.buddyram.rframe.ftc.SparkFunOTOSOdometry;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
+import com.buddyram.rframe.ftc.decode.Globals;
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
 import com.buddyram.rframe.ftc.decode.indexer.DoubleSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
@@ -94,6 +95,8 @@ public abstract class BaseOpmode extends LinearOpMode {
         }
 
     }
+
+
     public abstract void execute() throws RobotException, InterruptedException;
     public void initializeHardware() throws InterruptedException {
         Boolean reset = null;
@@ -114,7 +117,12 @@ public abstract class BaseOpmode extends LinearOpMode {
         /*
          * Starts polling for data.
          */
-        limelight.init();
+        if (Globals.POSITION == null) {
+            limelight.init();
+        } else {
+            telemetry.addLine("Used Backup Position Value");
+            limelight.initWithBackup(Globals.POSITION.rotation.z);
+        }
 
 
 
@@ -126,16 +134,21 @@ public abstract class BaseOpmode extends LinearOpMode {
         motorFL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorBR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         motorBL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        telemetry.addLine("O for red and X for blue.");
-        telemetry.update();
         int isRed = -1;
-        while (isRed == -1) {
-            if (gamepad1.cross) {
-                isRed = 0;
+        if (Globals.IS_RED == null) {
+            telemetry.addLine("O for red and X for blue.");
+            telemetry.update();
+            while (isRed == -1) {
+                if (gamepad1.cross) {
+                    isRed = 0;
+                }
+                if (gamepad1.circle) {
+                    isRed = 1;
+                }
             }
-            if (gamepad1.circle) {
-                isRed = 1;
-            }
+            Globals.IS_RED = isRed == 1;
+        } else {
+            isRed = Globals.IS_RED ? 1 : 0;
         }
         telemetry.addData("isRed", isRed);
 
@@ -146,8 +159,14 @@ public abstract class BaseOpmode extends LinearOpMode {
         if (!otosOdometry.init()) {
             telemetry.addData("OTOS", "Failed");
         }
-        otosOdometry.setPosition(limelight.get());
-        telemetry.addData("OTOS", "Yay!!s");
+        try {
+            otosOdometry.setPosition(limelight.get());
+            telemetry.addData("OTOS", "used limelight");
+        } catch (RuntimeException e) {
+            telemetry.addData("OTOS", "used cached");
+            otosOdometry.setPosition(Globals.POSITION);
+        }
+
         telemetry.update();
 
 //        AprilTagProcessor aprilTagProcessor = new AprilTagProcessor.Builder().setCameraPose(
@@ -222,7 +241,7 @@ public abstract class BaseOpmode extends LinearOpMode {
         indexMotor.setTargetPosition(0);
         indexMotor.setPower(0.5);
         indexMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        Indexer indexer = new Indexer(null, indexMotor,  28 * 2.89 * 5.23, new ColorSensor.ColorMatch[]{ColorSensor.ColorMatch.MATCH_PURPLE, ColorSensor.ColorMatch.MATCH_PURPLE, ColorSensor.ColorMatch.MATCH_GREEN}, sensor);
+        Indexer indexer = new Indexer(null, indexMotor,  28 * 2.89 * 5.23, Globals.INDEXER, sensor);
 
 
 

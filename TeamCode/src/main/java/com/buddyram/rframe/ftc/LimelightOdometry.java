@@ -57,6 +57,24 @@ public class LimelightOdometry implements Odometry<Pose3D> {
         return true;
     }
 
+    public boolean initWithBackup(double yawBackup) {
+        this.limelight.start();
+        if (!this.limelight.isRunning()) {
+            throw new RuntimeException("Not Running!!");
+        }
+        try {
+            try {
+                this.updateOrientation(calculateStartingYaw());
+                return true;
+            } catch (RuntimeException e) {
+                this.updateOrientation(yawBackup);
+                return false;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public double calculateStartingYaw() throws Exception {
         double total = 0;
         int samples = 0;

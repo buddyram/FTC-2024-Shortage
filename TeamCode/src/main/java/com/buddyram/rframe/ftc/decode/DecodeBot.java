@@ -261,6 +261,12 @@ public class DecodeBot implements Navigatable<HolonomicDriveTrain> {
 //    }
 //
 //
+
+    public void updateGlobals() {
+        Globals.POSITION = this.odometry.get();
+        Globals.INDEXER = this.indexer.getSlots();
+    }
+
     public void runAutonomous(boolean close) throws RobotException, InterruptedException {
         RobotAction<DecodeBot> SET_TO_INTAKING = new RobotAction<DecodeBot>() {
             @Override
