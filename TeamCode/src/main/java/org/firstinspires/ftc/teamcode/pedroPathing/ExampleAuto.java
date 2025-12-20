@@ -1,22 +1,11 @@
 package org.firstinspires.ftc.teamcode.pedroPathing; // make sure this aligns with class location
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierCurve;
-import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.CoordinateSystem;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.bylazar.configurables.PanelsConfigurables;
-import com.bylazar.configurables.annotations.Configurable;
-import com.bylazar.configurables.annotations.IgnoreConfigurable;
-import com.bylazar.field.FieldManager;
-import com.bylazar.field.PanelsField;
-import com.bylazar.field.Style;
-import com.bylazar.telemetry.PanelsTelemetry;
-import com.bylazar.telemetry.TelemetryManager;
 
 @Autonomous(name = "Example Auto", group = "Examples")
 public class ExampleAuto extends OpMode {
@@ -26,11 +15,7 @@ public class ExampleAuto extends OpMode {
 
     private int pathState;
     private final Pose startPose = new Pose(19.531, 117.011, Math.toRadians(0)); // Start Pose of our robot.
-    Paths Paths;
-
-    public void buildPaths() {
-
-    }
+    Paths paths;
 
     public void autonomousPathUpdate() throws InterruptedException {
         switch (pathState) {
@@ -48,12 +33,14 @@ public class ExampleAuto extends OpMode {
                 if (!follower.isBusy()) {
                     Thread.sleep(1000);
                     setPathState(3);
+                    follower.setMaxPower(0.3);
                 }
                 break;
             case 3:
                 if (!follower.isBusy()) {
                     Thread.sleep(1000);
                     setPathState(4);
+                    follower.setMaxPower(1);
                 }
                 break;
 
@@ -68,7 +55,9 @@ public class ExampleAuto extends OpMode {
     /** These change the states of the paths and actions. It will also reset the timers of the individual switches **/
     public void setPathState(int pState) {
         pathState = pState;
-        follower.followPath(Paths.getPath(pState));
+        if (pState >= 1) {
+            follower.followPath(paths.getPath(pState));
+        }
         pathTimer.resetTimer();
     }
 
@@ -92,7 +81,6 @@ public class ExampleAuto extends OpMode {
         telemetry.addData("heading", follower.getPose().getHeading());
         telemetry.update();
     }
-
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
@@ -102,14 +90,29 @@ public class ExampleAuto extends OpMode {
 
 
         follower = Constants.createFollower(hardwareMap);
-        buildPaths();
+        this.paths = new Paths(follower);
         follower.setStartingPose(startPose);
 
     }
 
-    /** This method is called continuously after Init while waiting for "play". **/
-    @Override
-    public void init_loop() {}
+    public Pose getRobotPoseFromCamera() {
+//        camera.
+        return new Pose().getAsCoordinateSystem(new CoordinateSystem() {
+            @Override
+            public Pose convertToPedro(Pose pose) {
+                double angle = (pose.getHeading() + 90) % 360;
+                angle = angle < 0 ? angle + 360 : angle;
+                return new Pose(pose.getX(), pose.getY(), angle);
+            }
+
+            @Override
+            public Pose convertFromPedro(Pose pose) {
+                double angle = (pose.getHeading() - 90) % 360;
+                angle = angle < 0 ? angle + 360 : angle;
+                return new Pose(pose.getX(), pose.getY(), angle);
+            }
+        });
+    }
 
     /** This method is called once at the start of the OpMode.
      * It runs all the setup actions, including building paths and starting the path system **/
@@ -118,75 +121,6 @@ public class ExampleAuto extends OpMode {
         opmodeTimer.resetTimer();
         setPathState(0);
     }
-
-    /** We do not use this because everything should automatically disable **/
-    @Override
-    public void stop() {}
-
-
-
-    public static class Paths {
-
-        public PathChain Path1;
-        public PathChain Path2;
-        public PathChain Path3;
-        public PathChain Path4;
-
-        public Paths(Follower follower) {
-            Path1 = follower
-                    .pathBuilder()
-                    .addPath(
-                            new BezierCurve(
-                                    new Pose(19.531, 117.011),
-                                    new Pose(54.866, 109.199),
-                                    new Pose(55.398, 96.947)
-                            )
-                    )
-                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-180))
-                    .build();
-
-            Path2 = follower
-                    .pathBuilder()
-                    .addPath(
-                            new BezierCurve(
-                                    new Pose(55.398, 96.947),
-                                    new Pose(56.464, 82.920),
-                                    new Pose(44.567, 83.453)
-                            )
-                    )
-                    .setConstantHeadingInterpolation(Math.toRadians(180))
-                    .build();
-
-            Path3 = follower
-                    .pathBuilder()
-                    .addPath(
-                            new BezierLine(new Pose(44.567, 83.453), new Pose(23.970, 83.453))
-                    )
-                    .setTangentHeadingInterpolation()
-                    .build();
-
-            Path4 = follower
-                    .pathBuilder()
-                    .addPath(
-                            new BezierCurve(
-                                    new Pose(23.970, 83.453),
-                                    new Pose(36.755, 82.742),
-                                    new Pose(47.763, 87.536)
-                            )
-                    )
-                    .setTangentHeadingInterpolation()
-                    .setReversed()
-                    .build();
-        }
-        private PathChain[] paths;
-        public Paths () {
-            paths = new PathChain[]{Path1, Path2, Path3, Path4};
-        }
-        public PathChain getPath(int i) {
-            return paths[i];
-        }
-    }
-
 
 }
 
