@@ -11,7 +11,6 @@ import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 public class ExampleAuto extends OpMode {
 
     private Follower follower;
-    private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
     private final Pose startPose = new Pose(19.531, 117.011, Math.toRadians(0)); // Start Pose of our robot.
@@ -58,7 +57,7 @@ public class ExampleAuto extends OpMode {
         if (pState >= 1) {
             follower.followPath(paths.getPath(pState));
         }
-        pathTimer.resetTimer();
+//        pathTimer.resetTimer();
     }
 
     /** This is the main loop of the OpMode, it will run repeatedly after clicking "Play". **/
@@ -84,10 +83,6 @@ public class ExampleAuto extends OpMode {
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
-        pathTimer = new Timer();
-        opmodeTimer = new Timer();
-        opmodeTimer.resetTimer();
-
 
         follower = Constants.createFollower(hardwareMap);
         this.paths = new Paths(follower);
@@ -118,7 +113,7 @@ public class ExampleAuto extends OpMode {
      * It runs all the setup actions, including building paths and starting the path system **/
     @Override
     public void start() {
-        opmodeTimer.resetTimer();
+
         setPathState(0);
     }
 
