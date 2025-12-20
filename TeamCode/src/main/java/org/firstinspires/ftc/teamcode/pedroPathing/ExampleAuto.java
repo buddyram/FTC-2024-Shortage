@@ -25,34 +25,38 @@ public class ExampleAuto extends OpMode {
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
-    private final Pose startPose = new Pose(23.615289765721332, 119.3193588162762, Math.toRadians(0)); // Start Pose of our robot.
-    PathChain Path1;
-    PathChain Path2;
+    private final Pose startPose = new Pose(19.531, 117.011, Math.toRadians(0)); // Start Pose of our robot.
+    Paths Paths;
 
     public void buildPaths() {
-        Path1 = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierCurve(
-                                new Pose(23.615, 119.319),
-                                new Pose(39.773, 107.423),
-                                new Pose(58.417, 83.985)
-                        )
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
-                .build();
+
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() throws InterruptedException {
         switch (pathState) {
             case 0:
-                if (!follower.isBusy()) {
-                    follower.followPath(Path1);
-//                    setPathState(1);
-                }
+                Thread.sleep(1000);
+                setPathState(1);
                 break;
             case 1:
+                if (!follower.isBusy()) {
+                    Thread.sleep(1000);
+                    setPathState(2);
+                }
                 break;
+            case 2:
+                if (!follower.isBusy()) {
+                    Thread.sleep(1000);
+                    setPathState(3);
+                }
+                break;
+            case 3:
+                if (!follower.isBusy()) {
+                    Thread.sleep(1000);
+                    setPathState(4);
+                }
+                break;
+
             /* You could check for
             - Follower State: "if(!follower.isBusy()) {}"
             - Time: "if(pathTimer.getElapsedTimeSeconds() > 1) {}"
@@ -64,6 +68,7 @@ public class ExampleAuto extends OpMode {
     /** These change the states of the paths and actions. It will also reset the timers of the individual switches **/
     public void setPathState(int pState) {
         pathState = pState;
+        follower.followPath(Paths.getPath(pState));
         pathTimer.resetTimer();
     }
 
@@ -73,7 +78,12 @@ public class ExampleAuto extends OpMode {
 
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
-        autonomousPathUpdate();
+        try {
+            autonomousPathUpdate();
+        } catch (InterruptedException e) {
+
+
+        }
 
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
@@ -112,4 +122,71 @@ public class ExampleAuto extends OpMode {
     /** We do not use this because everything should automatically disable **/
     @Override
     public void stop() {}
+
+
+
+    public static class Paths {
+
+        public PathChain Path1;
+        public PathChain Path2;
+        public PathChain Path3;
+        public PathChain Path4;
+
+        public Paths(Follower follower) {
+            Path1 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierCurve(
+                                    new Pose(19.531, 117.011),
+                                    new Pose(54.866, 109.199),
+                                    new Pose(55.398, 96.947)
+                            )
+                    )
+                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(-180))
+                    .build();
+
+            Path2 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierCurve(
+                                    new Pose(55.398, 96.947),
+                                    new Pose(56.464, 82.920),
+                                    new Pose(44.567, 83.453)
+                            )
+                    )
+                    .setConstantHeadingInterpolation(Math.toRadians(180))
+                    .build();
+
+            Path3 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierLine(new Pose(44.567, 83.453), new Pose(23.970, 83.453))
+                    )
+                    .setTangentHeadingInterpolation()
+                    .build();
+
+            Path4 = follower
+                    .pathBuilder()
+                    .addPath(
+                            new BezierCurve(
+                                    new Pose(23.970, 83.453),
+                                    new Pose(36.755, 82.742),
+                                    new Pose(47.763, 87.536)
+                            )
+                    )
+                    .setTangentHeadingInterpolation()
+                    .setReversed()
+                    .build();
+        }
+        private PathChain[] paths;
+        public Paths () {
+            paths = new PathChain[]{Path1, Path2, Path3, Path4};
+        }
+        public PathChain getPath(int i) {
+            return paths[i];
+        }
+    }
+
+
 }
+
