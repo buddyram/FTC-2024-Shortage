@@ -58,6 +58,7 @@ public abstract class BaseOpmode extends LinearOpMode {
             while(!Thread.currentThread().isInterrupted()) {
                 if (opModeIsActive()) {
                     this.cachedOdometry.refresh();
+                    this.decodeBot.updateGlobals();
                     try {
                         if (decodeBot.indexer.getCurrentMode() == Indexer.Mode.INTAKING) {
                             decodeBot.indexer.ifFullGoToNext();
@@ -100,14 +101,19 @@ public abstract class BaseOpmode extends LinearOpMode {
     public abstract void execute() throws RobotException, InterruptedException;
     public void initializeHardware() throws InterruptedException {
         Boolean reset = null;
-        telemetry.addData("DID RUN AUTO? YES: SQUARE , NO: TRIANGLE", "");
-        telemetry.update();
-        while (reset == null) {
-            if (gamepad1.square) {
-                reset = false;
-            } else if (gamepad1.triangle) {
-                reset = true;
+        if (Globals.DID_RUN_AUTO == null) {
+            telemetry.addData("DID RUN AUTO? YES: SQUARE , NO: TRIANGLE", "");
+            telemetry.update();
+            while (reset == null) {
+                if (gamepad1.square) {
+                    reset = false;
+                } else if (gamepad1.triangle) {
+                    reset = true;
+                }
             }
+        } else {
+            telemetry.addData("USED CACHE", "");
+            reset = Globals.DID_RUN_AUTO;
         }
 
         Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");

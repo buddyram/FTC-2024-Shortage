@@ -20,12 +20,22 @@ public class Constants {
             .mass(9.93)
             .forwardZeroPowerAcceleration(-24.79)
             .lateralZeroPowerAcceleration(-69.123)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0.00003, 0.00, 0.020))
-            .headingPIDFCoefficients(new PIDFCoefficients(0.2, 0, 0.01, 0.01))
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0.027))
+            .headingPIDFCoefficients(new PIDFCoefficients(0.5, 0, 0.05, 0.025))
 //            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.5,0.0,0.00001,0.1,0.01))
-            .centripetalScaling(0.004);
+            .centripetalScaling(0.0005)
+            .holdPointTranslationalScaling(0.25)
+            .holdPointHeadingScaling(0.2);
 
-    public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
+    public static PathConstraints pathConstraints = new PathConstraints(
+            0.99,
+            0.5,
+            0.5,
+            0.02,
+            150,
+            1.0,
+            10,
+            0.8);
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)

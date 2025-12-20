@@ -8,6 +8,7 @@ import com.buddyram.rframe.actions.TimeoutWrapperAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.ftc.decode.BotUtils;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
+import com.buddyram.rframe.ftc.decode.Globals;
 import com.buddyram.rframe.ftc.decode.action.ShootAction;
 import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
@@ -23,22 +24,34 @@ public class Teleop extends BaseOpmode {
     @Override
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
-        long lastTime = System.currentTimeMillis();
+//        long lastTime = System.currentTimeMillis();
+        Globals.DID_RUN_AUTO = false;
         while (this.decodeBot.isActive()) {
-            telemetry.addData("cycle time 0", System.currentTimeMillis() - lastTime);
+
+
+
+
+//            telemetry.addData("cycle time 0", System.currentTimeMillis() - lastTime);
 
             currentGamepad1.copy(gamepad1);
             telemetry.addData("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
             telemetry.addData("gamepad1 right stick", currentGamepad1.right_stick_x);
 
-            telemetry.addData("cycle time 1", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("cycle time 1", System.currentTimeMillis() - lastTime);
             colorRumbleFlywheel(currentGamepad1);
-            telemetry.addData("cycle time 2", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("cycle time 2", System.currentTimeMillis() - lastTime);
+
+            if (currentGamepad1.square) {
+                this.decodeBot.aimOn = false;
+            }
+            if (currentGamepad1.circle) {
+                this.decodeBot.aimOn = true;
+            }
 
             if (currentGamepad1.right_bumper) {
                 try {
                     gamepad1.setLedColor(0, 255, 255, 1000);
-                    this.decodeBot.aimOn = true;
+//                    this.decodeBot.aimOn = true;
                     new TimeoutWrapperAction<>(new ShootAction(), 6000).run(this.decodeBot);
                     this.decodeBot.launcher.feeder.setPosition(Feeder.CLOSE);
                     Thread.sleep(500);
@@ -54,19 +67,19 @@ public class Teleop extends BaseOpmode {
 //                }
 //                this.decodeBot.indexer.setCurrentMode(Indexer.Mode.INTAKING);
 //            }
-            telemetry.addData("cycle time 3", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("cycle time 3", System.currentTimeMillis() - lastTime);
             this.decodeBot.adjustFlywheelSpeed();
             this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
             telemetry.addData("turretOffset", this.decodeBot.turretOffset);
-            telemetry.addData("cycle time 4", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("cycle time 4", System.currentTimeMillis() - lastTime);
             this.decodeBot.controlIntake();
-            telemetry.addData("cycle time 5", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("cycle time 5", System.currentTimeMillis() - lastTime);
 //            try {
 //                decodeBot.indexer.ifFullGoToNext();
 //            } catch (Exception e) {
 //                stop();
 //            }
-            telemetry.addData("cycle time 6", System.currentTimeMillis() - lastTime);
+//            telemetry.addData("cycle time 6", System.currentTimeMillis() - lastTime);
 //            if (currentGamepad1.left_bumper) {
 //                this.decodeBot.getIntake().sweeper.setPower(-1);
 //            } else if (currentGamepad1.left_trigger > 0) {
@@ -87,7 +100,7 @@ public class Teleop extends BaseOpmode {
             telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
             telemetry.update();
             this.decodeBot.jamFix = gamepad1.left_bumper;
-            lastTime = System.currentTimeMillis();
+//            lastTime = System.currentTimeMillis();
         }
     }
 

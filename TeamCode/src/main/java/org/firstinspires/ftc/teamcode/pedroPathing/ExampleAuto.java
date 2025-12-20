@@ -25,7 +25,7 @@ public class ExampleAuto extends OpMode {
     private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
-    private final Pose startPose = new Pose(72, 72, Math.toRadians(90)); // Start Pose of our robot.
+    private final Pose startPose = new Pose(23.615289765721332, 119.3193588162762, Math.toRadians(0)); // Start Pose of our robot.
     PathChain Path1;
     PathChain Path2;
 
@@ -34,35 +34,25 @@ public class ExampleAuto extends OpMode {
                 .pathBuilder()
                 .addPath(
                         new BezierCurve(
-                                new Pose(71.734, 71.556),
-                                new Pose(71.379, 84.340),
-                                new Pose(72.089, 95.527)
+                                new Pose(23.615, 119.319),
+                                new Pose(39.773, 107.423),
+                                new Pose(58.417, 83.985)
                         )
                 )
-                .setConstantHeadingInterpolation(Math.toRadians(0))
-                .build();
-
-        Path2 = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(72.089, 95.527), new Pose(72.089, 95.527))
-                )
-                .setLinearHeadingInterpolation(
-                        Math.toRadians(0),
-                        Math.toRadians(0)
-                )
+                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(180))
                 .build();
     }
 
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0:
-                follower.followPath(Path1);
-//                setPathState(1);
+                if (!follower.isBusy()) {
+                    follower.followPath(Path1);
+//                    setPathState(1);
+                }
                 break;
             case 1:
-                follower.followPath(Path2);
-
+                break;
             /* You could check for
             - Follower State: "if(!follower.isBusy()) {}"
             - Time: "if(pathTimer.getElapsedTimeSeconds() > 1) {}"
