@@ -15,6 +15,7 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
+    public boolean block = true;
     public Logger logger;
     public Odometry<Pose3D> odometry;
     private static final Vector3D BLUE_GOAL = new Vector3D(12, 132, 0);
@@ -97,7 +98,12 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
     public void adjustFlywheelSpeed() {
         double dist = this.odometry.get().position.distance(this.targetGoal);
-        this.getLauncher().wheel.setRPM((2800 + Math.pow(dist, 1.44)) / 2.25);
+        this.getLauncher().wheel.setRPM(2461.50621 * Math.pow(1.00529, dist));
+        if (this.odometry.get().position.y < 72) {
+            this.launcher.hood.setAngle(1);
+        } else {
+            this.launcher.hood.setAngle(0.2);
+        }
     }
 
     public double autoAim() {
@@ -124,9 +130,13 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
 
 
     public void controlIntake() {
+        this.launcher.blocker.setAngle(this.block ? this.launcher.blocker.OPEN : this.launcher.blocker.CLOSED);
         if (jamFix) {
-            this.intake.enableMode(Intake.Modes.IDLE);
+            this.intake.enableMode(Intake.Modes.INTAKING);
             return;
+        }
+        else {
+            this.intake.enableMode(Intake.Modes.IDLE);
         }
     }
 

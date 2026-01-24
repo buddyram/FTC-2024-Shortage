@@ -6,8 +6,8 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 public class Turret extends BaseComponent<Robot> {
-    public static final int MIN_ANGLE = -90;
-    public static final int MAX_ANGLE = 90;
+    public static final int MIN_ANGLE = -180;
+    public static final int MAX_ANGLE = 180;
     private final DcMotor motor;
 
     public Turret(Robot robot, DcMotor motor) {

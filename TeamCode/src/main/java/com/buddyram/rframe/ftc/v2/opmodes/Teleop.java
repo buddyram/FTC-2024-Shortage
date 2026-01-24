@@ -8,15 +8,17 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 
-@TeleOp(name = "TELEOP - DECODE/V1", group = "Decode")
+@TeleOp(name = "TELEOP - DECODE/V2", group = "Decode")
 public class Teleop extends BaseOpmode {
     @Override
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
         Globals.DID_RUN_AUTO = false;
         while (this.decodeBot.isActive()) {
+            this.decodeBot.block = !gamepad1.right_bumper;
 
             currentGamepad1.copy(gamepad1);
+            telemetry.addData("things", this.decodeBot.launcher.blocker.angle);
             telemetry.addData("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
             telemetry.addData("gamepad1 right stick", currentGamepad1.right_stick_x);
 
@@ -32,18 +34,14 @@ public class Teleop extends BaseOpmode {
             if (currentGamepad1.right_bumper) {
 
             }
-            this.decodeBot.adjustFlywheelSpeed();
             this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
             telemetry.addData("turretOffset", this.decodeBot.turretOffset);
-            this.decodeBot.controlIntake();
-            double angle = this.decodeBot.autoAim();
-            telemetry.addData("angle", angle);
             runDriveControls(currentGamepad1);
             telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
             telemetry.addData("Key", "(x, y, z), (roll, pitch, yaw), (!!!), (!!!)");
             telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
             telemetry.update();
-            this.decodeBot.jamFix = gamepad1.left_bumper;
+            this.decodeBot.jamFix = gamepad1.left_bumper || gamepad1.right_bumper;
         }
     }
 

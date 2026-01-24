@@ -19,6 +19,7 @@ import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot;
 import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.intake.Sweeper;
+import com.buddyram.rframe.ftc.v2.Robot.launcher.Blocker;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Flywheel;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Hood;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
@@ -29,10 +30,12 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
 
 public abstract class BaseOpmode extends LinearOpMode {
     NewDecodeBot decodeBot;
     CachedOdometry<Pose3D> cachedOdometry;
+
 
     public static final Pose3D DEFAULT_POSITION = new Pose3D( // pose
             new Vector3D(0, 0, 0), //            new Vector3D(0, 9, 0), // position
@@ -171,10 +174,10 @@ public abstract class BaseOpmode extends LinearOpMode {
             }
         };
         MecanumDriveTrain drive = new MecanumDriveTrain(
-                new Motor(motorFL, 1),
-                new Motor(motorFR, -1),
-                new Motor(motorBL, 1),
-                new Motor(motorBR, -1),
+                new Motor(motorFL, -1),
+                new Motor(motorFR, 1),
+                new Motor(motorBL, -1),
+                new Motor(motorBR, 1),
                 1
         );
 
@@ -200,11 +203,14 @@ public abstract class BaseOpmode extends LinearOpMode {
         turret.setTargetPosition(0);
         turret.setPower(0.2);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        Servo blocker = hardwareMap.get(Servo.class, "blocker");
+        Servo hood = hardwareMap.get(Servo.class, "hood");
         Launcher launcher = new Launcher(
                 this.decodeBot,
                 new Flywheel(this.decodeBot, new RPMMotor(motorFly, 28)),
                 new Turret(this.decodeBot, turret),
-                new Hood(null, null)
+                new Hood(this.decodeBot, hood),
+                new Blocker(this.decodeBot, blocker)
         );
         PIDFCoefficients pidOrig = motorFly.getPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
         Logger logger = new SmartLogWrapper(

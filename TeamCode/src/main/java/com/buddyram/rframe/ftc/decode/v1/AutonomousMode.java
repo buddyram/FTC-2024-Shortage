@@ -3,7 +3,9 @@ package com.buddyram.rframe.ftc.decode.v1;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.ftc.decode.Globals;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name = "Autonomous", group = "Decode")
 public class AutonomousMode extends BaseOpmode {
     @Override

@@ -14,11 +14,12 @@ import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
 import com.buddyram.rframe.ftc.decode.indexer.Indexer;
 import com.buddyram.rframe.ftc.decode.intake.Intake;
 import com.buddyram.rframe.ftc.decode.launcher.Feeder;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-
+@Disabled
 @TeleOp(name = "TELEOP - DECODE/V1", group = "Decode")
 public class Teleop extends BaseOpmode {
     @Override
