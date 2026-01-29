@@ -96,13 +96,14 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             return true;
         }
     }
+    public int speed = 0;
     public void adjustFlywheelSpeed() {
         double dist = this.odometry.get().position.distance(this.targetGoal);
-        this.getLauncher().wheel.setRPM(2461.50621 * Math.pow(1.00529, dist));
-        if (this.odometry.get().position.y < 72) {
-            this.launcher.hood.setAngle(1);
+        this.getLauncher().wheel.setRPM(2291.50621 * Math.pow(1.00529, dist) + speed);
+        if (dist > 78) {
+            this.launcher.hood.setAngle(0.6);
         } else {
-            this.launcher.hood.setAngle(0.2);
+            this.launcher.hood.setAngle(1);
         }
     }
 

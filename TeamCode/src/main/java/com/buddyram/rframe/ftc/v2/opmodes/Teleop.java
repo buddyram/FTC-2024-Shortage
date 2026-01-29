@@ -34,6 +34,13 @@ public class Teleop extends BaseOpmode {
             if (currentGamepad1.right_bumper) {
 
             }
+//            if (currentGamepad1.circle) {
+//                this.decodeBot.speed = 0;
+//            }
+//            if (currentGamepad1.cross) {
+//                this.decodeBot.speed = -100;
+//            }
+            this.decodeBot.speed += (int) (gamepad1.right_trigger - gamepad1.left_trigger);
             this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
             telemetry.addData("turretOffset", this.decodeBot.turretOffset);
             runDriveControls(currentGamepad1);
