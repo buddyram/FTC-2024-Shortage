@@ -108,7 +108,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public double autoAim() {
-        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
+        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position.add(this.odometry.get().positionVelocity.mul(1)));
         double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z + turretOffset) % 360;
         if (angle < 0) angle += 360;
         angle = angle > 180 ? angle - 360 : angle;
@@ -147,4 +147,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         Globals.POSITION = this.odometry.get();
     }
 
+    public void runAuto() {
+
+    }
 }

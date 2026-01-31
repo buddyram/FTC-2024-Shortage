@@ -17,15 +17,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(9.93)
-            .forwardZeroPowerAcceleration(-24.79)
-            .lateralZeroPowerAcceleration(-69.123)
-            .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.05, 0.03))
-            .headingPIDFCoefficients(new PIDFCoefficients(0.5, 0, 0.05, 0.025))
-//            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.5,0.0,0.00001,0.1,0.01))
-            .centripetalScaling(0.0005)
-            .holdPointTranslationalScaling(0.25)
-            .holdPointHeadingScaling(0.2);
+            .mass(11.29)
+//            .mass(9.93)
+            .forwardZeroPowerAcceleration(-28.2315)
+            .lateralZeroPowerAcceleration(-69.27727)
+            .translationalPIDFCoefficients(new PIDFCoefficients(0.3, 0, 0.05, 0.05))
+            .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.00, 0.03));
+////            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.5,0.0,0.00001,0.1,0.01))
+//            .centripetalScaling(0.0005)
+//            .holdPointTranslationalScaling(0.25)
+//            .holdPointHeadingScaling(0.2);
 
     public static PathConstraints pathConstraints = new PathConstraints(
             0.99,
@@ -47,16 +48,16 @@ public class Constants {
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .xVelocity(83.177)
-            .yVelocity(67.611);
+            .xVelocity(56.0544)
+            .yVelocity(49.7833);
 
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")
             .linearUnit(DistanceUnit.INCH)
             .angleUnit(AngleUnit.RADIANS)
-            .offset(new SparkFunOTOS.Pose2D(-1.0813 / 2, -0.1201 / 2, -Math.PI / 2))
-            .linearScalar(48 / 45.3558)
-            .angularScalar(3600 / 3635.0354);
+            .offset(new SparkFunOTOS.Pose2D(4.28, -3.84, -Math.PI / 2))
+            .linearScalar(0.8883)
+            .angularScalar(1.0101010101);
 
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
