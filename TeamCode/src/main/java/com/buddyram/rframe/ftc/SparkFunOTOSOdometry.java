@@ -20,7 +20,7 @@ public class SparkFunOTOSOdometry implements Odometry<Pose3D> {
     public boolean init() {
 
         this.sensor.setLinearUnit(DistanceUnit.INCH);
-        this.sensor.setAngularUnit(AngleUnit.DEGREES);
+        this.sensor.setAngularUnit(AngleUnit.RADIANS);
         // TODO: allow user to pass in offsets
 //        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(0.0781, -1.4418, 0);
 //        this.sensor.setOffset(offset);

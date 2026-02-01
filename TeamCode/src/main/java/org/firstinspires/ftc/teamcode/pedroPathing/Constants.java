@@ -19,10 +19,11 @@ public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(11.29)
 //            .mass(9.93)
-            .forwardZeroPowerAcceleration(-28.2315)
-            .lateralZeroPowerAcceleration(-69.27727)
+            .forwardZeroPowerAcceleration(-31.77)
+            .lateralZeroPowerAcceleration(-63.5)
             .translationalPIDFCoefficients(new PIDFCoefficients(0.3, 0, 0.05, 0.05))
-            .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.00, 0.03));
+            .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.00, 0.03))
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.025, 0, 0.00001, 0.36, 0.01));
 ////            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.5,0.0,0.00001,0.1,0.01))
 //            .centripetalScaling(0.0005)
 //            .holdPointTranslationalScaling(0.25)
@@ -48,8 +49,8 @@ public class Constants {
             .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .xVelocity(56.0544)
-            .yVelocity(49.7833);
+            .xVelocity(71.003)
+            .yVelocity(55.002);
 
     public static OTOSConstants localizerConstants = new OTOSConstants()
             .hardwareMapName("otos")

@@ -331,6 +331,7 @@ class ForwardVelocityTuner extends OpMode {
     private final ArrayList<Double> velocities = new ArrayList<>();
     public static double DISTANCE = 48;
     public static double RECORD_NUMBER = 10;
+    public static double POWER = 1.0;
 
     private boolean end;
 
@@ -342,7 +343,7 @@ class ForwardVelocityTuner extends OpMode {
     /** This initializes the drive motors as well as the cache of velocities and the Panels telemetry. */
     @Override
     public void init_loop() {
-        telemetryM.debug("The robot will run at 1 power until it reaches " + DISTANCE + " inches forward.");
+        telemetryM.debug("The robot will run at " + POWER + " power until it reaches " + DISTANCE + " inches forward.");
         telemetryM.debug("Make sure you have enough room, since the robot has inertia after cutting power.");
         telemetryM.debug("After running the distance, the robot will cut power from the drivetrain and display the forward velocity.");
         telemetryM.debug("Press B on game pad 1 to stop.");
@@ -385,7 +386,7 @@ class ForwardVelocityTuner extends OpMode {
                 end = true;
                 stopRobot();
             } else {
-                follower.setTeleOpDrive(1,0,0,true);
+                follower.setTeleOpDrive(POWER,0,0,true);
                 //double currentVelocity = Math.abs(follower.getVelocity().getXComponent());
                 double currentVelocity = Math.abs(follower.poseTracker.getLocalizer().getVelocity().getX());
                 velocities.add(currentVelocity);
