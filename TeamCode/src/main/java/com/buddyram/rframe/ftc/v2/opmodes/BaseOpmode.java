@@ -201,7 +201,7 @@ public abstract class BaseOpmode extends LinearOpMode {
             turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         }
         turret.setTargetPosition(0);
-        turret.setPower(0.2);
+        turret.setPower(0.4);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Servo blocker = hardwareMap.get(Servo.class, "blocker");
         Servo hood = hardwareMap.get(Servo.class, "hood");
