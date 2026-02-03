@@ -11,18 +11,39 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 public class LimelightOdometry implements Odometry<Pose3D> {
     public static final int INIT_SAMPLE_COUNT = 10000;
     Limelight3A limelight;
-
+    Odometry<Vector3D> imu;
     Double yaw = null;
 
-
     public LimelightOdometry(Limelight3A limelight) {
+        this(limelight, null);
+    }
+
+    public LimelightOdometry(Limelight3A limelight, Odometry<Vector3D> imu) {
         limelight.pipelineSwitch(0);
         this.limelight = limelight;
+        this.imu = imu;
     }
 
     public void updateOrientation(double yaw) {
         this.yaw = yaw;
         this.limelight.updateRobotOrientation(yaw);
+    }
+
+    public Pose3D getMT1() {
+        LLResult result = limelight.getLatestResult();
+        org.firstinspires.ftc.robotcore.external.navigation.Pose3D botPose = result.getBotpose();
+
+        if (botPose == null || !result.isValid()) {
+            return null;
+        }
+        return new Pose3D(
+                new Vector3D(botPose.getPosition().y * 39.3701 + 72,
+                        -botPose.getPosition().x * 39.3701 + 72,
+                        botPose.getPosition().z + 0),
+                new Vector3D(0, 0, Utils.normalizeAngle(botPose.getOrientation().getYaw()+180)),
+                new Vector3D(),
+                new Vector3D()
+        );
     }
 
     @Override

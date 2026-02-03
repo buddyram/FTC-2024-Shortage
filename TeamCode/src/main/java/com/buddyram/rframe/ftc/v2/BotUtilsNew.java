@@ -11,7 +11,7 @@ import com.buddyram.rframe.ftc.DriveToSmoothAction;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
 
 public class BotUtilsNew {
-    public static RobotAction<DecodeBot> wait(int timeMs) {
+    public static RobotAction<NewDecodeBot> wait(int timeMs) {
         return (drive) -> {
             try {
                 Thread.sleep(timeMs);
@@ -21,7 +21,7 @@ public class BotUtilsNew {
             return true;
         };
     }
-    public static RobotAction<DecodeBot> rotateTo(double targetAngle) {
+    public static RobotAction<NewDecodeBot> rotateTo(double targetAngle) {
         return new RotateToAction<>(targetAngle, 0.5);
     }
 

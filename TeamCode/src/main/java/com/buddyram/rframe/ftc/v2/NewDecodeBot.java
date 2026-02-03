@@ -6,10 +6,13 @@ import com.buddyram.rframe.Odometry;
 import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
+import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
+import com.buddyram.rframe.ftc.DriveToAction;
+import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.buddyram.rframe.ftc.decode.Globals;
 import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
@@ -147,7 +150,29 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         Globals.POSITION = this.odometry.get();
     }
 
-    public void runAuto() {
+    public void runAuto() throws RobotException {
+        Vector3D shoot_close = new Vector3D(60, 84, 0);
+        //19.5,72.25
+        //12.8,118.5
+        //15.2,74.8
+        //8.5,75.2
+        BotUtilsNew.driveTo(shoot_close, false).run(this);
+        this.aimOn = true;
+        BotUtilsNew.rotateTo(45).run(this);
+        BotUtilsNew.wait(500).run(this);
+        this.jamFix = true;
+        this.block = false;
+        BotUtilsNew.wait(1000).run(this);
+        this.aimOn = false;
+        this.block = true;
+        BotUtilsNew.driveTo(new Vector3D(18, 84, 0), false).run(this);
+        this.aimOn = true;
+        BotUtilsNew.driveTo(shoot_close, false).run(this);
+        BotUtilsNew.wait(500).run(this);
+        this.jamFix = true;
+        this.block = false;
+        BotUtilsNew.wait(1000).run(this);
+        this.jamFix = false;
 
     }
 }

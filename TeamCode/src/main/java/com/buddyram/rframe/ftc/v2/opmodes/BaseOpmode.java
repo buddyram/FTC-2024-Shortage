@@ -100,7 +100,12 @@ public abstract class BaseOpmode extends LinearOpMode {
 
         Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");
 
-        LimelightOdometry limelight = new LimelightOdometry(limelightDEVICE);
+        LimelightOdometry limelight = new LimelightOdometry(limelightDEVICE) {
+            @Override
+            public Pose3D get() {
+                return getMT1(); // use mt1 instead
+            }
+        };
 
         /*
          * Starts polling for data.
