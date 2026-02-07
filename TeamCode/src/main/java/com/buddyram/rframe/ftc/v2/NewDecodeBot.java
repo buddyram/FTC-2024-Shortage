@@ -106,6 +106,8 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         this.getLauncher().wheel.setRPM(Math.max(2350.50621 * Math.pow(1.00529, dist) + speed, 0));
         if (dist > 68) {
             this.launcher.hood.setAngle(0.55);
+        } else if (dist > 50) {
+            this.launcher.hood.setAngle(0.64);
         } else {
             this.launcher.hood.setAngle(1);
         }
@@ -192,7 +194,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             String.format("%.2f", pos.rotation.z));
     }
 
-    public void intakeTick(int x, int y) throws RobotException {
+    public void intakeTick(double x, double y) throws RobotException {
         jamFix = true;
         BotUtilsNew.driveAndRotateTo(new Vector3D(45, y, 0), 110).run(this);
         logPos("intakeTick approach (45," + y + ")@110");
@@ -201,10 +203,10 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void intakeTickFar() throws RobotException {
-        intakeTick(14, 36);
+        intakeTick(15, 36);
     }
     public void intakeTickMiddle() throws RobotException {
-        intakeTick(14, 57);
+        intakeTick(15, 57.6);
     }
 
     public void intakeTickClose() throws RobotException {
