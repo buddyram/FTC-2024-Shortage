@@ -144,7 +144,7 @@ public abstract class BaseOpmode extends LinearOpMode {
             try {
                 limelight.init();
             } catch (Exception e) {
-                limelight.initWithBackup(BotUtilsNew.mirrorIfRed(52.88, isRed == 1));
+                limelight.initWithBackup(BotUtilsNew.mirrorIfRed(isRed == 1 ? -51.91 : 52.88, isRed == 1));
             }
         } else {
             telemetry.addLine("Used Backup Position Value");
@@ -165,14 +165,25 @@ public abstract class BaseOpmode extends LinearOpMode {
         } catch (RuntimeException e) {
             if (Globals.POSITION == null) {
                 telemetry.addData("OTOS", "used auto starting");
-                otosOdometry.setPosition(
-                        new Pose3D(
-                                BotUtilsNew.mirrorIfRed(new Vector3D(-44.19 + 72, 58.26 + 72, 0), isRed == 1),
-                                new Vector3D(0, 0, BotUtilsNew.mirrorIfRed(52.88, isRed == 1)),
-                                new Vector3D(),
-                                new Vector3D()
-                        )
-                );
+                if (isRed != 1) {
+                    otosOdometry.setPosition(
+                            new Pose3D(
+                                    new Vector3D(-44.19 + 72, 58.26 + 72, 0),
+                                    new Vector3D(0, 0, 52.88),
+                                    new Vector3D(),
+                                    new Vector3D()
+                            )
+                    );
+                } else {
+                    otosOdometry.setPosition(
+                            new Pose3D(
+                                    new Vector3D(116.5, 130, 0),
+                                    new Vector3D(0, 0, -51.91),
+                                    new Vector3D(),
+                                    new Vector3D()
+                            )
+                    );
+                }
             } else {
                 otosOdometry.setPosition(Globals.POSITION);
                 telemetry.addData("OTOS", "used cached");

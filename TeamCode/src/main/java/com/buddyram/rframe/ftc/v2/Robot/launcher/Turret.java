@@ -20,7 +20,7 @@ public class Turret extends BaseComponent<Robot> {
     }
 
     public boolean isReady() {
-        return Math.abs(motor.getTargetPosition() - motor.getCurrentPosition()) < 3;
+        return Math.abs(motor.getTargetPosition() - motor.getCurrentPosition()) < 2;
     }
 
     public void setAngle (double newAngle) {

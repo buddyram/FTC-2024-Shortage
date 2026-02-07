@@ -9,7 +9,7 @@ import com.buddyram.rframe.ftc.decode.DecodeBot;
 public class Flywheel extends BaseComponent<Robot> {
     private final RPMMotor motor;
     private double target;
-    public static final int MAX = 4000;
+    public static final int MAX = 5000;
     public static final int MIN = 0;
     public static final int THRESHOLD = 50;
 

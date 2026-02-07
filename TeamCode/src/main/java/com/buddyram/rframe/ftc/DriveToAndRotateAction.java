@@ -15,12 +15,12 @@ public class DriveToAndRotateAction<T extends Navigatable<HolonomicDriveTrain>> 
     private final Vector3D target;
     private final double accuracy;
     private final CalculateDriveSpeed speed;
-    private final int rotation;
+    private final double rotation;
 
 
     // public DriveToAndRotateAction(Vector3D target, double accuracy, int rotation) {}
 
-    public DriveToAndRotateAction(Vector3D target, double accuracy, CalculateDriveSpeed speed, int rotation) {
+    public DriveToAndRotateAction(Vector3D target, double accuracy, CalculateDriveSpeed speed, double rotation) {
         this.target = target;
         this.accuracy = accuracy;
         this.speed = speed;
