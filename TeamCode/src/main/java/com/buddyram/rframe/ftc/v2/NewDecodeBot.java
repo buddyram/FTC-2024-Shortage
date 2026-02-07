@@ -111,8 +111,44 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         }
     }
     public Double overrideAngle = null;
+
+    /**
+     * Calculates the turret angle needed to hit the goal from a given position and heading.
+     * Use this to preload the turret during a drive so it's ready to shoot on arrival.
+     */
+    public double calculateTurretAngle(Vector3D fromPosition, double heading) {
+        Vector3D posToGoal = this.targetGoal.sub(fromPosition);
+        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - heading + turretOffset) % 360;
+        if (angle < 0) angle += 360;
+        angle = angle > 180 ? angle - 360 : angle;
+        return angle;
+    }
+
+    /**
+     * Preloads the turret angle for a future shooting position/heading.
+     * Sets overrideAngle so the turret starts moving immediately, even while driving.
+     */
+    public void preloadTurretForPosition(Vector3D shootPosition, double shootHeading) {
+        this.aimOn = true;
+        this.overrideAngle = calculateTurretAngle(shootPosition, shootHeading);
+    }
+
+    /**
+     * Waits until the turret motor reaches its target position, with a timeout.
+     */
+    public void waitForTurret(int timeoutMs) throws RobotException {
+        long start = System.currentTimeMillis();
+        while (!this.launcher.turret.isReady()) {
+            if (System.currentTimeMillis() - start > timeoutMs) {
+                System.out.println("[AUTO] waitForTurret timed out after " + timeoutMs + "ms");
+                break;
+            }
+            try { Thread.sleep(10); } catch (InterruptedException e) { throw new RuntimeException(e); }
+        }
+    }
+
     public double autoAim() {
-        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);//.add(this.odometry.get().positionVelocity.mul(1)));
+        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
         double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z + turretOffset) % 360;
         if (angle < 0) angle += 360;
         angle = angle > 180 ? angle - 360 : angle;
@@ -122,7 +158,6 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         if (!aimOn) {
             angle = 0;
         }
-
 
         this.launcher.turret.setAngle(angle);
         return angle;
@@ -173,20 +208,31 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void intakeTickClose() throws RobotException {
-        BotUtilsNew.driveAndRotateTo(new Vector3D(15, 84, 0), 90).run(this);
+        BotUtilsNew.driveAndRotateTo(new Vector3D(19, 84, 0), 90).run(this);
         logPos("intakeTickClose (12,84)@90");
     }
 
+    private static final Vector3D SHOOT_POSITION = new Vector3D(50, 84, 0);
+    private static final int SHOOT_HEADING = 90;
+
     public void shootClose() throws RobotException {
+        // Turret should already be preloaded from prior step; drive to shooting position
         this.aimOn = true;
-        BotUtilsNew.driveAndRotateTo(new Vector3D(50, 84, 0), 90).run(this);
+        BotUtilsNew.driveAndRotateTo(SHOOT_POSITION, SHOOT_HEADING).run(this);
         logPos("shootClose arrived (50,84)@90");
+
+        // Switch to live auto-aim and wait for turret to settle
         overrideAngle = null;
+        waitForTurret(500);
+
+        // Shoot
         this.jamFix = true;
         this.block = false;
         BotUtilsNew.wait(1300).run(this);
         this.block = true;
-        overrideAngle = -45.0;
+
+        // Preload turret angle for next shot while we drive to intake
+        preloadTurretForPosition(SHOOT_POSITION, SHOOT_HEADING);
     }
 
     public void openGate() throws RobotException {
@@ -203,7 +249,8 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
 
     public void runAuto() throws RobotException {
         logPos("AUTO START");
-        overrideAngle = -45.0;
+        // Preload turret for first shot while driving to shooting position
+        preloadTurretForPosition(SHOOT_POSITION, SHOOT_HEADING);
 
         shootClose();
         logPos("after shootClose #1");
