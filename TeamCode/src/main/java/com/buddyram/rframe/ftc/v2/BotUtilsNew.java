@@ -7,6 +7,7 @@ import com.buddyram.rframe.actions.ConditionalWrapperAction;
 import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.drive.RotateToAction;
 import com.buddyram.rframe.ftc.DriveToAction;
+import com.buddyram.rframe.ftc.DriveToAndRotateAction;
 import com.buddyram.rframe.ftc.DriveToSmoothAction;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
 
@@ -25,9 +26,9 @@ public class BotUtilsNew {
         return new RotateToAction<>(targetAngle, 0.5);
     }
 
-//    public static RobotAction<DecodeBot> DriveAndRotateTo(Vector3D target, double targetAngle) {
-//        return new DriveToAndRotateAction<>(target, 2, targetAngle);
-//    }
+    public static RobotAction<NewDecodeBot> driveAndRotateTo(Vector3D target, int targetAngle) {
+        return new DriveToAndRotateAction<>(target, 4, (dist) -> dist > 20 ? 1 : 0.3, targetAngle);
+    }
 
     public static RobotAction<NewDecodeBot> driveTowardsUntil(int x, int y, PositionalCondition condition) {
         return BotUtilsNew.driveTowardsUntil(x, y, condition, 1);
@@ -38,7 +39,7 @@ public class BotUtilsNew {
     }
 
     public static RobotAction<NewDecodeBot> driveTo(Vector3D target, boolean prerotation) {
-        return new DriveToAction<>(target, 0.5, (dist) -> dist > 20 ? 1 : 0.35, prerotation);
+        return new DriveToAction<>(target, 2, (dist) -> dist > 20 ? 1 : 0.35, prerotation);
     }
 
     public static RobotAction<NewDecodeBot> driveToSmooth(Vector3D target, boolean prerotation) {

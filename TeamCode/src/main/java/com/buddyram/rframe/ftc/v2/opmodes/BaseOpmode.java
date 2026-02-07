@@ -98,25 +98,6 @@ public abstract class BaseOpmode extends LinearOpMode {
             reset = !Globals.DID_RUN_AUTO;
         }
 
-        Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");
-
-        LimelightOdometry limelight = new LimelightOdometry(limelightDEVICE) {
-            @Override
-            public Pose3D get() {
-                return getMT1(); // use mt1 instead
-            }
-        };
-
-        /*
-         * Starts polling for data.
-         */
-        if (Globals.POSITION == null) {
-            limelight.init();
-        } else {
-            telemetry.addLine("Used Backup Position Value");
-            limelight.initWithBackup(Globals.POSITION.rotation.z);
-        }
-
 
 
         DcMotor motorFR = hardwareMap.get(DcMotor.class, "dfr");
@@ -145,6 +126,32 @@ public abstract class BaseOpmode extends LinearOpMode {
         }
         telemetry.addData("isRed", isRed);
 
+
+
+
+        Limelight3A limelightDEVICE = hardwareMap.get(Limelight3A.class, "limelight");
+
+        LimelightOdometry limelight = new LimelightOdometry(limelightDEVICE) {
+            @Override
+            public Pose3D get() {
+                return super.getMT1();
+            }
+        };
+        /*
+         * Starts polling for data.
+         */
+        if (Globals.POSITION == null) {
+            try {
+                limelight.init();
+            } catch (Exception e) {
+                limelight.initWithBackup(BotUtilsNew.mirrorIfRed(52.88, isRed == 1));
+            }
+        } else {
+            telemetry.addLine("Used Backup Position Value");
+            limelight.initWithBackup(Globals.POSITION.rotation.z);
+        }
+
+
         SparkFunOTOSOdometry otosOdometry = new SparkFunOTOSOdometry(
                 hardwareMap.get(SparkFunOTOS.class, "otos"),
                 BotUtilsNew.mirrorIfRed(DEFAULT_POSITION, isRed == 1)
@@ -156,11 +163,24 @@ public abstract class BaseOpmode extends LinearOpMode {
             otosOdometry.setPosition(limelight.get());
             telemetry.addData("OTOS", "used limelight");
         } catch (RuntimeException e) {
-            telemetry.addData("OTOS", "used cached");
-            otosOdometry.setPosition(Globals.POSITION);
+            if (Globals.POSITION == null) {
+                telemetry.addData("OTOS", "used auto starting");
+                otosOdometry.setPosition(
+                        new Pose3D(
+                                BotUtilsNew.mirrorIfRed(new Vector3D(-44.19 + 72, 58.26 + 72, 0), isRed == 1),
+                                new Vector3D(0, 0, BotUtilsNew.mirrorIfRed(52.88, isRed == 1)),
+                                new Vector3D(),
+                                new Vector3D()
+                        )
+                );
+            } else {
+                otosOdometry.setPosition(Globals.POSITION);
+                telemetry.addData("OTOS", "used cached");
+            }
         }
 
         telemetry.update();
+        Thread.sleep(1000);
 
         GroundingOdometry<Pose3D> groundingOdometry = new GroundingOdometry<>(limelight, otosOdometry, () -> {
             Pose3D res = otosOdometry.get();
@@ -168,7 +188,8 @@ public abstract class BaseOpmode extends LinearOpMode {
             double limelightYaw = otosYaw <= 0 ? otosYaw + 180 : otosYaw - 180;
             limelight.updateOrientation(limelightYaw);
             System.out.println("res: " + res + " \nmagnitude: " + res.positionVelocity.magnitude());
-            return res.positionVelocity.magnitude() + res.rotationVelocity.magnitude() < 0.7;
+            return false;
+            //return res.positionVelocity.magnitude() + res.rotationVelocity.magnitude() < 0.7;
         });
 
 
@@ -230,11 +251,14 @@ public abstract class BaseOpmode extends LinearOpMode {
                 }
         );
         Intake intake = new Intake(this.decodeBot, new Sweeper(this.decodeBot, motorInt));
-        this.decodeBot.init(logger, new CachedOdometry<>(groundingOdometry), adapter, launcher, intake, limelight, isRed == 1);
+        this.decodeBot.init(logger, new CachedOdometry<>(otosOdometry), adapter, launcher, intake, limelight, isRed == 1);
         while (! this.isStarted()) {
             telemetry.addData("P,I,D (orig)", "%.04f, %.04f, %.0f, %.04f",
                     pidOrig.p, pidOrig.i, pidOrig.d, pidOrig.f);
+            groundingOdometry.sync();
             telemetry.addData("POS", groundingOdometry.get());
+            telemetry.addData("POSotos", otosOdometry.get());
+            telemetry.addData("POSlime", limelight.get());
             telemetry.update();
         }
     }

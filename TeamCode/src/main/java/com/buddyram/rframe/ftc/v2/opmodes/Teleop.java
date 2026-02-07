@@ -25,10 +25,10 @@ public class Teleop extends BaseOpmode {
             colorRumbleFlywheel(currentGamepad1);
 
             if (currentGamepad1.square) {
-                this.decodeBot.aimOn = false;
+                this.decodeBot.speed = 0;
             }
             if (currentGamepad1.circle) {
-                this.decodeBot.aimOn = true;
+                this.decodeBot.speed = -1000000;
             }
 
             if (currentGamepad1.right_bumper) {

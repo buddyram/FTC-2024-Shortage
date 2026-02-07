@@ -8,6 +8,7 @@ import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.actions.MultiAction;
 import com.buddyram.rframe.actions.RobotAction;
+import com.buddyram.rframe.actions.TimeoutWrapperAction;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
@@ -102,22 +103,26 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     public int speed = 0;
     public void adjustFlywheelSpeed() {
         double dist = this.odometry.get().position.distance(this.targetGoal);
-        this.getLauncher().wheel.setRPM(2350.50621 * Math.pow(1.00529, dist) + speed);
-        if (dist > 78) {
+        this.getLauncher().wheel.setRPM(Math.max(2350.50621 * Math.pow(1.00529, dist) + speed, 0));
+        if (dist > 68) {
             this.launcher.hood.setAngle(0.55);
         } else {
             this.launcher.hood.setAngle(1);
         }
     }
-
+    public Double overrideAngle = null;
     public double autoAim() {
-        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position.add(this.odometry.get().positionVelocity.mul(1)));
+        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);//.add(this.odometry.get().positionVelocity.mul(1)));
         double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z + turretOffset) % 360;
         if (angle < 0) angle += 360;
         angle = angle > 180 ? angle - 360 : angle;
+        if (overrideAngle != null) {
+            angle = overrideAngle;
+        }
         if (!aimOn) {
             angle = 0;
         }
+
 
         this.launcher.turret.setAngle(angle);
         return angle;
@@ -144,35 +149,59 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         }
     }
 
+    public void intakeTick(int x, int y) throws RobotException {
+        jamFix = true;
+        BotUtilsNew.driveAndRotateTo(new Vector3D(45, y, 0), 110).run(this);
+        BotUtilsNew.driveAndRotateTo(new Vector3D(x, y, 0), 90).run(this);
+    }
 
+    public void intakeTickFar() throws RobotException {
+        intakeTick(10, 36);
+    }
+    public void intakeTickMiddle() throws RobotException {
+        intakeTick(10, 57);
+    }
+
+    public void intakeTickClose() throws RobotException {
+        BotUtilsNew.driveAndRotateTo(new Vector3D(12, 84, 0), 90).run(this);
+    }
+
+    public void shootClose() throws RobotException {
+        this.aimOn = true;
+        BotUtilsNew.driveAndRotateTo(new Vector3D(50, 84, 0), 90).run(this);
+        overrideAngle = null;
+        this.jamFix = true;
+        this.block = false;
+        BotUtilsNew.wait(1300).run(this);
+        this.block = true;
+        overrideAngle = -45.0;
+    }
+
+    public void openGate() throws RobotException {
+        BotUtilsNew.driveAndRotateTo(new Vector3D(25, 72, 0), 90).run(this);
+        new TimeoutWrapperAction<>( BotUtilsNew.driveAndRotateTo(new Vector3D(11, 72, 0), 90), 1000).run(this);
+        BotUtilsNew.wait(500).run(this);
+    }
 
     public void updateGlobals() {
         Globals.POSITION = this.odometry.get();
     }
 
     public void runAuto() throws RobotException {
-        Vector3D shoot_close = new Vector3D(60, 84, 0);
-        //19.5,72.25
-        //12.8,118.5
-        //15.2,74.8
-        //8.5,75.2
-        BotUtilsNew.driveTo(shoot_close, false).run(this);
-        this.aimOn = true;
-        BotUtilsNew.rotateTo(45).run(this);
-        BotUtilsNew.wait(500).run(this);
-        this.jamFix = true;
-        this.block = false;
-        BotUtilsNew.wait(1000).run(this);
-        this.aimOn = false;
-        this.block = true;
-        BotUtilsNew.driveTo(new Vector3D(18, 84, 0), false).run(this);
-        this.aimOn = true;
-        BotUtilsNew.driveTo(shoot_close, false).run(this);
-        BotUtilsNew.wait(500).run(this);
-        this.jamFix = true;
-        this.block = false;
-        BotUtilsNew.wait(1000).run(this);
-        this.jamFix = false;
+        overrideAngle = -45.0;
+        shootClose();
+        intakeTickMiddle();
+        // openGate();
+        shootClose();
+        intakeTickClose();
+        shootClose();
+        intakeTickFar();
+        shootClose();
 
+        BotUtilsNew.driveAndRotateTo(new Vector3D(24, 72, 0), 0).run(this);
+
+        // Turn off intake and shooter aim
+        this.jamFix = false;
+        this.aimOn = false;
     }
 }
