@@ -149,26 +149,38 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         }
     }
 
+    private void logPos(String label) {
+        Pose3D pos = this.odometry.get();
+        System.out.println("[AUTO] " + label + " pos=(" +
+            String.format("%.2f", pos.position.x) + ", " +
+            String.format("%.2f", pos.position.y) + ") heading=" +
+            String.format("%.2f", pos.rotation.z));
+    }
+
     public void intakeTick(int x, int y) throws RobotException {
         jamFix = true;
         BotUtilsNew.driveAndRotateTo(new Vector3D(45, y, 0), 110).run(this);
+        logPos("intakeTick approach (45," + y + ")@110");
         BotUtilsNew.driveAndRotateTo(new Vector3D(x, y, 0), 90).run(this);
+        logPos("intakeTick pickup (" + x + "," + y + ")@90");
     }
 
     public void intakeTickFar() throws RobotException {
-        intakeTick(10, 36);
+        intakeTick(14, 36);
     }
     public void intakeTickMiddle() throws RobotException {
-        intakeTick(10, 57);
+        intakeTick(14, 57);
     }
 
     public void intakeTickClose() throws RobotException {
-        BotUtilsNew.driveAndRotateTo(new Vector3D(12, 84, 0), 90).run(this);
+        BotUtilsNew.driveAndRotateTo(new Vector3D(15, 84, 0), 90).run(this);
+        logPos("intakeTickClose (12,84)@90");
     }
 
     public void shootClose() throws RobotException {
         this.aimOn = true;
         BotUtilsNew.driveAndRotateTo(new Vector3D(50, 84, 0), 90).run(this);
+        logPos("shootClose arrived (50,84)@90");
         overrideAngle = null;
         this.jamFix = true;
         this.block = false;
@@ -179,7 +191,9 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
 
     public void openGate() throws RobotException {
         BotUtilsNew.driveAndRotateTo(new Vector3D(25, 72, 0), 90).run(this);
+        logPos("openGate approach (25,72)@90");
         new TimeoutWrapperAction<>( BotUtilsNew.driveAndRotateTo(new Vector3D(11, 72, 0), 90), 1000).run(this);
+        logPos("openGate push (11,72)@90");
         BotUtilsNew.wait(500).run(this);
     }
 
@@ -188,17 +202,33 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void runAuto() throws RobotException {
+        logPos("AUTO START");
         overrideAngle = -45.0;
+
         shootClose();
+        logPos("after shootClose #1");
+
         intakeTickMiddle();
+        logPos("after intakeTickMiddle");
+
         // openGate();
         shootClose();
+        logPos("after shootClose #2");
+
         intakeTickClose();
+        logPos("after intakeTickClose");
+
         shootClose();
+        logPos("after shootClose #3");
+
         intakeTickFar();
+        logPos("after intakeTickFar");
+
         shootClose();
+        logPos("after shootClose #4");
 
         BotUtilsNew.driveAndRotateTo(new Vector3D(24, 72, 0), 0).run(this);
+        logPos("after final park (24,72)@0");
 
         // Turn off intake and shooter aim
         this.jamFix = false;

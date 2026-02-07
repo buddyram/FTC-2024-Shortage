@@ -47,7 +47,7 @@ public class DriveToAndRotateAction<T extends Navigatable<HolonomicDriveTrain>> 
             positionReached =  distance <= accuracy;
             angleDifference = Utils.angleDifference(drive.getOdometry().get().rotation.z, this.rotation);
             direction = angleDifference < 0 ? RotateAction.Direction.COUNTER_CLOCKWISE : RotateAction.Direction.CLOCKWISE;
-            double rotationSpeed = (Math.abs(angleDifference) > 40 ? 1: Math.abs(angleDifference) > 5 ? 0.2 : 0);
+            double rotationSpeed = (Math.abs(angleDifference) > 40 ? 1: Math.abs(angleDifference) > this.accuracy ? 0.2 : 0);
             rotationSpeed = direction == RotateAction.Direction.CLOCKWISE ? rotationSpeed : -rotationSpeed;
             drive.getDrive().drive(new HolonomicDriveInstruction(rotationSpeed, speed, driveAngle));
         }
