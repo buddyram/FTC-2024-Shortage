@@ -5,7 +5,7 @@ import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.v2.BotUtilsNew;
 import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
-import com.buddyram.rframe.ftc.v2.NewDecodeBot.IntakePosition;
+import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous(name = "Auto Far", group = "Decode")
@@ -16,7 +16,7 @@ public class AutoFar extends BaseOpmode {
         decodeBot.runAutoSequence(new AutoSequenceConfig(
             /* shootPos */           new Vector3D(60, 24, 0),
             /* shootHeading */       90,
-            /* intakeOrder */        new IntakePosition[]{IntakePosition.FAR, IntakePosition.MIDDLE},
+            /* steps */              new AutoStep[]{AutoStep.FAR, AutoStep.MIDDLE},
             /* parkPos */            new Vector3D(30, 36, 0),
             /* firstTurretWaitMs */  2000,
             /* turretWaitMs */       500

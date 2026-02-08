@@ -19,30 +19,30 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
-    public enum IntakePosition { NEAR, MIDDLE, FAR }
+    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE }
 
     public static class AutoSequenceConfig {
         public final Vector3D shootPos;
         public final double shootHeading;
-        public final IntakePosition[] intakeOrder;
+        public final AutoStep[] steps;
         public final Vector3D parkPos;
         public final int firstTurretWaitMs;
         public final int turretWaitMs;
 
         public AutoSequenceConfig(Vector3D shootPos, double shootHeading,
-                                  IntakePosition[] intakeOrder, Vector3D parkPos,
+                                  AutoStep[] steps, Vector3D parkPos,
                                   int firstTurretWaitMs, int turretWaitMs) {
             this.shootPos = shootPos;
             this.shootHeading = shootHeading;
-            this.intakeOrder = intakeOrder;
+            this.steps = steps;
             this.parkPos = parkPos;
             this.firstTurretWaitMs = firstTurretWaitMs;
             this.turretWaitMs = turretWaitMs;
         }
 
         public AutoSequenceConfig(Vector3D shootPos, double shootHeading,
-                                  IntakePosition[] intakeOrder, Vector3D parkPos) {
-            this(shootPos, shootHeading, intakeOrder, parkPos, 1000, 500);
+                                  AutoStep[] steps, Vector3D parkPos) {
+            this(shootPos, shootHeading, steps, parkPos, 1000, 500);
         }
     }
     public boolean block = true;
@@ -241,11 +241,12 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         logPos("intakeTickClose (12,84)@90");
     }
 
-    public void runIntake(IntakePosition pos) throws RobotException {
-        switch (pos) {
+    public void runStep(AutoStep step) throws RobotException {
+        switch (step) {
             case NEAR: intakeTickClose(); break;
             case MIDDLE: intakeTickMiddle(); break;
             case FAR: intakeTickFar(); break;
+            case OPEN_GATE: openGate(); break;
         }
     }
 
@@ -296,10 +297,12 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         // Shoot preloaded ball (flywheel spinning up, needs longer wait)
         shootFrom(config.shootPos, config.shootHeading, config.firstTurretWaitMs);
 
-        // Intake -> shoot cycle for each position in order (flywheel already at speed)
-        for (IntakePosition pos : config.intakeOrder) {
-            runIntake(pos);
-            shootFrom(config.shootPos, config.shootHeading, config.turretWaitMs);
+        // Execute steps in order; intake steps are followed by a shoot
+        for (AutoStep step : config.steps) {
+            runStep(step);
+            if (step != AutoStep.OPEN_GATE) {
+                shootFrom(config.shootPos, config.shootHeading, config.turretWaitMs);
+            }
         }
 
         // Park
@@ -312,7 +315,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     public void runAuto() throws RobotException {
         runAutoSequence(new AutoSequenceConfig(
             SHOOT_POSITION, SHOOT_HEADING,
-            new IntakePosition[]{IntakePosition.MIDDLE, IntakePosition.NEAR, IntakePosition.FAR},
+            new AutoStep[]{AutoStep.MIDDLE, AutoStep.NEAR, AutoStep.FAR},
             new Vector3D(24, 72, 0)
         ));
     }

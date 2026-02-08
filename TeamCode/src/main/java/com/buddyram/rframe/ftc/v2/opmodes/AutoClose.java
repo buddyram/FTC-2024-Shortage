@@ -4,7 +4,7 @@ import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
-import com.buddyram.rframe.ftc.v2.NewDecodeBot.IntakePosition;
+import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 @Autonomous(name = "Auto Close", group = "Decode")
@@ -15,7 +15,7 @@ public class AutoClose extends BaseOpmode {
         decodeBot.runAutoSequence(new AutoSequenceConfig(
             /* shootPos */     new Vector3D(50, 84, 0),
             /* shootHeading */ 90,
-            /* intakeOrder */  new IntakePosition[]{IntakePosition.MIDDLE, IntakePosition.NEAR, IntakePosition.FAR},
+            /* steps */        new AutoStep[]{AutoStep.MIDDLE, AutoStep.OPEN_GATE, AutoStep.NEAR, AutoStep.FAR},
             /* parkPos */      new Vector3D(24, 72, 0)
         ));
     }
