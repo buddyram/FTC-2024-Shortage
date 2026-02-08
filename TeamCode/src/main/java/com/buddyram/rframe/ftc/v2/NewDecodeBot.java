@@ -197,7 +197,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
 
     public void intakeTick(double x, double y) throws RobotException {
         jamFix = true;
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(45, y, 0), isRed), BotUtilsNew.mirrorIfRed(110, isRed)).run(this);
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(45, y, 0), isRed), BotUtilsNew.mirrorIfRed(90 /*+ 20*/, isRed)).run(this);
         logPos("intakeTick approach (45," + y + ")@110");
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(x, y, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
         logPos("intakeTick pickup (" + x + "," + y + ")@90");

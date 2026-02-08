@@ -227,7 +227,7 @@ public abstract class BaseOpmode extends LinearOpMode {
         DcMotorEx motorFly = hardwareMap.get(DcMotorEx.class, "LFly");
         motorFly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         motorFly.setVelocity(0);
-        PIDFCoefficients pidNew = new PIDFCoefficients(354, 0, 0, 20);
+        PIDFCoefficients pidNew = new PIDFCoefficients(354, 0, 0, 40);
         motorFly.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidNew);
 
         DcMotor motorInt = hardwareMap.get(DcMotor.class, "intake");
