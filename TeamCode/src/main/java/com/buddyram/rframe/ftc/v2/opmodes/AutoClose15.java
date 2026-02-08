@@ -7,15 +7,15 @@ import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name = "Auto Close 12", group = "Decode")
-public class AutoClose extends BaseOpmode {
+@Autonomous(name = "Auto Close 15", group = "Decode")
+public class AutoClose15 extends BaseOpmode {
     @Override
     public void execute() throws RobotException, InterruptedException {
         Globals.DID_RUN_AUTO = true;
         decodeBot.runAutoSequence(new AutoSequenceConfig(
             /* shootPos */     new Vector3D(50, 84, 0),
             /* shootHeading */ 90,
-            /* steps */        new AutoStep[]{AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.OPEN_GATE, AutoStep.SHOOT, AutoStep.NEAR, AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT},
+            /* steps */        new AutoStep[]{AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.SHOOT, AutoStep.NEAR, AutoStep.OPEN_GATE, AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT},
             /* parkPos */      new Vector3D(24, 72, 0)
         ));
     }

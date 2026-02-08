@@ -19,7 +19,7 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
-    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE }
+    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE, SHOOT }
 
     public static class AutoSequenceConfig {
         public final Vector3D shootPos;
@@ -278,9 +278,9 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void openGate() throws RobotException {
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(25, 72, 0), isRed), 90).run(this);
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(25, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
         logPos("openGate approach (25,72)@90");
-        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(11, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 1000).run(this);
+        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(16, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
         logPos("openGate push (11,72)@90");
         BotUtilsNew.wait(500).run(this);
     }
@@ -294,14 +294,14 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         logPos("AUTO START");
         preloadTurretForPosition(BotUtilsNew.mirrorIfRed(config.shootPos, isRed), BotUtilsNew.mirrorIfRed(config.shootHeading, isRed));
 
-        // Shoot preloaded ball (flywheel spinning up, needs longer wait)
-        shootFrom(config.shootPos, config.shootHeading, config.firstTurretWaitMs);
-
-        // Execute steps in order; intake steps are followed by a shoot
+        boolean firstShot = true;
         for (AutoStep step : config.steps) {
-            runStep(step);
-            if (step != AutoStep.OPEN_GATE) {
-                shootFrom(config.shootPos, config.shootHeading, config.turretWaitMs);
+            if (step == AutoStep.SHOOT) {
+                shootFrom(config.shootPos, config.shootHeading,
+                    firstShot ? config.firstTurretWaitMs : config.turretWaitMs);
+                firstShot = false;
+            } else {
+                runStep(step);
             }
         }
 
@@ -315,7 +315,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     public void runAuto() throws RobotException {
         runAutoSequence(new AutoSequenceConfig(
             SHOOT_POSITION, SHOOT_HEADING,
-            new AutoStep[]{AutoStep.MIDDLE, AutoStep.NEAR, AutoStep.FAR},
+            new AutoStep[]{AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.SHOOT, AutoStep.NEAR, AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT},
             new Vector3D(24, 72, 0)
         ));
     }

@@ -8,7 +8,7 @@ import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
-@Autonomous(name = "Auto Far", group = "Decode")
+@Autonomous(name = "Auto Far 9", group = "Decode")
 public class AutoFar extends BaseOpmode {
     @Override
     public void execute() throws RobotException, InterruptedException {
@@ -16,7 +16,7 @@ public class AutoFar extends BaseOpmode {
         decodeBot.runAutoSequence(new AutoSequenceConfig(
             /* shootPos */           new Vector3D(60, 24, 0),
             /* shootHeading */       90,
-            /* steps */              new AutoStep[]{AutoStep.FAR, AutoStep.MIDDLE},
+            /* steps */              new AutoStep[]{AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.SHOOT},
             /* parkPos */            new Vector3D(30, 36, 0),
             /* firstTurretWaitMs */  2000,
             /* turretWaitMs */       500
