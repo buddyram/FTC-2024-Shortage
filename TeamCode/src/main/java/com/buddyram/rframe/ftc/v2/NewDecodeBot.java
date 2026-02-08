@@ -280,7 +280,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     public void openGate() throws RobotException {
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(25, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
         logPos("openGate approach (25,72)@90");
-        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(16, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
+        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(14, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
         logPos("openGate push (11,72)@90");
         BotUtilsNew.wait(500).run(this);
     }
@@ -296,6 +296,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
 
         boolean firstShot = true;
         for (AutoStep step : config.steps) {
+            logPos("before " + step);
             if (step == AutoStep.SHOOT) {
                 shootFrom(config.shootPos, config.shootHeading,
                     firstShot ? config.firstTurretWaitMs : config.turretWaitMs);
@@ -303,6 +304,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             } else {
                 runStep(step);
             }
+            logPos("after " + step);
         }
 
         // Park

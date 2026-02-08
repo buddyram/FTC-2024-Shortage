@@ -122,10 +122,10 @@ public abstract class BaseOpmode extends LinearOpMode {
             telemetry.addLine("O for red and X for blue.");
             telemetry.update();
             while (isRed == -1) {
-                if (gamepad1.cross) {
+                if (gamepad1.cross || gamepad2.cross) {
                     isRed = 0;
                 }
-                if (gamepad1.circle) {
+                if (gamepad1.circle || gamepad2.circle) {
                     isRed = 1;
                 }
             }
