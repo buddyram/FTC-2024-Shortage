@@ -81,6 +81,15 @@ public abstract class BaseOpmode extends LinearOpMode {
 
 
     public abstract void execute() throws RobotException, InterruptedException;
+
+    protected Vector3D getBlueStartPosition() {
+        return new Vector3D(-44.19 + 72, 58.26 + 72, 0);
+    }
+    protected double getBlueStartHeading() { return 52.88; }
+    protected Vector3D getRedStartPosition() {
+        return new Vector3D(116.5, 130, 0);
+    }
+    protected double getRedStartHeading() { return -51.91; }
     public void initializeHardware() throws InterruptedException {
         Boolean reset = null;
         if (Globals.DID_RUN_AUTO == null) {
@@ -144,7 +153,7 @@ public abstract class BaseOpmode extends LinearOpMode {
             try {
                 limelight.init();
             } catch (Exception e) {
-                limelight.initWithBackup(BotUtilsNew.mirrorIfRed(isRed == 1 ? -51.91 : 52.88, isRed == 1));
+                limelight.initWithBackup(BotUtilsNew.mirrorIfRed(isRed == 1 ? getRedStartHeading() : getBlueStartHeading(), isRed == 1));
             }
         } else {
             telemetry.addLine("Used Backup Position Value");
@@ -168,8 +177,8 @@ public abstract class BaseOpmode extends LinearOpMode {
                 if (isRed != 1) {
                     otosOdometry.setPosition(
                             new Pose3D(
-                                    new Vector3D(-44.19 + 72, 58.26 + 72, 0),
-                                    new Vector3D(0, 0, 52.88),
+                                    getBlueStartPosition(),
+                                    new Vector3D(0, 0, getBlueStartHeading()),
                                     new Vector3D(),
                                     new Vector3D()
                             )
@@ -177,8 +186,8 @@ public abstract class BaseOpmode extends LinearOpMode {
                 } else {
                     otosOdometry.setPosition(
                             new Pose3D(
-                                    new Vector3D(116.5, 130, 0),
-                                    new Vector3D(0, 0, -51.91),
+                                    getRedStartPosition(),
+                                    new Vector3D(0, 0, getRedStartHeading()),
                                     new Vector3D(),
                                     new Vector3D()
                             )

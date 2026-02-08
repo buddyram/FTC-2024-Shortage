@@ -19,6 +19,32 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
+    public enum IntakePosition { NEAR, MIDDLE, FAR }
+
+    public static class AutoSequenceConfig {
+        public final Vector3D shootPos;
+        public final double shootHeading;
+        public final IntakePosition[] intakeOrder;
+        public final Vector3D parkPos;
+        public final int firstTurretWaitMs;
+        public final int turretWaitMs;
+
+        public AutoSequenceConfig(Vector3D shootPos, double shootHeading,
+                                  IntakePosition[] intakeOrder, Vector3D parkPos,
+                                  int firstTurretWaitMs, int turretWaitMs) {
+            this.shootPos = shootPos;
+            this.shootHeading = shootHeading;
+            this.intakeOrder = intakeOrder;
+            this.parkPos = parkPos;
+            this.firstTurretWaitMs = firstTurretWaitMs;
+            this.turretWaitMs = turretWaitMs;
+        }
+
+        public AutoSequenceConfig(Vector3D shootPos, double shootHeading,
+                                  IntakePosition[] intakeOrder, Vector3D parkPos) {
+            this(shootPos, shootHeading, intakeOrder, parkPos, 1000, 500);
+        }
+    }
     public boolean block = true;
     public Logger logger;
     public Odometry<Pose3D> odometry;
@@ -215,18 +241,26 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         logPos("intakeTickClose (12,84)@90");
     }
 
+    public void runIntake(IntakePosition pos) throws RobotException {
+        switch (pos) {
+            case NEAR: intakeTickClose(); break;
+            case MIDDLE: intakeTickMiddle(); break;
+            case FAR: intakeTickFar(); break;
+        }
+    }
+
     private static final Vector3D SHOOT_POSITION = new Vector3D(50, 84, 0);
     private static final int SHOOT_HEADING = 90;
 
-    public void shootClose() throws RobotException {
+    public void shootFrom(Vector3D shootPos, double shootHeading, int turretWaitMs) throws RobotException {
         // Turret should already be preloaded from prior step; drive to shooting position
         this.aimOn = true;
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(SHOOT_POSITION, isRed), BotUtilsNew.mirrorIfRed(SHOOT_HEADING, isRed)).run(this);
-        logPos("shootClose arrived (50,84)@90");
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(shootPos, isRed), BotUtilsNew.mirrorIfRed(shootHeading, isRed)).run(this);
+        logPos("shootFrom arrived (" + shootPos.x + "," + shootPos.y + ")@" + shootHeading);
 
-        // Switch to live auto-aim and wait for turret to settle
+        // Switch to live auto-aim and wait for turret/flywheel to settle
         overrideAngle = null;
-        waitForTurret(1000);
+        waitForTurret(turretWaitMs);
 
         // Shoot
         this.jamFix = true;
@@ -235,7 +269,11 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         this.block = true;
 
         // Preload turret angle for next shot while we drive to intake
-        preloadTurretForPosition(BotUtilsNew.mirrorIfRed(SHOOT_POSITION, isRed), BotUtilsNew.mirrorIfRed(SHOOT_HEADING, isRed));
+        preloadTurretForPosition(BotUtilsNew.mirrorIfRed(shootPos, isRed), BotUtilsNew.mirrorIfRed(shootHeading, isRed));
+    }
+
+    public void shootClose() throws RobotException {
+        shootFrom(SHOOT_POSITION, SHOOT_HEADING, 1000);
     }
 
     public void openGate() throws RobotException {
@@ -250,39 +288,32 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         Globals.POSITION = this.odometry.get();
     }
 
-    public void runAuto() throws RobotException {
-        this.overrideDistance = BotUtilsNew.mirrorIfRed(SHOOT_POSITION, isRed).distance(targetGoal);
+    public void runAutoSequence(AutoSequenceConfig config) throws RobotException {
+        this.overrideDistance = BotUtilsNew.mirrorIfRed(config.shootPos, isRed).distance(targetGoal);
         logPos("AUTO START");
-        // Preload turret for first shot while driving to shooting position
-        preloadTurretForPosition(BotUtilsNew.mirrorIfRed(SHOOT_POSITION, isRed), BotUtilsNew.mirrorIfRed(SHOOT_HEADING, isRed));
+        preloadTurretForPosition(BotUtilsNew.mirrorIfRed(config.shootPos, isRed), BotUtilsNew.mirrorIfRed(config.shootHeading, isRed));
 
-        shootClose();
-        logPos("after shootClose #1");
+        // Shoot preloaded ball (flywheel spinning up, needs longer wait)
+        shootFrom(config.shootPos, config.shootHeading, config.firstTurretWaitMs);
 
-        intakeTickMiddle();
-        logPos("after intakeTickMiddle");
+        // Intake -> shoot cycle for each position in order (flywheel already at speed)
+        for (IntakePosition pos : config.intakeOrder) {
+            runIntake(pos);
+            shootFrom(config.shootPos, config.shootHeading, config.turretWaitMs);
+        }
 
-        // openGate();
-        shootClose();
-        logPos("after shootClose #2");
-
-        intakeTickClose();
-        logPos("after intakeTickClose");
-
-        shootClose();
-        logPos("after shootClose #3");
-
-        intakeTickFar();
-        logPos("after intakeTickFar");
-
-        shootClose();
-        logPos("after shootClose #4");
-
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(24, 72, 0), isRed), 0).run(this);
-        logPos("after final park (24,72)@0");
-
-        // Turn off intake and shooter aim
+        // Park
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(config.parkPos, isRed), 0).run(this);
+        logPos("after final park");
         this.jamFix = false;
         this.aimOn = false;
+    }
+
+    public void runAuto() throws RobotException {
+        runAutoSequence(new AutoSequenceConfig(
+            SHOOT_POSITION, SHOOT_HEADING,
+            new IntakePosition[]{IntakePosition.MIDDLE, IntakePosition.NEAR, IntakePosition.FAR},
+            new Vector3D(24, 72, 0)
+        ));
     }
 }
