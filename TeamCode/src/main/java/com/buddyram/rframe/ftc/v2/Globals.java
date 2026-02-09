@@ -6,6 +6,6 @@ import com.buddyram.rframe.ftc.decode.indexer.ColorSensor;
 
 public class Globals {
     public static Pose3D POSITION = null;
-    public static Boolean DID_RUN_AUTO = false;
+    public static Boolean DID_RUN_AUTO = null;
     public static Boolean IS_RED = null;
 }

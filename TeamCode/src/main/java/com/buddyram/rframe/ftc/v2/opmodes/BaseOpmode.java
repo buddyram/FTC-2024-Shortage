@@ -169,8 +169,9 @@ public abstract class BaseOpmode extends LinearOpMode {
             telemetry.addData("OTOS", "Failed");
         }
         try {
-            otosOdometry.setPosition(limelight.get());
-            telemetry.addData("OTOS", "used limelight");
+            throw new RuntimeException();
+//            otosOdometry.setPosition(limelight.get());
+//            telemetry.addData("OTOS", "used limelight");
         } catch (RuntimeException e) {
             if (Globals.POSITION == null) {
                 telemetry.addData("OTOS", "used auto starting");
@@ -247,7 +248,8 @@ public abstract class BaseOpmode extends LinearOpMode {
             turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         }
         turret.setTargetPosition(0);
-        turret.setPower(0.4);
+        turret.setPower(0.6);
+
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         Servo blocker = hardwareMap.get(Servo.class, "blocker");
         Servo hood = hardwareMap.get(Servo.class, "hood");
@@ -275,8 +277,8 @@ public abstract class BaseOpmode extends LinearOpMode {
         while (! this.isStarted()) {
             telemetry.addData("P,I,D (orig)", "%.04f, %.04f, %.0f, %.04f",
                     pidOrig.p, pidOrig.i, pidOrig.d, pidOrig.f);
-            groundingOdometry.sync();
-            telemetry.addData("POS", groundingOdometry.get());
+//            groundingOdometry.sync();
+//            telemetry.addData("POS", groundingOdometry.get());
             telemetry.addData("POSotos", otosOdometry.get());
             telemetry.addData("POSlime", limelight.get());
             telemetry.update();

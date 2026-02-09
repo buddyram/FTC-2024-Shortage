@@ -30,6 +30,10 @@ public class BotUtilsNew {
         return new DriveToAndRotateAction<>(target, 3, (dist) -> dist > 20 ? 1 : 0.3, targetAngle);
     }
 
+    public static RobotAction<NewDecodeBot> driveAndRotateTo(Vector3D target, double targetAngle, double accuracy) {
+        return new DriveToAndRotateAction<>(target, accuracy, (dist) -> dist > 20 ? 1 : 0.3, targetAngle);
+    }
+
     public static RobotAction<NewDecodeBot> driveTowardsUntil(int x, int y, PositionalCondition condition) {
         return BotUtilsNew.driveTowardsUntil(x, y, condition, 1);
     }

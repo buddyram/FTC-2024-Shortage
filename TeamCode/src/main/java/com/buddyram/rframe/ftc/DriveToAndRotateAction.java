@@ -39,6 +39,10 @@ public class DriveToAndRotateAction<T extends Navigatable<HolonomicDriveTrain>> 
         boolean angleReached = false;
         boolean positionReached = false;
         while (!(angleReached && positionReached)) {
+            if (Thread.currentThread().isInterrupted()) {
+                new StopDrivingAction<T>().run(drive);
+                return false;
+            }
             position = drive.getOdometry().get().position;
             distance = position.distance(this.target);
             driveAngle = position.calculateRotation(this.target).z;
