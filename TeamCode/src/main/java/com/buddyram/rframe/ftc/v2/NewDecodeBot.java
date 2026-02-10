@@ -132,11 +132,11 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         double dist = overrideDistance == null ? this.odometry.get().position.distance(this.targetGoal) : overrideDistance;
         this.getLauncher().wheel.setRPM(Math.max(2350.50621 * Math.pow(1.00529, dist) + speed, 0));
         if (dist > 78) {
-            this.launcher.hood.setAngle(0.5);
-        } else if (dist > 68) {
             this.launcher.hood.setAngle(0.55);
+        } else if (dist > 68) {
+            this.launcher.hood.setAngle(0.5);
         } else {
-            this.launcher.hood.setAngle(1);
+            this.launcher.hood.setAngle(0.96);
         }
     }
     public Double overrideAngle = null;
