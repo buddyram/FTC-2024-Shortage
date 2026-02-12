@@ -14,12 +14,12 @@ public class Teleop extends BaseOpmode {
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
         Globals.DID_RUN_AUTO = false;
-        this.decodeBot.overrideHood = 1.0;
+//        this.decodeBot.overrideHood = 1.0;
         while (this.decodeBot.isActive()) {
             this.decodeBot.block = !gamepad1.right_bumper;
 
             currentGamepad1.copy(gamepad1);
-            telemetry.addData("things", this.decodeBot.launcher.blocker.angle);
+            telemetry.addData("hoodangle", decodeBot.overrideHood);
             telemetry.addData("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
             telemetry.addData("gamepad1 right stick", currentGamepad1.right_stick_x);
 
@@ -32,13 +32,13 @@ public class Teleop extends BaseOpmode {
                 this.decodeBot.speed = -1000000;
             }
 
-            if (currentGamepad1.triangle) {
-                this.decodeBot.overrideHood -= 0.005;
-            }
-            if (currentGamepad1.cross) {
-                this.decodeBot.overrideHood += 0.005;
-            }
-            this.decodeBot.overrideHood = Math.min(1, Math.max(0, decodeBot.overrideHood));
+//            if (currentGamepad1.triangle) {
+//                this.decodeBot.overrideHood -= 0.005;
+//            }
+//            if (currentGamepad1.cross) {
+//                this.decodeBot.overrideHood += 0.005;
+//            }
+//            this.decodeBot.overrideHood = Math.min(1, Math.max(0, decodeBot.overrideHood));
 //            if (currentGamepad1.circle) {
 //                this.decodeBot.speed = 0;
 //            }

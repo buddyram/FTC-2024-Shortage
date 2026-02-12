@@ -252,9 +252,9 @@ public abstract class BaseOpmode extends LinearOpMode {
         turret.setTargetPosition(0);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         PIDFCoefficients turretPidf = turret.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
-        turretPidf.p = 8;//300
-        turretPidf.i = 1;
-        turretPidf.d = 1;
+        turretPidf.p = 6;//300
+        turretPidf.i = 0;
+        turretPidf.d = 4;
         turretPidf.f = 0;
         turret.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, turretPidf);
 
