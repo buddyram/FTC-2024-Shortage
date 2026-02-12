@@ -257,6 +257,8 @@ public abstract class BaseOpmode extends LinearOpMode {
         turretPidf.d = 4;
         turretPidf.f = 0;
         turret.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, turretPidf);
+        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        turret.setTargetPositionTolerance(1);
 
         Servo blocker = hardwareMap.get(Servo.class, "blocker");
         Servo hood = hardwareMap.get(Servo.class, "hood");

@@ -187,7 +187,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         if (overrideAngle != null) {
             angle = overrideAngle;
         }
-        if (!aimOn || Math.abs(this.odometry.get().rotationVelocity.z) > 50) {
+        if (!aimOn) {
             angle = 0;
         }
 
