@@ -83,13 +83,13 @@ public abstract class BaseOpmode extends LinearOpMode {
     public abstract void execute() throws RobotException, InterruptedException;
 
     protected Vector3D getBlueStartPosition() {
-        return new Vector3D(-44.19 + 72, 58.26 + 72, 0);
+        return new Vector3D(26.25, 9.23, 0);
     }
-    protected double getBlueStartHeading() { return 52.88; }
+    protected double getBlueStartHeading() { return 54; }
     protected Vector3D getRedStartPosition() {
-        return new Vector3D(116.5, 130, 0);
+        return new Vector3D(118.78, 128.25, 0);
     }
-    protected double getRedStartHeading() { return -51.91; }
+    protected double getRedStartHeading() { return -53.29; }
     public void initializeHardware() throws InterruptedException {
         Boolean reset = null;
         if (Globals.DID_RUN_AUTO == null) {
@@ -185,6 +185,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                             )
                     );
                 } else {
+
                     otosOdometry.setPosition(
                             new Pose3D(
                                     getRedStartPosition(),
@@ -243,14 +244,20 @@ public abstract class BaseOpmode extends LinearOpMode {
         DcMotor motorInt = hardwareMap.get(DcMotor.class, "intake");
         motorInt.setPower(0);
         telemetry.addData("Status", "Initialized");
-        DcMotor turret = hardwareMap.get(DcMotor.class, "turret");
+        DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "turret");
         if (reset) {
             turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         }
-        turret.setTargetPosition(0);
         turret.setPower(0.4);
-
+        turret.setTargetPosition(0);
         turret.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        PIDFCoefficients turretPidf = turret.getPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION);
+        turretPidf.p = 8;//300
+        turretPidf.i = 1;
+        turretPidf.d = 1;
+        turretPidf.f = 0;
+        turret.setPIDFCoefficients(DcMotor.RunMode.RUN_TO_POSITION, turretPidf);
+
         Servo blocker = hardwareMap.get(Servo.class, "blocker");
         Servo hood = hardwareMap.get(Servo.class, "hood");
         Launcher launcher = new Launcher(

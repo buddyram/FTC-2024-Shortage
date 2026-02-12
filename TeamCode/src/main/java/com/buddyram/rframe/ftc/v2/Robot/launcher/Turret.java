@@ -4,13 +4,14 @@ import com.buddyram.rframe.BaseComponent;
 import com.buddyram.rframe.Robot;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 public class Turret extends BaseComponent<Robot> {
     public static final int MIN_ANGLE = -180;
     public static final int MAX_ANGLE = 180;
-    private final DcMotor motor;
+    private final DcMotorEx motor;
 
-    public Turret(Robot robot, DcMotor motor) {
+    public Turret(Robot robot, DcMotorEx motor) {
         super(robot);
         this.motor = motor;
     }
