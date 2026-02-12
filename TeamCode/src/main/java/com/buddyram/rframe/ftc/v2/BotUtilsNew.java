@@ -54,9 +54,16 @@ public class BotUtilsNew {
         return new DriveToAction<>(target, 0.5, (dist) -> 0.25,  prerotation);
     }
 
-    public static RobotAction<NewDecodeBot> driveTowardsUntil(int x, int y, PositionalCondition condition, double speed) {
+    public static RobotAction<NewDecodeBot> driveTowardsUntil(double x, double y, PositionalCondition condition, double speed) {
         return new ConditionalWrapperAction<NewDecodeBot>(
                 new DriveTowardsAction(new Vector3D(x, y, 0), false, speed),
+                (drive) -> condition.isComplete(drive.getOdometry().get().position)
+        );
+    }
+
+    public static RobotAction<NewDecodeBot> driveTowardsUntilRelative(double x, double y, PositionalCondition condition, double speed) {
+        return new ConditionalWrapperAction<NewDecodeBot>(
+                new DriveTowardsAction(new Vector3D(x, y, 0), true, speed),
                 (drive) -> condition.isComplete(drive.getOdometry().get().position)
         );
     }

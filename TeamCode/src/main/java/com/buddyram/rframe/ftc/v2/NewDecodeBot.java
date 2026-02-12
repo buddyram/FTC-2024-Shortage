@@ -19,7 +19,7 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
-    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE, SHOOT }
+    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE, OPEN_GATE_BLOCK_AFTER_NEAR, SHOOT, INTAKE_GATE }
 
     public static class AutoSequenceConfig {
         public final Vector3D shootPos;
@@ -127,6 +127,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         }
     }
     public int speed = 0;
+    public Double overrideHood = null;
     public Double overrideDistance = null;
     public void adjustFlywheelSpeed() {
         double dist = overrideDistance == null ? this.odometry.get().position.distance(this.targetGoal) : overrideDistance;
@@ -137,6 +138,9 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             this.launcher.hood.setAngle(0.5);
         } else {
             this.launcher.hood.setAngle(0.96);
+        }
+        if (overrideHood != null) {
+            this.launcher.hood.setAngle(overrideHood);
         }
     }
     public Double overrideAngle = null;
@@ -185,7 +189,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         if (overrideAngle != null) {
             angle = overrideAngle;
         }
-        if (!aimOn) {
+        if (!aimOn || Math.abs(this.odometry.get().rotationVelocity.z) > 50) {
             angle = 0;
         }
 
@@ -222,6 +226,21 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             String.format("%.2f", pos.rotation.z));
     }
 
+    public void intakeFromGate() throws RobotException {
+        BotUtilsNew.driveAndRotateTo(new Vector3D(114, 60, 0), -90).run(this);
+        BotUtilsNew.driveAndRotateTo(new Vector3D(128, 57.92, 0), -60.49).run(this); // 127.22, 56.94, -62.39
+        double time = System.currentTimeMillis();
+        jamFix = true;
+        BotUtilsNew.driveTowardsUntil(131, 58.56, (pos) -> System.currentTimeMillis() - time > 1100 , 0.3).run(this);
+        jamFix = false;
+    }
+    public void intakeWhileBlocking() throws RobotException {
+        BotUtilsNew.driveAndRotateTo(new Vector3D(126.7, 64.54, 0), 14.35).run(this);
+        double time = System.currentTimeMillis();
+        BotUtilsNew.driveTowardsUntil(128.68, 64.5, (pos) -> System.currentTimeMillis() - time > 300, 0.8).run(this);
+        BotUtilsNew.driveAndRotateTo(new Vector3D(130, 58, 0), 15.92).run(this);
+    }
+
     public void intakeTick(double x, double y) throws RobotException {
         jamFix = true;
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(45, y, 0), isRed), BotUtilsNew.mirrorIfRed(90 /*+ 20*/, isRed)).run(this);
@@ -234,7 +253,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         intakeTick(15, 36);
     }
     public void intakeTickMiddle() throws RobotException {
-        intakeTick(15, 57.6);
+        intakeTick(15, 55);
     }
 
     public void intakeTickClose() throws RobotException {
@@ -248,6 +267,8 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             case MIDDLE: intakeTickMiddle(); break;
             case FAR: intakeTickFar(); break;
             case OPEN_GATE: openGate(); break;
+            case OPEN_GATE_BLOCK_AFTER_NEAR: intakeWhileBlocking();
+            case INTAKE_GATE: intakeFromGate();
         }
     }
 
@@ -257,7 +278,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     public void shootFrom(Vector3D shootPos, double shootHeading, int turretWaitMs) throws RobotException {
         // Turret should already be preloaded from prior step; drive to shooting position
         this.aimOn = true;
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(shootPos, isRed), BotUtilsNew.mirrorIfRed(shootHeading, isRed), 6).run(this);
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(shootPos, isRed), BotUtilsNew.mirrorIfRed(shootHeading, isRed), 8).run(this);
         logPos("shootFrom arrived (" + shootPos.x + "," + shootPos.y + ")@" + shootHeading);
 
         // Switch to live auto-aim and wait for turret/flywheel to settle
@@ -279,12 +300,14 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void openGate() throws RobotException {
+        jamFix = false;
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(30, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
         logPos("openGate approach (25,72)@90");
         new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(9, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
         logPos("openGate push (11,72)@90");
         BotUtilsNew.wait(800).run(this);
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(40, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
+        jamFix = true;
     }
 
     public void updateGlobals() {
