@@ -14,6 +14,7 @@ public class Teleop extends BaseOpmode {
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
         Globals.DID_RUN_AUTO = false;
+        this.decodeBot.overrideHood = 1.0;
         while (this.decodeBot.isActive()) {
             this.decodeBot.block = !gamepad1.right_bumper;
 
@@ -31,19 +32,24 @@ public class Teleop extends BaseOpmode {
                 this.decodeBot.speed = -1000000;
             }
 
-            if (currentGamepad1.right_bumper) {
-
+            if (currentGamepad1.triangle) {
+                this.decodeBot.overrideHood -= 0.005;
             }
+            if (currentGamepad1.cross) {
+                this.decodeBot.overrideHood += 0.005;
+            }
+            this.decodeBot.overrideHood = Math.min(1, Math.max(0, decodeBot.overrideHood));
 //            if (currentGamepad1.circle) {
 //                this.decodeBot.speed = 0;
 //            }
 //            if (currentGamepad1.cross) {
 //                this.decodeBot.speed = -100;
 //            }
-            this.decodeBot.speed += (int) (gamepad1.right_trigger - gamepad1.left_trigger);
+//            this.decodeBot.speed += (int) (gamepad1.right_trigger - gamepad1.left_trigger);
             this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
             telemetry.addData("turretOffset", this.decodeBot.turretOffset);
             runDriveControls(currentGamepad1);
+            telemetry.addData("distance", this.decodeBot.odometry.get().position.distance(this.decodeBot.targetGoal));
             telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
             telemetry.addData("Key", "(x, y, z), (roll, pitch, yaw), (!!!), (!!!)");
             telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
