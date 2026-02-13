@@ -299,12 +299,14 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         // Preload turret toward estimated shoot position so it's moving while we drive
         preloadTurretForPosition(BotUtilsNew.mirrorIfRed(shootPos, isRed), BotUtilsNew.mirrorIfRed(shootHeading, isRed));
 
-        // Drive toward a point inside the near zone (shootPos.x at y=100 is safely above the
-        // y=144-x and y=x boundaries). The robot stops as soon as it enters the zone.
-        Vector3D driveTarget = BotUtilsNew.mirrorIfRed(new Vector3D(shootPos.x, 100, 0), isRed);
-        BotUtilsNew.driveTowardsUntil(driveTarget.x, driveTarget.y, (pos) -> DecodeGameMap.isInShootingZone(pos.position.x, pos.position.y, pos.rotation.z), 0.7).run(this);
+        // Drive toward a point inside the near zone. Stops as soon as it enters the zone.
+        Vector3D driveTarget = BotUtilsNew.mirrorIfRed(new Vector3D(60, 120, 0), isRed);
+        BotUtilsNew.driveTowardsUntil(driveTarget.x, driveTarget.y, (pos) -> DecodeGameMap.isInShootingZone(pos.position.x, pos.position.y, pos.rotation.z), 0.8).run(this);
         this.getDrive().drive(new HolonomicDriveInstruction(0, 0, 0));
         logPos("shootImmediate entered shooting zone");
+
+        // Use actual distance for hood/RPM so we don't overshoot at close range
+        this.overrideDistance = this.odometry.get().position.distance(this.targetGoal);
 
         // Switch to live auto-aim and wait until turret is within 3 degrees of real target
         overrideAngle = null;
