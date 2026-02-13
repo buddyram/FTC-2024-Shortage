@@ -36,6 +36,10 @@ public class Turret extends BaseComponent<Robot> {
         return MAX_POWER - t * (MAX_POWER - MIN_POWER);
     }
 
+    public double getCurrentAngle() {
+        return motor.getCurrentPosition() / TICKS_PER_DEGREE;
+    }
+
     public boolean isReady() {
         return Math.abs(motor.getTargetPosition() - motor.getCurrentPosition()) < 2;
     }

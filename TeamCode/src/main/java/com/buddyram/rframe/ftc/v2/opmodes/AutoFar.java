@@ -14,6 +14,7 @@ public class AutoFar extends BaseOpmode {
     public void execute() throws RobotException, InterruptedException {
         Globals.DID_RUN_AUTO = true;
         decodeBot.runAutoSequence(new AutoSequenceConfig(
+            /* firstShotPos */     new Vector3D(60, 24, 0),
             /* shootPos */           new Vector3D(60, 24, 0),
             /* shootHeading */       90,
             /* steps */              new AutoStep[]{AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.SHOOT},
