@@ -11,6 +11,15 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 @TeleOp(name = "TELEOP - DECODE/V2", group = "Decode")
 public class Teleop extends BaseOpmode {
+    private boolean adjustmentMode = false;
+    private Gamepad previousGamepad1 = new Gamepad();
+    private long dpadHoldStartLR = 0;
+    private long lastAdjustTimeLR = 0;
+    private long dpadHoldStartUD = 0;
+    private long lastAdjustTimeUD = 0;
+    private static final long INITIAL_DELAY_MS = 400;
+    private static final long REPEAT_MS = 80;
+
     @Override
     protected Pose3D getOTOSOverridePosition() {
         if (Globals.POSITION != null) {
@@ -34,15 +43,13 @@ public class Teleop extends BaseOpmode {
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
         Globals.DID_RUN_AUTO = false;
-//        this.decodeBot.overrideHood = 1.0;
         while (this.decodeBot.isActive()) {
-            this.decodeBot.block = !gamepad1.right_bumper;
-
+            previousGamepad1.copy(currentGamepad1);
             currentGamepad1.copy(gamepad1);
-            telemetry.addData("hoodangle", decodeBot.overrideHood);
-            telemetry.addData("gamepad1 left sticks", currentGamepad1.left_stick_x + ", " + -currentGamepad1.left_stick_y);
-            telemetry.addData("gamepad1 right stick", currentGamepad1.right_stick_x);
 
+            // Always active controls
+            this.decodeBot.block = !gamepad1.right_bumper;
+            this.decodeBot.jamFix = gamepad1.left_bumper || gamepad1.right_bumper;
             colorRumbleFlywheel(currentGamepad1);
 
             if (currentGamepad1.square) {
@@ -52,29 +59,75 @@ public class Teleop extends BaseOpmode {
                 this.decodeBot.speed = -1000000;
             }
 
-//            if (currentGamepad1.triangle) {
-//                this.decodeBot.overrideHood -= 0.005;
-//            }
-//            if (currentGamepad1.cross) {
-//                this.decodeBot.overrideHood += 0.005;
-//            }
-//            this.decodeBot.overrideHood = Math.min(1, Math.max(0, decodeBot.overrideHood));
-//            if (currentGamepad1.circle) {
-//                this.decodeBot.speed = 0;
-//            }
-//            if (currentGamepad1.cross) {
-//                this.decodeBot.speed = -100;
-//            }
-//            this.decodeBot.speed += (int) (gamepad1.right_trigger - gamepad1.left_trigger);
-            this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
-            telemetry.addData("turretOffset", this.decodeBot.turretOffset);
-            runDriveControls(currentGamepad1);
-            telemetry.addData("distance", this.decodeBot.odometry.get().position.distance(this.decodeBot.targetGoal));
-            telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
-            telemetry.addData("Key", "(x, y, z), (roll, pitch, yaw), (!!!), (!!!)");
-            telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
+            // Toggle adjustment mode on OPTIONS press
+            if (currentGamepad1.options && !previousGamepad1.options) {
+                adjustmentMode = !adjustmentMode;
+            }
+
+            if (adjustmentMode) {
+                runAdjustmentMode(currentGamepad1);
+                // Joystick driving still works in adjustment mode
+                double speed = 0.8;
+                if (currentGamepad1.left_stick_button || currentGamepad1.right_stick_button) speed = 1;
+                double speedLevel = Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(currentGamepad1.left_stick_y, 2));
+                decodeBot.getDrive().drive(new HolonomicDriveInstruction(
+                        currentGamepad1.right_stick_x * speed,
+                        speed * speedLevel,
+                        Math.toDegrees(Math.atan2(-currentGamepad1.left_stick_y, currentGamepad1.left_stick_x)) + this.decodeBot.odometry.get().rotation.z
+                ));
+                this.decodeBot.aimOn = true;
+            } else {
+                this.decodeBot.turretOffset += (gamepad1.right_trigger - gamepad1.left_trigger);
+                telemetry.addData("turretOffset", this.decodeBot.turretOffset);
+                telemetry.addData("hoodOffset", this.decodeBot.hoodOffset);
+                runDriveControls(currentGamepad1);
+                telemetry.addData("distance", this.decodeBot.odometry.get().position.distance(this.decodeBot.targetGoal));
+                telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
+                telemetry.addData("Speed", this.decodeBot.getLauncher().wheel.getRPM());
+            }
+
             telemetry.update();
-            this.decodeBot.jamFix = gamepad1.left_bumper || gamepad1.right_bumper;
+        }
+    }
+
+    private void runAdjustmentMode(Gamepad gp) {
+        telemetry.addData("== ADJUSTMENT MODE ==", "OPTIONS to exit");
+        telemetry.addData("Left/Right", "Turret offset (1 deg/tap)");
+        telemetry.addData("Up/Down", "Hood offset (0.01/tap)");
+        telemetry.addData("Turret Offset", String.format("%.1f deg", decodeBot.turretOffset));
+        telemetry.addData("Hood Offset", String.format("%.3f", decodeBot.hoodOffset));
+        telemetry.addData("OTOS Position", this.decodeBot.getOdometry().get());
+
+        long now = System.currentTimeMillis();
+
+        // Turret offset: left/right d-pad
+        boolean turretPressed = gp.dpad_left || gp.dpad_right;
+        boolean turretWasPressed = previousGamepad1.dpad_left || previousGamepad1.dpad_right;
+        if (turretPressed) {
+            double dir = gp.dpad_right ? 1 : -1;
+            if (!turretWasPressed) {
+                decodeBot.turretOffset = Math.max(-180, Math.min(180, decodeBot.turretOffset + dir));
+                dpadHoldStartLR = now;
+                lastAdjustTimeLR = now;
+            } else if (now - dpadHoldStartLR > INITIAL_DELAY_MS && now - lastAdjustTimeLR > REPEAT_MS) {
+                decodeBot.turretOffset = Math.max(-180, Math.min(180, decodeBot.turretOffset + dir));
+                lastAdjustTimeLR = now;
+            }
+        }
+
+        // Hood offset: up/down d-pad
+        boolean hoodPressed = gp.dpad_up || gp.dpad_down;
+        boolean hoodWasPressed = previousGamepad1.dpad_up || previousGamepad1.dpad_down;
+        if (hoodPressed) {
+            double dir = gp.dpad_up ? 0.01 : -0.01;
+            if (!hoodWasPressed) {
+                decodeBot.hoodOffset += dir;
+                dpadHoldStartUD = now;
+                lastAdjustTimeUD = now;
+            } else if (now - dpadHoldStartUD > INITIAL_DELAY_MS && now - lastAdjustTimeUD > REPEAT_MS) {
+                decodeBot.hoodOffset += dir;
+                lastAdjustTimeUD = now;
+            }
         }
     }
 
@@ -96,22 +149,14 @@ public class Teleop extends BaseOpmode {
 
         if (currentGamepad1.dpad_up) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(0, 1, 0), speed));
-//            this.decodeBot.aimOn = false;
         } else if (currentGamepad1.dpad_down) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(0, -1, 0), speed));
-//            this.decodeBot.aimOn = false;
         } else if (currentGamepad1.dpad_right) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(1, 0, 0), speed));
-//            this.decodeBot.aimOn = false;
         } else if (currentGamepad1.dpad_left) {
             this.decodeBot.getDrive().drive(this.decodeBot.calculateRelativeDriveInstruction(new Vector3D(-1, 0, 0), speed));
-//            this.decodeBot.aimOn = false;
-
         } else {
             double speedLevel = Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(currentGamepad1.left_stick_y, 2));
-            if (speedLevel > 0) {
-//                this.decodeBot.aimOn = false;
-            }
             decodeBot.getDrive().drive(new HolonomicDriveInstruction(
                     currentGamepad1.right_stick_x * speed,
                     speed * speedLevel,
