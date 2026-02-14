@@ -1,5 +1,6 @@
 package com.buddyram.rframe.ftc.v2.opmodes;
 
+import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
@@ -10,6 +11,25 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 @TeleOp(name = "TELEOP - DECODE/V2", group = "Decode")
 public class Teleop extends BaseOpmode {
+    @Override
+    protected Pose3D getOTOSOverridePosition() {
+        if (Globals.POSITION != null) {
+            telemetry.addData("OTOS Position", "SQUARE = Reset (72,72), TRIANGLE = Keep (" +
+                String.format("%.1f, %.1f, h%.1f", Globals.POSITION.position.x, Globals.POSITION.position.y, Globals.POSITION.rotation.z) + ")");
+        } else {
+            telemetry.addData("OTOS Position", "SQUARE = Reset (72,72) | No cached position");
+        }
+        telemetry.update();
+        while (true) {
+            if (gamepad1.square) {
+                return new Pose3D(new Vector3D(72, 72, 0), new Vector3D(), new Vector3D(), new Vector3D());
+            }
+            if (gamepad1.triangle && Globals.POSITION != null) {
+                return Globals.POSITION;
+            }
+        }
+    }
+
     @Override
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();

@@ -14,7 +14,7 @@ import com.buddyram.rframe.drive.HolonomicDriveTrain;
 import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.ftc.DriveToAction;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
-import com.buddyram.rframe.ftc.decode.Globals;
+import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
@@ -271,10 +271,10 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void intakeTickFar() throws RobotException {
-        intakeTick(15, 36);
+        intakeTick(18, 36);
     }
     public void intakeTickMiddle() throws RobotException {
-        intakeTick(15, 55);
+        intakeTick(15, 58);
     }
 
     public void intakeTickClose() throws RobotException {
@@ -301,7 +301,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
 
         // Drive toward a point inside the near zone. Stops as soon as it enters the zone.
         Vector3D driveTarget = BotUtilsNew.mirrorIfRed(new Vector3D(60, 120, 0), isRed);
-        BotUtilsNew.driveTowardsUntil(driveTarget.x, driveTarget.y, (pos) -> DecodeGameMap.isInShootingZone(pos.position.x, pos.position.y, pos.rotation.z), 0.8).run(this);
+        BotUtilsNew.driveTowardsUntil(driveTarget.x, driveTarget.y, (pos) -> DecodeGameMap.isInShootingZone(pos.position.x, pos.position.y, pos.rotation.z), 0.9).run(this);
         this.getDrive().drive(new HolonomicDriveInstruction(0, 0, 0));
         logPos("shootImmediate entered shooting zone");
 
@@ -358,6 +358,9 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     public void runAutoSequence(AutoSequenceConfig config) throws RobotException {
         this.overrideDistance = BotUtilsNew.mirrorIfRed(config.shootPos, isRed).distance(targetGoal);
         logPos("AUTO START");
+
+        // Preload turret toward first shot position so it's already aimed when we arrive
+        preloadTurretForPosition(BotUtilsNew.mirrorIfRed(config.firstShotPos, isRed), BotUtilsNew.mirrorIfRed(config.shootHeading, isRed));
 
         boolean firstShot = true;
         for (AutoStep step : config.steps) {

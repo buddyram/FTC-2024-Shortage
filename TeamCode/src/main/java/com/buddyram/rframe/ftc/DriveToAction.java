@@ -42,7 +42,7 @@ public class DriveToAction<T extends Navigatable<HolonomicDriveTrain>> implement
         }
 
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-        while (distance > accuracy) {
+        while (distance > accuracy && drive.isActive()) {
             position = drive.getOdometry().get().position;
             distance = position.distance(this.target);
             driveAngle = position.calculateRotation(this.target).z;

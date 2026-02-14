@@ -36,6 +36,9 @@ public abstract class BaseOpmode extends LinearOpMode {
     NewDecodeBot decodeBot;
     CachedOdometry<Pose3D> cachedOdometry;
 
+    protected static final Pose3D KEEP_CURRENT_OTOS = new Pose3D(
+            new Vector3D(), new Vector3D(), new Vector3D(), new Vector3D()
+    );
 
     public static final Pose3D DEFAULT_POSITION = new Pose3D( // pose
             new Vector3D(0, 0, 0), //            new Vector3D(0, 9, 0), // position
@@ -82,14 +85,18 @@ public abstract class BaseOpmode extends LinearOpMode {
 
     public abstract void execute() throws RobotException, InterruptedException;
 
+    protected Pose3D getOTOSOverridePosition() {
+        return null;
+    }
+
     protected Vector3D getBlueStartPosition() {
         return new Vector3D(26.25, 9.23, 0);
     }
     protected double getBlueStartHeading() { return 54; }
     protected Vector3D getRedStartPosition() {
-        return new Vector3D(118.78, 128.25, 0);
+        return new Vector3D(118.44, 130.37, 0);
     }
-    protected double getRedStartHeading() { return -53.29; }
+    protected double getRedStartHeading() { return -52.25; }
     public void initializeHardware() throws InterruptedException {
         Boolean reset = null;
         if (Globals.DID_RUN_AUTO == null) {
@@ -173,7 +180,16 @@ public abstract class BaseOpmode extends LinearOpMode {
 //            otosOdometry.setPosition(limelight.get());
 //            telemetry.addData("OTOS", "used limelight");
         } catch (RuntimeException e) {
-            if (Globals.POSITION == null) {
+            Pose3D otosOverride = getOTOSOverridePosition();
+            if (otosOverride == KEEP_CURRENT_OTOS) {
+                telemetry.addData("OTOS", "keeping current position");
+            } else if (otosOverride != null) {
+                otosOdometry.setPosition(otosOverride);
+                telemetry.addData("OTOS", "used override");
+            } else if (Globals.POSITION != null) {
+                otosOdometry.setPosition(Globals.POSITION);
+                telemetry.addData("OTOS", "used cached");
+            } else {
                 telemetry.addData("OTOS", "used auto starting");
                 if (isRed != 1) {
                     otosOdometry.setPosition(
@@ -185,7 +201,6 @@ public abstract class BaseOpmode extends LinearOpMode {
                             )
                     );
                 } else {
-
                     otosOdometry.setPosition(
                             new Pose3D(
                                     getRedStartPosition(),
@@ -195,9 +210,6 @@ public abstract class BaseOpmode extends LinearOpMode {
                             )
                     );
                 }
-            } else {
-                otosOdometry.setPosition(Globals.POSITION);
-                telemetry.addData("OTOS", "used cached");
             }
         }
 

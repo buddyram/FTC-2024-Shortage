@@ -38,7 +38,7 @@ public class DriveToAndRotateAction<T extends Navigatable<HolonomicDriveTrain>> 
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
         boolean angleReached = false;
         boolean positionReached = false;
-        while (!(angleReached && positionReached)) {
+        while (!(angleReached && positionReached) && drive.isActive()) {
             if (Thread.currentThread().isInterrupted()) {
                 new StopDrivingAction<T>().run(drive);
                 return false;
