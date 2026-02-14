@@ -16,7 +16,7 @@ public class AutoCloseDoubleGate extends BaseOpmode {
             /* firstShotPos */     new Vector3D(50, 84, 0),
             /* shootPos */     new Vector3D(60, 120, 0),
             /* shootHeading */ 90,
-            /* steps */        new AutoStep[]{AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.OPEN_GATE_LEFT, AutoStep.SHOOT, AutoStep.NEAR, AutoStep.OPEN_GATE_RIGHT, AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT},
+            /* steps */        new AutoStep[]{AutoStep.SHOOT, AutoStep.MIDDLE, AutoStep.OPEN_GATE_LEFT, AutoStep.SHOOT, AutoStep.NEAR, AutoStep.OPEN_GATE_LEFT, AutoStep.SHOOT, AutoStep.FAR, AutoStep.SHOOT},
             /* parkPos */      new Vector3D(24, 72, 0)
         ));
     }

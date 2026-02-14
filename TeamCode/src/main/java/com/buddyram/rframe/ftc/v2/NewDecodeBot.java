@@ -19,7 +19,7 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
-    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE_LEFT, OPEN_GATE_RIGHT, OPEN_GATE_BLOCK_AFTER_NEAR, SHOOT, INTAKE_GATE }
+    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE_LEFT, /* OPEN_GATE_RIGHT , */ OPEN_GATE_BLOCK_AFTER_NEAR, SHOOT, INTAKE_GATE }
 
     public static class AutoSequenceConfig {
         public final Vector3D shootPos;
@@ -267,7 +267,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         jamFix = true;
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(45, y, 0), isRed), BotUtilsNew.mirrorIfRed(90 /*+ 20*/, isRed)).run(this);
         logPos("intakeTick approach (45," + y + ")@110");
-        BotUtilsNew.driveTo(BotUtilsNew.mirrorIfRed(new Vector3D(x, y, 0), isRed), false).run(this);
+        new TimeoutWrapperAction<>(BotUtilsNew.driveTo(BotUtilsNew.mirrorIfRed(new Vector3D(x, y, 0), isRed), false), 1600).run(this);
         logPos("intakeTick pickup (" + x + "," + y + ")@90");
     }
 
@@ -279,7 +279,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void intakeTickClose() throws RobotException {
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(19, 84, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
+        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(19, 84, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 1600).run(this);
         logPos("intakeTickClose (12,84)@90");
     }
 
@@ -289,7 +289,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             case MIDDLE: intakeTickMiddle(); break;
             case FAR: intakeTickFar(); break;
             case OPEN_GATE_LEFT: openGateLeft(); break;
-            case OPEN_GATE_RIGHT: openGateRight(); break;
+//            case OPEN_GATE_RIGHT: openGateRight(); break;
             case OPEN_GATE_BLOCK_AFTER_NEAR: intakeWhileBlocking();
             case INTAKE_GATE: intakeFromGate();
         }
@@ -301,8 +301,8 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         // Preload turret toward estimated shoot position so it's moving while we drive
         preloadTurretForPosition(BotUtilsNew.mirrorIfRed(shootPos, isRed), BotUtilsNew.mirrorIfRed(shootHeading, isRed));
 
-        // Drive toward a point inside the near zone. Stops as soon as it enters the zone.
-        Vector3D driveTarget = BotUtilsNew.mirrorIfRed(new Vector3D(60, 120, 0), isRed);
+        // Drive toward shoot position. Stops as soon as it enters a shooting zone.
+        Vector3D driveTarget = BotUtilsNew.mirrorIfRed(shootPos, isRed);
         BotUtilsNew.driveTowardsUntil(driveTarget.x, driveTarget.y, (pos) -> DecodeGameMap.isInShootingZone(pos.position.x, pos.position.y, pos.rotation.z), 0.9).run(this);
         this.getDrive().drive(new HolonomicDriveInstruction(0, 0, 0));
         logPos("shootImmediate entered shooting zone");
@@ -343,26 +343,32 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
     }
 
     public void openGateLeft() throws RobotException {
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(30, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
-        logPos("openGate approach (25,72)@90");
+        // Fast approach - just get close to alignment position
+        new DriveToAction<NewDecodeBot>(BotUtilsNew.mirrorIfRed(new Vector3D(30, 72, 0), isRed), 8, (dist) -> 0.8, false).run(this);
+        logPos("openGateLeft approach");
+        // Push with heading alignment, timeout prevents stalling
         jamFix = false;
-        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(9, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
-        logPos("openGate push (11,72)@90");
+        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(9, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
+        logPos("openGateLeft push");
         BotUtilsNew.wait(800).run(this);
         jamFix = true;
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(40, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
+        // Fast back away
+        new DriveToAction<NewDecodeBot>(BotUtilsNew.mirrorIfRed(new Vector3D(40, 60, 0), isRed), 8, (dist) -> 0.8, false).run(this);
     }
 
-    public void openGateRight() throws RobotException {
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(30, 76, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
-        logPos("openGate approach (25,72)@90");
-        jamFix = false;
-        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(9, 76, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
-        logPos("openGate push (11,72)@90");
-        BotUtilsNew.wait(300).run(this);
-        jamFix = true;
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(40, 76, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
-    }
+//    public void openGateRight() throws RobotException {
+//        // Fast approach - just get close to alignment position
+//        new DriveToAction<NewDecodeBot>(BotUtilsNew.mirrorIfRed(new Vector3D(30, 72, 0), isRed), 8, (dist) -> 0.8, false).run(this);
+//        logPos("openGateRight approach");
+//        // Push with heading alignment, timeout prevents stalling
+//        jamFix = false;
+//        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(9, 72, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
+//        logPos("openGateRight push");
+//        BotUtilsNew.wait(300).run(this);
+//        jamFix = true;
+//        // Fast back away
+//        new DriveToAction<NewDecodeBot>(BotUtilsNew.mirrorIfRed(new Vector3D(40, 72, 0), isRed), 8, (dist) -> 0.8, false).run(this);
+//    }
 
     public void updateGlobals() {
         Globals.POSITION = this.odometry.get();
