@@ -267,7 +267,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         jamFix = true;
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(45, y, 0), isRed), BotUtilsNew.mirrorIfRed(90 /*+ 20*/, isRed)).run(this);
         logPos("intakeTick approach (45," + y + ")@110");
-        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(x, y, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
+        BotUtilsNew.driveTo(BotUtilsNew.mirrorIfRed(new Vector3D(x, y, 0), isRed), false).run(this);
         logPos("intakeTick pickup (" + x + "," + y + ")@90");
     }
 

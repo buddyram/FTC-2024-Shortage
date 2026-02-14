@@ -55,10 +55,16 @@ public class BotUtilsNew {
     }
 
     public static RobotAction<NewDecodeBot> driveTowardsUntil(double x, double y, PositionalCondition condition, double speed) {
+        Vector3D target = new Vector3D(x, y, 0);
         return new ConditionalWrapperAction<NewDecodeBot>(
-                new DriveTowardsAction(new Vector3D(x, y, 0), false, speed),
+                new DriveTowardsAction(target, false, speed),
                 (drive) -> condition.isComplete(drive.getOdometry().get())
-        );
+        ) {
+            @Override
+            public void waitingForCompletion(NewDecodeBot drive) throws com.buddyram.rframe.RobotException {
+                drive.getDrive().drive(drive.calculateDriveInstruction(target, speed));
+            }
+        };
     }
 
     public static RobotAction<NewDecodeBot> driveTowardsUntilRelative(double x, double y, PositionalCondition condition, double speed) {
