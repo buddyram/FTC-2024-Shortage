@@ -19,7 +19,7 @@ import com.buddyram.rframe.ftc.v2.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.v2.Robot.launcher.Launcher;
 
 public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
-    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE, OPEN_GATE_BLOCK_AFTER_NEAR, SHOOT, INTAKE_GATE }
+    public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE_LEFT, OPEN_GATE_RIGHT, OPEN_GATE_BLOCK_AFTER_NEAR, SHOOT, INTAKE_GATE }
 
     public static class AutoSequenceConfig {
         public final Vector3D shootPos;
@@ -288,7 +288,8 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
             case NEAR: intakeTickClose(); break;
             case MIDDLE: intakeTickMiddle(); break;
             case FAR: intakeTickFar(); break;
-            case OPEN_GATE: openGate(); break;
+            case OPEN_GATE_LEFT: openGateLeft(); break;
+            case OPEN_GATE_RIGHT: openGateRight(); break;
             case OPEN_GATE_BLOCK_AFTER_NEAR: intakeWhileBlocking();
             case INTAKE_GATE: intakeFromGate();
         }
@@ -341,7 +342,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         shootFrom(SHOOT_POSITION, SHOOT_HEADING, 1000);
     }
 
-    public void openGate() throws RobotException {
+    public void openGateLeft() throws RobotException {
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(30, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
         logPos("openGate approach (25,72)@90");
         jamFix = false;
@@ -350,6 +351,17 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         BotUtilsNew.wait(800).run(this);
         jamFix = true;
         BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(40, 66, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
+    }
+
+    public void openGateRight() throws RobotException {
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(30, 76, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
+        logPos("openGate approach (25,72)@90");
+        jamFix = false;
+        new TimeoutWrapperAction<>(BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(9, 76, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)), 500).run(this);
+        logPos("openGate push (11,72)@90");
+        BotUtilsNew.wait(300).run(this);
+        jamFix = true;
+        BotUtilsNew.driveAndRotateTo(BotUtilsNew.mirrorIfRed(new Vector3D(40, 76, 0), isRed), BotUtilsNew.mirrorIfRed(90, isRed)).run(this);
     }
 
     public void updateGlobals() {
