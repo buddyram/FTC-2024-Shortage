@@ -275,7 +275,7 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         intakeTick(18, 36);
     }
     public void intakeTickMiddle() throws RobotException {
-        intakeTick(15, 58);
+        intakeTick(15, 56);
     }
 
     public void intakeTickClose() throws RobotException {

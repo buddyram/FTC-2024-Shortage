@@ -4,6 +4,7 @@ import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
+import com.buddyram.rframe.ftc.v2.BotUtilsNew;
 import com.buddyram.rframe.ftc.v2.Globals;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
@@ -57,6 +58,23 @@ public class Teleop extends BaseOpmode {
             }
             if (currentGamepad1.circle) {
                 this.decodeBot.speed = -1000000;
+            }
+            if (currentGamepad1.triangle) {
+                this.decodeBot.odometry.setPosition(
+                    BotUtilsNew.mirrorIfRed(
+                        new Pose3D(
+                            new Vector3D(7.98, 8.94, 0),
+                            new Vector3D(),
+                            new Vector3D(),
+                            new Vector3D()
+                        ),
+                        !this.decodeBot.isRed
+                    )
+                );
+            }
+            if (currentGamepad1.cross) {
+                this.decodeBot.overrideDistance = this.decodeBot.overrideDistance == null ? 67.8822509939 : null;
+                this.decodeBot.overrideAngle = this.decodeBot.overrideAngle == null ? 0.0 : null;
             }
 
             // Toggle adjustment mode on OPTIONS press

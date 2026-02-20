@@ -90,9 +90,9 @@ public abstract class BaseOpmode extends LinearOpMode {
     }
 
     protected Vector3D getBlueStartPosition() {
-        return new Vector3D(26.25, 9.23, 0);
+        return new Vector3D(25.46, 129.8, 0);
     }
-    protected double getBlueStartHeading() { return 54; }
+    protected double getBlueStartHeading() { return 52.01; }
     protected Vector3D getRedStartPosition() {
         return new Vector3D(118.44, 130.37, 0);
     }
