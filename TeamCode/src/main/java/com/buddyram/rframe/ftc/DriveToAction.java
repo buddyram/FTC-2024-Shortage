@@ -22,7 +22,7 @@ public class DriveToAction<T extends Navigatable<HolonomicDriveTrain>> implement
     }
 
     public DriveToAction(Vector3D target, double accuracy, boolean prerotation) {
-        this(target, accuracy, distance -> Math.abs(distance) > 20 ? 1 : Math.abs(distance) > 5 ? 0.6 : 0.3, prerotation);
+        this(target, accuracy, distance -> Math.abs(distance) > 20 ? 1 : Math.abs(distance) > 8 ? 0.6 : 0.35, prerotation);
     }
 
     public DriveToAction(Vector3D target, double accuracy, CalculateDriveSpeed speed, boolean prerotation) {
@@ -42,7 +42,7 @@ public class DriveToAction<T extends Navigatable<HolonomicDriveTrain>> implement
         }
 
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-        while (distance > accuracy) {
+        while (distance > accuracy && drive.isActive()) {
             position = drive.getOdometry().get().position;
             distance = position.distance(this.target);
             driveAngle = position.calculateRotation(this.target).z;

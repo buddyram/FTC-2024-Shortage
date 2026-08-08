@@ -1,4 +1,4 @@
-package com.buddyram.rframe.ftc.decode.launcher;
+package com.buddyram.rframe.ftc.decode.intake;
 
 import com.buddyram.rframe.BaseComponent;
 import com.buddyram.rframe.Robot;
@@ -22,10 +22,15 @@ public class Sweeper extends BaseComponent<Robot> {
         this.servo.setPower(newPower);
     }
 
-    public static RobotAction<DecodeBot> moveTo(double tgt) {
-        return (robot) -> {
-            robot.getIntake().sweeper.setPower(tgt);
-            return true;
-        };
+    public void idle() {
+        servo.setPower(-0.25);
+    }
+
+    public void intaking() {
+        servo.setPower(1);
+    }
+
+    public void waiting() {
+        servo.setPower(-0.1);
     }
 }

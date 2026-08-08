@@ -2,16 +2,33 @@ package com.buddyram.rframe.ftc.decode.intake;
 
 import com.buddyram.rframe.BaseComponent;
 import com.buddyram.rframe.Robot;
-import com.buddyram.rframe.ftc.decode.DecodeBot;
-import com.buddyram.rframe.ftc.decode.launcher.Feeder;
-import com.buddyram.rframe.ftc.decode.launcher.Flywheel;
-import com.buddyram.rframe.ftc.decode.launcher.Sweeper;
 
 public class Intake extends BaseComponent<Robot> {
+    public Modes getMode() {
+        return mode;
+    }
+
+    public enum Modes {
+        INTAKING,
+        IDLE,
+        WAITING
+    }
+    private Modes mode;
     public final Sweeper sweeper;
 
     public Intake(Robot robot, Sweeper sweeper) {
         super(robot);
         this.sweeper = sweeper;
+    }
+
+    public void enableMode(Modes mode) {
+        if (mode == Modes.IDLE) {
+            sweeper.idle();
+        } else if (mode == Modes.WAITING) {
+            sweeper.waiting();
+        } else if (mode == Modes.INTAKING) {
+            sweeper.intaking();
+        }
+        this.mode = mode;
     }
 }

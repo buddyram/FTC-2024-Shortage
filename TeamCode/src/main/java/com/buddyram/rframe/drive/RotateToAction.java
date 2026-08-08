@@ -10,7 +10,7 @@ public class RotateToAction<T extends Navigatable<HolonomicDriveTrain>> implemen
     private final CalculateRotationSpeed speed;
 
     public RotateToAction(double targetAngle, double accuracy) {
-        this(targetAngle, accuracy, angleDifference -> Math.abs(angleDifference) > 60 ? 1 : Math.abs(angleDifference) > 5 ? 0.3 : 0.15);
+        this(targetAngle, accuracy, angleDifference -> Math.abs(angleDifference) > 60 ? 1 : Math.abs(angleDifference) > 6 ? 0.20 : 0.1);
     }
 
     public RotateToAction(double targetAngle, double accuracy, CalculateRotationSpeed speed) {

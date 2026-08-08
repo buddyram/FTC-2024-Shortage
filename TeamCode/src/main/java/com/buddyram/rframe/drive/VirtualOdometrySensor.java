@@ -52,4 +52,9 @@ public class VirtualOdometrySensor implements Odometry<Pose3D> {
     public void setPosition(Pose3D pos) {
 
     }
+
+    @Override
+    public void cleanup() {
+
+    }
 }
