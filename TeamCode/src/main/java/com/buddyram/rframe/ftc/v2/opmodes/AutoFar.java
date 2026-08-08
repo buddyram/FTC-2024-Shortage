@@ -7,7 +7,9 @@ import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name = "Auto Far 9", group = "Decode")
 public class AutoFar extends BaseOpmode {
     @Override

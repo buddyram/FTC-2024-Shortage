@@ -6,7 +6,9 @@ import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name = "Auto Close 15", group = "Decode")
 public class AutoClose15 extends BaseOpmode {
     @Override

@@ -6,10 +6,11 @@ import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.ftc.v2.BotUtilsNew;
 import com.buddyram.rframe.ftc.v2.Globals;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-
+@Disabled
 @TeleOp(name = "TELEOP - DECODE/V2", group = "Decode")
 public class Teleop extends BaseOpmode {
     private boolean adjustmentMode = false;

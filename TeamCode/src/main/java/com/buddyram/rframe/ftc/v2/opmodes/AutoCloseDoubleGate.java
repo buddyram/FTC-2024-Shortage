@@ -6,7 +6,9 @@ import com.buddyram.rframe.ftc.v2.Globals;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoSequenceConfig;
 import com.buddyram.rframe.ftc.v2.NewDecodeBot.AutoStep;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
+@Disabled
 @Autonomous(name = "Auto Double Gate", group = "Decode")
 public class AutoCloseDoubleGate extends BaseOpmode {
     @Override
