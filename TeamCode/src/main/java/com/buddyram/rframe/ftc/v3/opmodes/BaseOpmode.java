@@ -16,6 +16,7 @@ import com.buddyram.rframe.ftc.v3.BotUtilsNew;
 import com.buddyram.rframe.ftc.v3.Globals;
 import com.buddyram.rframe.ftc.v3.NewDecodeBot;
 import com.buddyram.rframe.ftc.v3.Robot.intake.Intake;
+import com.buddyram.rframe.ftc.v3.Robot.intake.IntakeServoLift;
 import com.buddyram.rframe.ftc.v3.Robot.intake.Sweeper;
 import com.buddyram.rframe.ftc.v3.Robot.launcher.Blocker;
 import com.buddyram.rframe.ftc.v3.Robot.launcher.Flywheel;
@@ -220,6 +221,8 @@ public abstract class BaseOpmode extends LinearOpMode {
 
             Servo blockerServo = hardwareMap.get(Servo.class, "blocker");
             Servo hood = hardwareMap.get(Servo.class, "hood");
+            Servo intakeServoLeft = hardwareMap.get(Servo.class, "intakeLeft");
+            Servo intakeServoRight = hardwareMap.get(Servo.class, "intakeRight");
             launcher = new Launcher(
                     this.decodeBot,
                     new Flywheel(this.decodeBot, new RPMMotor(motorFly, 28)),
@@ -227,7 +230,10 @@ public abstract class BaseOpmode extends LinearOpMode {
                     new Hood(this.decodeBot, hood),
                     new Blocker(this.decodeBot, blockerServo)
             );
-            intake = new Intake(this.decodeBot, new Sweeper(this.decodeBot, motorInt));
+            intake = new Intake(
+                    this.decodeBot,
+                    new Sweeper(this.decodeBot, motorInt),
+                    new IntakeServoLift(this.decodeBot, intakeServoLeft, intakeServoRight ));
             telemetry.addData("Subsystems", "Initialized");
         } catch (Exception e) {
             telemetry.addData("Subsystems", "Not found - drivetrain only");

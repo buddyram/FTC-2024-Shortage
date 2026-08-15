@@ -27,11 +27,11 @@ public class Intake extends BaseComponent<Robot> {
         DOWN
     }
     public void enableHeight(Position mode) {
-        if (mode = Position.UP) {
+        if (mode == Position.UP) {
             intakeServoLift.up();
-        } else if (mode = Position.MIDDLE) {
+        } else if (mode == Position.MIDDLE) {
             intakeServoLift.middle();
-        } else if (mode = Position.DOWN){
+        } else if (mode == Position.DOWN){
             intakeServoLift.down();
         }
     }
