@@ -231,10 +231,12 @@ public class NewDecodeBot implements Navigatable<HolonomicDriveTrain> {
         if (this.launcher == null || this.intake == null) return;
         this.launcher.blocker.setAngle(this.block ? this.launcher.blocker.OPEN : this.launcher.blocker.CLOSED);
         if (jamFix) {
+            this.intake.enableHeight(Intake.Position.MIDDLE);
             this.intake.enableMode(Intake.Modes.INTAKING);
             return;
         }
         else {
+            this.intake.enableHeight(Intake.Position.UP);
             this.intake.enableMode(Intake.Modes.IDLE);
         }
     }

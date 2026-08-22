@@ -8,9 +8,9 @@ public class IntakeServoLift extends BaseComponent<Robot> {
     public double angle;
     private final Servo servoLeft;
     private final Servo servoRight;
-    public final double DOWN = 0;
-    public final double MIDDLE = 0.5;
-    public final double UP = 1;
+    public final double DOWN = 0.11;
+    public final double MIDDLE = 0.1649;
+    public final double UP = 0.7895;
     public IntakeServoLift(Robot robot, Servo servoLeft, Servo servoRight) {
         super(robot);
         this.servoLeft = servoLeft;

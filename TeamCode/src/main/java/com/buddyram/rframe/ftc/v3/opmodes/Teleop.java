@@ -20,6 +20,7 @@ public class Teleop extends BaseOpmode {
     private long lastAdjustTimeUD = 0;
     private static final long INITIAL_DELAY_MS = 400;
     private static final long REPEAT_MS = 80;
+//    private double intakeHeight = 0.5;
 
     @Override
     public void execute() throws RobotException, InterruptedException {
@@ -32,7 +33,10 @@ public class Teleop extends BaseOpmode {
             // Always active controls
             this.decodeBot.block = !gamepad1.right_bumper;
             this.decodeBot.jamFix = gamepad1.left_bumper || gamepad1.right_bumper;
-//            colorRumbleFlywheel(currentGamepad1);
+            colorRumbleFlywheel(currentGamepad1);
+//            telemetry.addData("test", this.intakeHeight);
+//            this.intakeHeight += gamepad2.left_stick_x / 5000;
+//            this.decodeBot.intake.intakeServoLift.setAngle(intakeHeight);
 
             if (currentGamepad1.square) {
                 this.decodeBot.speed = 0;
