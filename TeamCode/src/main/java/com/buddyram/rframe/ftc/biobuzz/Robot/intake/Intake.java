@@ -10,30 +10,15 @@ public class Intake extends BaseComponent<Robot> {
 
     public enum Modes {
         INTAKING,
+        INTAKING_FAST,
         IDLE,
         OUTTAKING
     }
     private Modes mode;
     public final Sweeper sweeper;
-    public final IntakeServoLift intakeServoLift;
-    public Intake(Robot robot, Sweeper sweeper, IntakeServoLift intakeServoLift) {
+    public Intake(Robot robot, Sweeper sweeper) {
         super(robot);
-        this.intakeServoLift = intakeServoLift;
         this.sweeper = sweeper;
-    }
-    public enum Position {
-        UP,
-        MIDDLE,
-        DOWN
-    }
-    public void enableHeight(Position mode) {
-        if (mode == Position.UP) {
-            intakeServoLift.up();
-        } else if (mode == Position.MIDDLE) {
-            intakeServoLift.middle();
-        } else if (mode == Position.DOWN){
-            intakeServoLift.down();
-        }
     }
     public void enableMode(Modes mode) {
         if (mode == Modes.IDLE) {
@@ -42,6 +27,8 @@ public class Intake extends BaseComponent<Robot> {
             sweeper.outtaking();
         } else if (mode == Modes.INTAKING) {
             sweeper.intaking();
+        } else if (mode == Modes.INTAKING_FAST) {
+            sweeper.intakingFast();
         }
         this.mode = mode;
     }

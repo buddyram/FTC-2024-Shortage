@@ -46,11 +46,12 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public boolean block = true;
     public Logger logger;
     public Odometry<Pose3D> odometry;
-    private static final Vector3D BLUE_GOAL = new Vector3D(0, 144, 0);
-    private static final Vector3D RED_GOAL = new Vector3D(144, 144, 0);
+    private static final Vector3D BLUE_GOAL = new Vector3D(72, 72, 0);
+    private static final Vector3D RED_GOAL = new Vector3D(72, 72, 0);
     public boolean isRed;
     public double turretOffset = 0;
     public boolean jamFix = false;
+    public boolean fastFeed = false; // feed at INTAKING_FAST instead of INTAKING while jamFix is on
 
     public Odometry<Pose3D> getApriltagOdometry() {
         return apriltagOdometry;
@@ -126,12 +127,14 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     }
     public int speed = 0;
     public Double overrideHood = null;
+    public Double overrideRPM = null;
     public Double overrideDistance = null;
     public double hoodOffset = 0;
     public void adjustFlywheelSpeed() {
         if (this.launcher == null) return;
         double dist = overrideDistance == null ? this.odometry.get().position.distance(this.targetGoal) : overrideDistance;
-        this.getLauncher().wheel.setRPM(Math.max(2350.50621 * Math.pow(1.00529, dist) + speed, 0));
+        double rpm = overrideRPM != null ? overrideRPM : Math.max(2350.50621 * Math.pow(1.00529, dist) + speed, 0);
+        this.getLauncher().wheel.setRPM(rpm);
         this.launcher.hood.setAngle(calculateHoodAngle(dist) + hoodOffset);
         if (overrideHood != null) {
             this.launcher.hood.setAngle(overrideHood);
@@ -231,12 +234,10 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         if (this.launcher == null || this.intake == null) return;
         this.launcher.blocker.setAngle(this.block ? this.launcher.blocker.OPEN : this.launcher.blocker.CLOSED);
         if (jamFix) {
-            this.intake.enableHeight(Intake.Position.MIDDLE);
-            this.intake.enableMode(Intake.Modes.INTAKING);
+            this.intake.enableMode(fastFeed ? Intake.Modes.INTAKING_FAST : Intake.Modes.INTAKING);
             return;
         }
         else {
-            this.intake.enableHeight(Intake.Position.UP);
             this.intake.enableMode(Intake.Modes.IDLE);
         }
     }

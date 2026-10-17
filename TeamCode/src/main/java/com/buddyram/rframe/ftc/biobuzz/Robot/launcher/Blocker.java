@@ -5,8 +5,8 @@ import com.buddyram.rframe.Robot;
 import com.qualcomm.robotcore.hardware.Servo;
 
 public class Blocker extends BaseComponent<Robot> {
-        public final double CLOSED = 0.55;
-        public final double OPEN = 0.59;
+        public final double CLOSED = 0.59;
+        public final double OPEN = 0.55;
         private final Servo servo;
         public double angle;
         public Blocker(Robot robot, Servo servo) {

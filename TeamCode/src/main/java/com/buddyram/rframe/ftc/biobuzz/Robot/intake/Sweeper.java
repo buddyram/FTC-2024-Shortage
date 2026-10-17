@@ -6,8 +6,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 
 public class Sweeper extends BaseComponent<Robot> {
     private final DcMotor motor;
-    public static final double INTAKING = 1;
-    public static final double OUTTAKING = 0;
+//    public static final double INTAKING = 1;
+//    public static final double OUTTAKING = 0;
 
     public Sweeper(Robot robot, DcMotor motor) {
         super(robot);
@@ -23,10 +23,14 @@ public class Sweeper extends BaseComponent<Robot> {
     }
 
     public void intaking() {
-        motor.setPower(-0.5);
+        motor.setPower(0.5);
+    }
+
+    public void intakingFast() {
+        motor.setPower(0.7);
     }
 
     public void outtaking() {
-        motor.setPower(0.2);
+        motor.setPower(-0.2);
     }
 }

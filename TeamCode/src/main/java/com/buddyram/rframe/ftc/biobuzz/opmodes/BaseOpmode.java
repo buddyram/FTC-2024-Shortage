@@ -15,7 +15,6 @@ import com.buddyram.rframe.ftc.RPMMotor;
 import com.buddyram.rframe.ftc.biobuzz.Globals;
 import com.buddyram.rframe.ftc.biobuzz.BiobuzzBot;
 import com.buddyram.rframe.ftc.biobuzz.Robot.intake.Intake;
-import com.buddyram.rframe.ftc.biobuzz.Robot.intake.IntakeServoLift;
 import com.buddyram.rframe.ftc.biobuzz.Robot.intake.Sweeper;
 import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Blocker;
 import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Flywheel;
@@ -26,7 +25,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.ServoImplEx;
 
@@ -138,9 +137,9 @@ public abstract class BaseOpmode extends LinearOpMode {
 
         // Pinpoint odometry setup
         GoBildaPinpointDriver odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
-        odo.setOffsets(-165.025, -0.35, DistanceUnit.MM);
+        odo.setOffsets(-151.9422952843, -2.8999939136, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
         Thread.sleep(300);
 
@@ -196,10 +195,10 @@ public abstract class BaseOpmode extends LinearOpMode {
         Intake intake = null;
         try {
             DcMotorEx motorFly = hardwareMap.get(DcMotorEx.class, "LFly");
+            // Reversed so positive RPM spins the right way and reads back positive
             motorFly.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             motorFly.setVelocity(0);
-            PIDFCoefficients pidNew = new PIDFCoefficients(354, 0, 0, 40);
-            motorFly.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidNew);
+            motorFly.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, Flywheel.PIDF);
 
             DcMotor motorInt = hardwareMap.get(DcMotor.class, "intake");
             motorInt.setPower(0);
@@ -207,8 +206,6 @@ public abstract class BaseOpmode extends LinearOpMode {
 
             Servo blockerServo = hardwareMap.get(Servo.class, "blocker");
             Servo hood = hardwareMap.get(Servo.class, "hood");
-            Servo intakeServoLeft = hardwareMap.get(Servo.class, "intakeLeft");
-            Servo intakeServoRight = hardwareMap.get(Servo.class, "intakeRight");
             launcher = new Launcher(
                     this.biobuzzBot,
                     new Flywheel(this.biobuzzBot, new RPMMotor(motorFly, 28)),
@@ -218,8 +215,7 @@ public abstract class BaseOpmode extends LinearOpMode {
             );
             intake = new Intake(
                     this.biobuzzBot,
-                    new Sweeper(this.biobuzzBot, motorInt),
-                    new IntakeServoLift(this.biobuzzBot, intakeServoLeft, intakeServoRight ));
+                    new Sweeper(this.biobuzzBot, motorInt));
             telemetry.addData("Subsystems", "Initialized");
         } catch (Exception e) {
             telemetry.addData("Subsystems", "Not found - drivetrain only");

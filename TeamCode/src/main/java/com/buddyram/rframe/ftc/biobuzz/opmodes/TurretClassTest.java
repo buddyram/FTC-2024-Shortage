@@ -44,6 +44,9 @@ public class TurretClassTest extends LinearOpMode {
             telemetry.addData("target (deg)", "%.1f", targetAngle);
             telemetry.addData("current (deg)", "%.1f", turret.getCurrentAngle());
             telemetry.addData("ready", turret.isReady());
+            // Nudge until the turret physically points straight ahead, then copy this into Turret
+            telemetry.addData("CENTER_OFFSET_DEG if centered now", "%.1f", Turret.CENTER_OFFSET_DEG + (Turret.REVERSED ? -1 : 1) * turret.getCurrentAngle());
+
             telemetry.update();
         }
     }

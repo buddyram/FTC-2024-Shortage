@@ -82,6 +82,11 @@ public class Teleop extends BaseOpmode {
                 telemetry.addData("hoodOffset", this.biobuzzBot.hoodOffset);
                 runDriveControls(currentGamepad1);
                 telemetry.addData("distance", this.biobuzzBot.odometry.get().position.distance(this.biobuzzBot.targetGoal));
+                if (this.biobuzzBot.launcher != null && this.biobuzzBot.launcher.turret != null) {
+                    Pose3D pose = this.biobuzzBot.odometry.get();
+                    telemetry.addData("turret aim (deg)", "%.1f", this.biobuzzBot.calculateTurretAngle(pose.position, pose.rotation.z));
+                    telemetry.addData("turret current (deg)", "%.1f", this.biobuzzBot.launcher.turret.getCurrentAngle());
+                }
                 telemetry.addData("OTOS Position", this.biobuzzBot.getOdometry().get());
 //                telemetry.addData("Speed", this.biobuzzBot.getLauncher().wheel.getRPM());
             }

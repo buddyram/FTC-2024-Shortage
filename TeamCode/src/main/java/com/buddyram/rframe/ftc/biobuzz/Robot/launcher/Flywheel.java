@@ -5,6 +5,7 @@ import com.buddyram.rframe.Robot;
 import com.buddyram.rframe.actions.RobotAction;
 import com.buddyram.rframe.ftc.RPMMotor;
 import com.buddyram.rframe.ftc.decode.DecodeBot;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 public class Flywheel extends BaseComponent<Robot> {
     private final RPMMotor motor;
@@ -12,6 +13,10 @@ public class Flywheel extends BaseComponent<Robot> {
     public static final int MAX = 5000;
     public static final int MIN = 0;
     public static final int THRESHOLD = 50;
+    // Velocity PIDF for RUN_USING_ENCODER. P was 354 with the old flywheel; the new one is
+    // about 1/4 the weight, so P is cut to 1/4 to stop it from yanking the wheel up to speed.
+    // F (feedforward) is about motor speed, not weight, so it stays the same.
+    public static final PIDFCoefficients PIDF = new PIDFCoefficients(254.0, 0, 0, 20);
 
     public Flywheel(Robot robot, RPMMotor motor) {
         super(robot);
