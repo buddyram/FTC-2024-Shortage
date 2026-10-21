@@ -13,10 +13,10 @@ public class Flywheel extends BaseComponent<Robot> {
     public static final int MAX = 5000;
     public static final int MIN = 0;
     public static final int THRESHOLD = 50;
-    // Velocity PIDF for RUN_USING_ENCODER. P was 354 with the old flywheel; the new one is
-    // about 1/4 the weight, so P is cut to 1/4 to stop it from yanking the wheel up to speed.
-    // F (feedforward) is about motor speed, not weight, so it stays the same.
-    public static final PIDFCoefficients PIDF = new PIDFCoefficients(254.0, 0, 0, 20);
+    public static final double DEFAULT_RPM = 2250; // starting speed for the manual / test opmodes
+    // Velocity PIDF for RUN_USING_ENCODER, from the Flywheel PIDF Tuner: F measured by its F calibration,
+    // I and D from its best 4-ball shot rounds (I helps the wheel recover between back-to-back shots).
+    public static final PIDFCoefficients PIDF = new PIDFCoefficients(254.0, 0.5, 1.0, 14.418);
 
     public Flywheel(Robot robot, RPMMotor motor) {
         super(robot);

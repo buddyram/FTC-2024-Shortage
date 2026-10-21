@@ -46,9 +46,18 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public boolean block = true;
     public Logger logger;
     public Odometry<Pose3D> odometry;
-    private static final Vector3D BLUE_GOAL = new Vector3D(72, 72, 0);
-    private static final Vector3D RED_GOAL = new Vector3D(72, 72, 0);
+    // BIOBUZZ HIVES (Competition Manual 9.6, Event Field Setup Guide 11.1). Our field frame is the manual's
+    // audience view turned 180 degrees: blue wall at x = 0, red wall at x = 144, scoring side at y = 0,
+    // audience side at y = 144. The HIVE frame sits in the field center with the red HIVE on the red half
+    // and the blue HIVE on the blue half. Each HIVE has 2 CELLS 18.8 in apart, one toward the audience and one toward the scoring side,
+    // and only the CELL tipped up can be scored. It tips to the other CELL once enough is launched into it.
+    // We always aim at our own alliance's HIVE, at the CELL on the side of the field the robot is on
+    // (scoring side y < 72, audience side y > 72).
+    private static final double HIVE_X_OFFSET = 12; // HIVE center from the field center, estimated from the manual's drawings
+    private static final double CELL_Y_OFFSET = 18.8 / 2;
+    private static final double SIDE_HYSTERESIS = 3; // in past the center line before switching CELLS, so the aim doesn't flicker
     public boolean isRed;
+    private boolean aimScoringCell;
     public double turretOffset = 0;
     public boolean jamFix = false;
     public boolean fastFeed = false; // feed at INTAKING_FAST instead of INTAKING while jamFix is on
@@ -75,7 +84,6 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
 
     public Launcher launcher;
 
-    public Vector3D targetGoal;
 
     public BiobuzzBot() {
         this(null, null, null, null, null, null, false);
@@ -92,7 +100,31 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         this.intake = intake;
         this.apriltagOdometry = apriltagOdometry;
         this.isRed = isRed;
-        this.targetGoal = isRed ? RED_GOAL : BLUE_GOAL;
+    }
+
+    /** The scoring-side or audience-side CELL of our alliance's HIVE. */
+    public Vector3D cellGoal(boolean scoringCell) {
+        return new Vector3D(
+                72 + (isRed ? HIVE_X_OFFSET : -HIVE_X_OFFSET),
+                72 + (scoringCell ? -CELL_Y_OFFSET : CELL_Y_OFFSET),
+                0);
+    }
+
+    /** Goal for a shot from position: our HIVE's CELL on that side of the field. */
+    public Vector3D goalFor(Vector3D position) {
+        return cellGoal(position.y < 72);
+    }
+
+    /** Goal for where the robot is now. Keeps the current CELL until the robot is clearly over the center line. */
+    public Vector3D getTargetGoal() {
+        double y = this.odometry.get().position.y;
+        if (y < 72 - SIDE_HYSTERESIS) aimScoringCell = true;
+        else if (y > 72 + SIDE_HYSTERESIS) aimScoringCell = false;
+        return cellGoal(aimScoringCell);
+    }
+
+    public boolean isAimingAtScoringCell() {
+        return aimScoringCell;
     }
 
     @Override
@@ -132,7 +164,7 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public double hoodOffset = 0;
     public void adjustFlywheelSpeed() {
         if (this.launcher == null) return;
-        double dist = overrideDistance == null ? this.odometry.get().position.distance(this.targetGoal) : overrideDistance;
+        double dist = overrideDistance == null ? this.odometry.get().position.distance(getTargetGoal()) : overrideDistance;
         double rpm = overrideRPM != null ? overrideRPM : Math.max(2350.50621 * Math.pow(1.00529, dist) + speed, 0);
         this.getLauncher().wheel.setRPM(rpm);
         this.launcher.hood.setAngle(calculateHoodAngle(dist) + hoodOffset);
@@ -151,7 +183,17 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
      * Use this to preload the turret during a drive so it's ready to shoot on arrival.
      */
     public double calculateTurretAngle(Vector3D fromPosition, double heading) {
-        Vector3D posToGoal = this.targetGoal.sub(fromPosition);
+        return turretAngleTo(goalFor(fromPosition), fromPosition, heading);
+    }
+
+    /** Turret angle to hit the goal from where the robot is now (same HIVE as getTargetGoal). */
+    public double currentTurretAngle() {
+        Pose3D pos = this.odometry.get();
+        return turretAngleTo(getTargetGoal(), pos.position, pos.rotation.z);
+    }
+
+    private double turretAngleTo(Vector3D goal, Vector3D fromPosition, double heading) {
+        Vector3D posToGoal = goal.sub(fromPosition);
         double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - heading + turretOffset) % 360;
         if (angle < 0) angle += 360;
         angle = angle > 180 ? angle - 360 : angle;
@@ -189,8 +231,7 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public void waitUntilAimed(double thresholdDegrees, int timeoutMs) {
         long start = System.currentTimeMillis();
         while (System.currentTimeMillis() - start < timeoutMs) {
-            Pose3D pos = this.odometry.get();
-            double targetAngle = calculateTurretAngle(pos.position, pos.rotation.z);
+            double targetAngle = currentTurretAngle();
             double currentAngle = this.launcher.turret.getCurrentAngle();
             double diff = targetAngle - currentAngle;
             if (diff > 180) diff -= 360;
@@ -205,10 +246,7 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
 
     public double autoAim() {
         if (this.launcher == null) return 0;
-        Vector3D posToGoal = this.targetGoal.sub(this.odometry.get().position);
-        double angle = (Math.toDegrees(Math.atan2(posToGoal.y, posToGoal.x)) - 90 - this.odometry.get().rotation.z + turretOffset) % 360;
-        if (angle < 0) angle += 360;
-        angle = angle > 180 ? angle - 360 : angle;
+        double angle = currentTurretAngle();
         if (overrideAngle != null) {
             angle = overrideAngle;
         }
@@ -310,7 +348,7 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         logPos("shootImmediate entered shooting zone");
 
         // Use actual distance for hood/RPM so we don't overshoot at close range
-        this.overrideDistance = this.odometry.get().position.distance(this.targetGoal);
+        this.overrideDistance = this.odometry.get().position.distance(getTargetGoal());
 
         // Switch to live auto-aim and wait until turret is within 3 degrees of real target
         overrideAngle = null;
@@ -380,7 +418,8 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         logPos("AUTO START");
 
         if (this.launcher != null) {
-            this.overrideDistance = BotUtilsNew.mirrorIfRed(config.shootPos, isRed).distance(targetGoal);
+            Vector3D shootPos = BotUtilsNew.mirrorIfRed(config.shootPos, isRed);
+            this.overrideDistance = shootPos.distance(goalFor(shootPos));
             // Preload turret toward first shot position so it's already aimed when we arrive
             preloadTurretForPosition(BotUtilsNew.mirrorIfRed(config.firstShotPos, isRed), BotUtilsNew.mirrorIfRed(config.shootHeading, isRed));
         }
