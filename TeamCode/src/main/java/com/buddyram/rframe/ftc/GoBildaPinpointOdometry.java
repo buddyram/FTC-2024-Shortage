@@ -8,6 +8,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit;
 
 public class GoBildaPinpointOdometry implements Odometry<Pose3D> {
     GoBildaPinpointDriver odometry;
@@ -19,7 +20,15 @@ public class GoBildaPinpointOdometry implements Odometry<Pose3D> {
     public Pose3D get() {
         this.odometry.update();
         Pose2D pos = this.odometry.getPosition();
-        return pinToMy(pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
+        Pose3D pose = pinToMy(pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
+        // Velocities in our frame: same axis swap as the position (in/s), heading rate in deg/s
+        double pinVx = this.odometry.getVelX(DistanceUnit.INCH);
+        double pinVy = this.odometry.getVelY(DistanceUnit.INCH);
+        return new Pose3D(
+                pose.position,
+                pose.rotation,
+                new Vector3D(pinVy, -pinVx, 0),
+                new Vector3D(0, 0, this.odometry.getHeadingVelocity(UnnormalizedAngleUnit.DEGREES)));
     }
 
     @Override

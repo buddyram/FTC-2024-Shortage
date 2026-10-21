@@ -1,12 +1,9 @@
 package com.buddyram.rframe.ftc.biobuzz.opmodes;
 
-import com.buddyram.rframe.Pose3D;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Vector3D;
 import com.buddyram.rframe.drive.HolonomicDriveInstruction;
-import com.buddyram.rframe.ftc.biobuzz.BotUtilsNew;
 import com.buddyram.rframe.ftc.biobuzz.Globals;
-import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Flywheel;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
@@ -14,7 +11,6 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 @TeleOp(name = "TELEOP - BIOBUZZ/V2", group = "Biobuzz")
 public class Teleop extends BaseOpmode {
     private boolean adjustmentMode = false;
-    private boolean rumbling = true; // so the first loop sets the LED red if not ready yet
     private Gamepad previousGamepad1 = new Gamepad();
     private long dpadHoldStartLR = 0;
     private long lastAdjustTimeLR = 0;
@@ -33,9 +29,19 @@ public class Teleop extends BaseOpmode {
             currentGamepad1.copy(gamepad1);
 
             // Always active controls
-            this.biobuzzBot.block = !gamepad1.right_bumper;
-            this.biobuzzBot.jamFix = gamepad1.left_bumper || gamepad1.right_bumper;
-            colorRumbleFlywheel(currentGamepad1);
+            // Holding R bumper only feeds while the shot is ready, so every ball leaves at the same speed
+            boolean ready = rumbleWhenReadyToShoot();
+            boolean feeding = gamepad1.right_bumper && ready;
+            this.biobuzzBot.block = !feeding;
+            this.biobuzzBot.jamFix = gamepad1.left_bumper || feeding;
+            if (gamepad1.right_bumper && !ready) telemetry.addLine(">> SHOOT HELD: waiting until ready");
+
+            // Distance and aim on top, same as Manual Teleop
+            Vector3D goal = this.biobuzzBot.getTargetGoal();
+            double dist = this.biobuzzBot.odometry.get().position.distance(goal);
+            telemetry.addData(">> DISTANCE TO GOAL", "%.1f in (%.2f ft)", dist, dist / 12);
+            telemetry.addData(">> AIMING AT", "%s HIVE, %s side CELL (%.1f, %.1f)", this.biobuzzBot.isRed ? "RED" : "BLUE",
+                    this.biobuzzBot.isAimingAtScoringCell() ? "scoring" : "audience", goal.x, goal.y);
 
             if (currentGamepad1.square) {
                 this.biobuzzBot.speed = 0;
@@ -44,17 +50,8 @@ public class Teleop extends BaseOpmode {
                 this.biobuzzBot.speed = -1000000;
             }
             if (currentGamepad1.triangle) {
-                this.biobuzzBot.odometry.setPosition(
-                    BotUtilsNew.mirrorIfRed(
-                        new Pose3D(
-                            new Vector3D(7.98, 8.94, 0),
-                            new Vector3D(),
-                            new Vector3D(),
-                            new Vector3D()
-                        ),
-                        !this.biobuzzBot.isRed
-                    )
-                );
+                // Back in the start corner, same as Manual Teleop
+                this.biobuzzBot.odometry.setPosition(BaseOpmode.startFor(this.biobuzzBot.isRed));
             }
             if (currentGamepad1.cross) {
                 this.biobuzzBot.overrideDistance = this.biobuzzBot.overrideDistance == null ? 67.8822509939 : null;
@@ -72,7 +69,7 @@ public class Teleop extends BaseOpmode {
                 double speed = 0.8;
                 if (currentGamepad1.left_stick_button || currentGamepad1.right_stick_button) speed = 1;
                 double speedLevel = Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(currentGamepad1.left_stick_y, 2));
-                biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(
+                robotCentricDrive.drive(new HolonomicDriveInstruction(
                         currentGamepad1.right_stick_x * speed,
                         speed * speedLevel,
                         Math.toDegrees(Math.atan2(-currentGamepad1.left_stick_y, currentGamepad1.left_stick_x))
@@ -83,7 +80,6 @@ public class Teleop extends BaseOpmode {
                 telemetry.addData("turretOffset", this.biobuzzBot.turretOffset);
                 telemetry.addData("hoodOffset", this.biobuzzBot.hoodOffset);
                 runDriveControls(currentGamepad1);
-                telemetry.addData("distance", this.biobuzzBot.odometry.get().position.distance(this.biobuzzBot.getTargetGoal()));
                 if (this.biobuzzBot.launcher != null && this.biobuzzBot.launcher.turret != null) {
                     telemetry.addData("turret aim (deg)", "%.1f", this.biobuzzBot.currentTurretAngle());
                     telemetry.addData("turret current (deg)", "%.1f", this.biobuzzBot.launcher.turret.getCurrentAngle());
@@ -137,21 +133,6 @@ public class Teleop extends BaseOpmode {
         }
     }
 
-    // Rumbles the whole time the flywheel is up to speed. Only sends a command when that changes,
-    // since a new rumble every loop floods the gamepad.
-    private void colorRumbleFlywheel(Gamepad currentGamepad1) {
-        Flywheel wheel = this.biobuzzBot.getLauncher().wheel;
-        boolean ready = wheel.getTarget() > 0 && wheel.isReady(); // flywheel off reads as "ready" at 0 RPM
-        if (ready && !rumbling) {
-            gamepad1.rumble(Gamepad.RUMBLE_DURATION_CONTINUOUS);
-            gamepad1.setLedColor(0, 255, 0, Gamepad.LED_DURATION_CONTINUOUS);
-        } else if (!ready && rumbling) {
-            gamepad1.stopRumble();
-            gamepad1.setLedColor(255, 0, 0, Gamepad.LED_DURATION_CONTINUOUS);
-        }
-        rumbling = ready;
-    }
-
     // Robot-centric: sticks and D-pad move relative to the robot, not the field
     private void runDriveControls(Gamepad currentGamepad1) throws RobotException {
         double speed = 0.8;
@@ -160,16 +141,16 @@ public class Teleop extends BaseOpmode {
         }
 
         if (currentGamepad1.dpad_up) {
-            this.biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, speed, 90));
+            robotCentricDrive.drive(new HolonomicDriveInstruction(0, speed, 90));
         } else if (currentGamepad1.dpad_down) {
-            this.biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, speed, -90));
+            robotCentricDrive.drive(new HolonomicDriveInstruction(0, speed, -90));
         } else if (currentGamepad1.dpad_right) {
-            this.biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, speed, 0));
+            robotCentricDrive.drive(new HolonomicDriveInstruction(0, speed, 0));
         } else if (currentGamepad1.dpad_left) {
-            this.biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, speed, 180));
+            robotCentricDrive.drive(new HolonomicDriveInstruction(0, speed, 180));
         } else {
             double speedLevel = Math.sqrt(Math.pow(currentGamepad1.left_stick_x, 2) + Math.pow(currentGamepad1.left_stick_y, 2));
-            biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(
+            robotCentricDrive.drive(new HolonomicDriveInstruction(
                     currentGamepad1.right_stick_x * speed,
                     speed * speedLevel,
                     Math.toDegrees(Math.atan2(-currentGamepad1.left_stick_y, currentGamepad1.left_stick_x))

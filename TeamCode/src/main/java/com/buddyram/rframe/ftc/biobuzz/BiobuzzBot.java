@@ -13,6 +13,14 @@ import com.buddyram.rframe.drive.Navigatable;
 import com.buddyram.rframe.ftc.DriveToAction;
 import com.buddyram.rframe.ftc.biobuzz.Robot.intake.Intake;
 import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Launcher;
+import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Flywheel;
+import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Turret;
+
+import java.util.ArrayList;
+
+import java.util.List;
+
+import java.util.Locale;
 
 public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public enum AutoStep { NEAR, MIDDLE, FAR, OPEN_GATE_LEFT, /* OPEN_GATE_RIGHT , */ OPEN_GATE_BLOCK_AFTER_NEAR, SHOOT, INTAKE_GATE }
@@ -46,18 +54,22 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public boolean block = true;
     public Logger logger;
     public Odometry<Pose3D> odometry;
-    // BIOBUZZ HIVES (Competition Manual 9.6, Event Field Setup Guide 11.1). Our field frame is the manual's
-    // audience view turned 180 degrees: blue wall at x = 0, red wall at x = 144, scoring side at y = 0,
-    // audience side at y = 144. The HIVE frame sits in the field center with the red HIVE on the red half
-    // and the blue HIVE on the blue half. Each HIVE has 2 CELLS 18.8 in apart, one toward the audience and one toward the scoring side,
+    // BIOBUZZ HIVES (Competition Manual 9.6, Event Field Setup Guide 11.1). The manual draws the field from the
+    // audience: red wall on the left, blue wall on the right, audience at the bottom, scoring side at the top.
+    // Our field frame is the field seen from the blue alliance station instead (see manualToField): blue wall
+    // at y = 0, red wall at y = 144, audience side at x = 0, scoring side at x = 144.
+    // The HIVE frame sits in the field center with the red HIVE on the red half and the blue HIVE on the blue
+    // half. Each HIVE has 2 CELLS 18.8 in apart, one toward the audience and one toward the scoring side,
     // and only the CELL tipped up can be scored. It tips to the other CELL once enough is launched into it.
-    // We always aim at our own alliance's HIVE, at the CELL on the side of the field the robot is on
-    // (scoring side y < 72, audience side y > 72).
-    private static final double HIVE_X_OFFSET = 12; // HIVE center from the field center, estimated from the manual's drawings
-    private static final double CELL_Y_OFFSET = 18.8 / 2;
+    // We always aim at our own alliance's HIVE, at the CELL on the side of the field the robot is on.
+    private static final double HIVE_OFFSET = 12; // HIVE center from the field center, estimated from the manual's drawings
+    private static final double CELL_OFFSET = 18.8 / 2;
     private static final double SIDE_HYSTERESIS = 3; // in past the center line before switching CELLS, so the aim doesn't flicker
     public boolean isRed;
     private boolean aimScoringCell;
+    private static final double TURRET_READY_DEG = 2;
+    private static final double STILL_SPEED_IN_PER_S = 2;   // "not moving" for the shot-ready check
+    private static final double STILL_TURN_DEG_PER_S = 5;
     public double turretOffset = 0;
     public boolean jamFix = false;
     public boolean fastFeed = false; // feed at INTAKING_FAST instead of INTAKING while jamFix is on
@@ -102,25 +114,85 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         this.isRed = isRed;
     }
 
+    /**
+     * Converts a point in the manual's audience-view drawings (x right toward the blue wall, y up toward the
+     * scoring side, inches from the audience-red corner) to our field frame. If the aim ever ends up on the
+     * wrong HIVE or CELL, this is the one place that sets how the field is turned.
+     */
+    public static Vector3D manualToField(double manualX, double manualY) {
+        return new Vector3D(manualY, 144 - manualX, 0);
+    }
+
+    /** How far toward the scoring side a field point is, in the manual's y (0 audience, 144 scoring). */
+    private static double scoringDepth(Vector3D fieldPosition) {
+        return fieldPosition.x;
+    }
+
     /** The scoring-side or audience-side CELL of our alliance's HIVE. */
     public Vector3D cellGoal(boolean scoringCell) {
-        return new Vector3D(
-                72 + (isRed ? HIVE_X_OFFSET : -HIVE_X_OFFSET),
-                72 + (scoringCell ? -CELL_Y_OFFSET : CELL_Y_OFFSET),
-                0);
+        return manualToField(
+                72 + (isRed ? -HIVE_OFFSET : HIVE_OFFSET),
+                72 + (scoringCell ? CELL_OFFSET : -CELL_OFFSET));
     }
 
     /** Goal for a shot from position: our HIVE's CELL on that side of the field. */
     public Vector3D goalFor(Vector3D position) {
-        return cellGoal(position.y < 72);
+        return cellGoal(scoringDepth(position) > 72);
     }
 
     /** Goal for where the robot is now. Keeps the current CELL until the robot is clearly over the center line. */
     public Vector3D getTargetGoal() {
-        double y = this.odometry.get().position.y;
-        if (y < 72 - SIDE_HYSTERESIS) aimScoringCell = true;
-        else if (y > 72 + SIDE_HYSTERESIS) aimScoringCell = false;
+        double depth = scoringDepth(this.odometry.get().position);
+        if (depth > 72 + SIDE_HYSTERESIS) aimScoringCell = true;
+        else if (depth < 72 - SIDE_HYSTERESIS) aimScoringCell = false;
         return cellGoal(aimScoringCell);
+    }
+
+    /**
+     * Turret angle wanted right now: the auto-aim angle, the override, or straight ahead when aiming is off.
+     * Same choice autoAim() makes.
+     */
+    public double wantedTurretAngle() {
+        if (!aimOn) return 0;
+        return overrideAngle != null ? overrideAngle : currentTurretAngle();
+    }
+
+    /** Flywheel is up to speed, the turret can reach the aim angle and is on it, and the robot is holding still. */
+    public boolean isReadyToShoot() {
+        return notReadyReasons().isEmpty();
+    }
+
+    /** Why the shot isn't ready yet, for telemetry. Empty when ready to shoot. */
+    public List<String> notReadyReasons() {
+        List<String> reasons = new ArrayList<>();
+        if (launcher == null || launcher.wheel == null || launcher.turret == null) {
+            reasons.add("Launcher not found");
+            return reasons;
+        }
+        double target = launcher.wheel.getTarget();
+        double rpm = launcher.wheel.getRPM();
+        if (target <= 0) {
+            reasons.add("Flywheel is off");
+        } else if (rpm < target - Flywheel.THRESHOLD) {
+            reasons.add(String.format(Locale.US, "Flywheel speed too low (%.0f / %.0f rpm)", rpm, target));
+        } else if (rpm > target + Flywheel.THRESHOLD) {
+            reasons.add(String.format(Locale.US, "Flywheel speed too high (%.0f / %.0f rpm)", rpm, target));
+        }
+        Pose3D pose = this.odometry.get();
+        double speed = Math.hypot(pose.positionVelocity.x, pose.positionVelocity.y);
+        double turn = Math.abs(pose.rotationVelocity.z);
+        if (speed > STILL_SPEED_IN_PER_S || turn > STILL_TURN_DEG_PER_S) {
+            reasons.add(String.format(Locale.US, "Robot is moving (%.1f in/s, turning %.0f deg/s)", speed, turn));
+        }
+        double wanted = wantedTurretAngle();
+        double current = launcher.turret.getCurrentAngle();
+        if (wanted < Turret.MIN_ANGLE || wanted > Turret.MAX_ANGLE) {
+            reasons.add(String.format(Locale.US, "Turret cannot get to position (needs %.0f deg, limit %.0f to %.0f), turn the robot",
+                    wanted, Turret.MIN_ANGLE, Turret.MAX_ANGLE));
+        } else if (Math.abs(current - wanted) > TURRET_READY_DEG) {
+            reasons.add(String.format(Locale.US, "Turret still moving (%.0f / %.0f deg)", current, wanted));
+        }
+        return reasons;
     }
 
     public boolean isAimingAtScoringCell() {
