@@ -178,6 +178,10 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         } else if (rpm > target + Flywheel.THRESHOLD) {
             reasons.add(String.format(Locale.US, "Flywheel speed too high (%.0f / %.0f rpm)", rpm, target));
         }
+        double sinceBall = launcher.wheel.msSinceLastBall();
+        if (sinceBall < Flywheel.BALL_PAUSE_MS) {
+            reasons.add(String.format(Locale.US, "Pause after last ball (%.0f / %.0f ms)", sinceBall, Flywheel.BALL_PAUSE_MS));
+        }
         Pose3D pose = this.odometry.get();
         double speed = Math.hypot(pose.positionVelocity.x, pose.positionVelocity.y);
         double turn = Math.abs(pose.rotationVelocity.z);

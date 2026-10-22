@@ -147,6 +147,7 @@ public class ManualTeleop extends BaseOpmode {
             }
             telemetry.addData("feed", feeding ? "SHOOTING" : currentGamepad1.right_bumper ? "waiting until ready"
                     : currentGamepad1.left_bumper ? "intaking" : "idle");
+            telemetry.addData("balls shot", launcher.wheel.getBallCount());
             telemetry.update();
         }
     }

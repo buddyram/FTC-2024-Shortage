@@ -20,6 +20,10 @@ public class RPMMotor {
 //        int StepsPerNS = (this.getCurrentPosition() - lastCurrentPosition);
         return this.motor.getVelocity() / (countsPerRevolution) * 60;
     }
+    public int getPosition() {
+        return this.motor.getCurrentPosition();
+    }
+
     public void setRPM(double target) {
         this.motor.setVelocity(target * countsPerRevolution / 60);
     }

@@ -78,6 +78,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                     this.cachedOdometry.refresh();
                     this.biobuzzBot.updateGlobals();
                     if (this.biobuzzBot.launcher != null) {
+                        this.biobuzzBot.launcher.wheel.update();
                         this.biobuzzBot.controlIntake();
                         this.biobuzzBot.autoAim();
                         this.biobuzzBot.adjustFlywheelSpeed();

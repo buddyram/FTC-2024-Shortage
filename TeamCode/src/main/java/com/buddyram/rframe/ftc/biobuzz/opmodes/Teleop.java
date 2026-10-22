@@ -35,6 +35,7 @@ public class Teleop extends BaseOpmode {
             this.biobuzzBot.block = !feeding;
             this.biobuzzBot.jamFix = gamepad1.left_bumper || feeding;
             if (gamepad1.right_bumper && !ready) telemetry.addLine(">> SHOOT HELD: waiting until ready");
+            if (this.biobuzzBot.launcher != null) telemetry.addData(">> BALLS SHOT", this.biobuzzBot.launcher.wheel.getBallCount());
 
             // Distance and aim on top, same as Manual Teleop
             Vector3D goal = this.biobuzzBot.getTargetGoal();
