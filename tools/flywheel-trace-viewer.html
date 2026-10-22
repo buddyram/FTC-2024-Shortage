@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flywheel Trace Viewer</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f4f2;
+    --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #8a8984;
+    --grid: #e6e5e1;
+    --axis: #c9c8c2;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --setpoint: #8a8984;
+    --feed: rgba(235, 104, 52, 0.10);
+    --select: rgba(42, 120, 214, 0.15);
+    --border: #dddcd7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #111110;
+      --surface-1: #1a1a19;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #8f8e88;
+      --grid: #2a2a28;
+      --axis: #44433f;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --setpoint: #8f8e88;
+      --feed: rgba(217, 89, 38, 0.16);
+      --select: rgba(57, 135, 229, 0.22);
+      --border: #33332f;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #111110;
+    --surface-1: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e88;
+    --grid: #2a2a28;
+    --axis: #44433f;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --setpoint: #8f8e88;
+    --feed: rgba(217, 89, 38, 0.16);
+    --select: rgba(57, 135, 229, 0.22);
+    --border: #33332f;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text-primary);
+    font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 14px 16px 6px; }
+  h1 { font-size: 18px; margin: 0 0 2px; }
+  .sub { color: var(--text-secondary); font-size: 13px; }
+  .layout { display: grid; grid-template-columns: 240px 1fr; gap: 12px; padding: 8px 16px 16px; }
+  @media (max-width: 760px) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+  #files { max-height: 70vh; overflow: auto; }
+  #files button { display: block; width: 100%; text-align: left; border: 0; background: none; color: var(--text-primary);
+    padding: 6px 8px; border-radius: 6px; cursor: pointer; font: inherit; font-size: 13px; }
+  #files button:hover { background: var(--grid); }
+  #files button.on { background: var(--select); font-weight: 600; }
+  #files .meta { color: var(--text-muted); font-size: 11px; }
+  .drop { border: 1.5px dashed var(--axis); border-radius: 8px; padding: 10px; text-align: center; color: var(--text-secondary);
+    font-size: 13px; margin-bottom: 8px; }
+  .drop.over { background: var(--select); }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 8px; font-size: 13px; color: var(--text-secondary); }
+  .controls select, .controls input { font: inherit; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--text-secondary); margin: 2px 0 6px; }
+  .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+  .sw.box { height: 10px; width: 12px; }
+  .chart-wrap { position: relative; }
+  canvas { display: block; width: 100%; touch-action: none; }
+  #tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 8px; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.12); display: none; white-space: nowrap; }
+  #tip b { font-weight: 600; }
+  #tip .k { color: var(--text-secondary); }
+  #stats { font-size: 12px; color: var(--text-secondary); margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Flywheel Trace Viewer</h1>
+  <div class="sub">Takes from the BIOBUZZ Flywheel Trace opmode (/sdcard/FIRST/flywheel_trace). Shaded = R bumper held (feeding).</div>
+</header>
+<div class="layout">
+  <div class="panel">
+    <div class="drop" id="drop">Drop CSV files here<br>or <input type="file" id="pick" multiple accept=".csv"></div>
+    <div id="files"></div>
+  </div>
+  <div class="panel">
+    <div class="controls">
+      <label>Encoder speed window
+        <select id="win">
+          <option value="5">5 ms</option><option value="10">10 ms</option><option value="20" selected>20 ms</option>
+          <option value="30">30 ms</option><option value="50">50 ms</option><option value="100">100 ms</option>
+        </select></label>
+      <label><input type="checkbox" id="showHub" checked> hub velocity</label>
+      <label><input type="checkbox" id="showEnc" checked> encoder speed</label>
+      <label><input type="checkbox" id="showDots"> sample dots</label>
+      <span id="title"></span>
+    </div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--series-1)"></span>Hub velocity (rpm)</span>
+      <span><span class="sw" style="background:var(--series-2)"></span>Encoder speed over window (rpm)</span>
+      <span><span class="sw" style="background:var(--setpoint)"></span>Target (rpm)</span>
+      <span><span class="sw" style="background:var(--series-3)"></span>Motor current (A)</span>
+      <span><span class="sw box" style="background:var(--feed)"></span>Feeding</span>
+    </div>
+    <div class="chart-wrap" id="wrap">
+      <canvas id="cv"></canvas>
+      <div id="tip"></div>
+    </div>
+    <div id="stats"></div>
+    <div class="hint">Drag across the chart to zoom in, double-click to zoom out. Arrow keys switch takes.</div>
+  </div>
+</div>
+
+<!-- tools/pull_flywheel_traces.sh puts pulled takes here as JSON {name: csvText} -->
+<script id="embedded-traces" type="application/json">{}</script>
+
+<script>
+(function () {
+  const traces = [];        // {name, rows: {t,pos,hub,amps,sp,feed,hood,volts}}
+  let cur = -1, view = null, drag = null, hoverX = null;
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const tip = document.getElementById('tip');
+  const PAD = { l: 56, r: 14, t: 10, b: 26 }, GAP = 22;
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+  function parse(name, text) {
+    const lines = text.trim().split(/\r?\n/);
+    const head = lines[0].split(',');
+    const col = k => head.indexOf(k);
+    const iT = col('t_ms'), iP = col('pos'), iH = col('hub_rpm'), iA = col('amps'), iS = col('setpoint_rpm'),
+      iF = col('feeding'), iHo = col('hood'), iV = col('battery_v');
+    const n = lines.length - 1;
+    const r = { t: new Float64Array(n), pos: new Float64Array(n), hub: new Float64Array(n), amps: new Float64Array(n),
+      sp: new Float64Array(n), feed: new Uint8Array(n), hood: new Float64Array(n), volts: new Float64Array(n) };
+    for (let i = 0; i < n; i++) {
+      const c = lines[i + 1].split(',');
+      r.t[i] = +c[iT];
+      r.pos[i] = iP >= 0 ? +c[iP] : NaN;
+      r.hub[i] = iH >= 0 ? +c[iH] : NaN;
+      r.amps[i] = iA >= 0 && c[iA] !== '' ? +c[iA] : NaN;
+      r.sp[i] = iS >= 0 ? +c[iS] : NaN;
+      r.feed[i] = iF >= 0 ? +c[iF] : 0;
+      r.hood[i] = iHo >= 0 ? +c[iHo] : NaN;
+      r.volts[i] = iV >= 0 ? +c[iV] : NaN;
+    }
+    const t0 = r.t[0];
+    for (let i = 0; i < n; i++) r.t[i] -= t0;
+    return { name, rows: r };
+  }
+
+  function addTrace(name, text) {
+    try {
+      const tr = parse(name, text);
+      if (tr.rows.t.length < 2) return;
+      const old = traces.findIndex(x => x.name === name);
+      if (old >= 0) traces[old] = tr; else traces.push(tr);
+    } catch (e) { console.warn('could not read', name, e); }
+  }
+
+  function listFiles() {
+    traces.sort((a, b) => a.name.localeCompare(b.name));
+    const el = document.getElementById('files');
+    el.innerHTML = '';
+    traces.forEach((tr, i) => {
+      const b = document.createElement('button');
+      const r = tr.rows, n = r.t.length, dur = r.t[n - 1];
+      b.innerHTML = `${tr.name}<div class="meta">${n} samples · ${(dur / 1000).toFixed(1)} s · ${(n / dur * 1000).toFixed(0)} Hz</div>`;
+      b.className = i === cur ? 'on' : '';
+      b.onclick = () => select(i);
+      el.appendChild(b);
+    });
+  }
+
+  function select(i) {
+    if (i < 0 || i >= traces.length) return;
+    cur = i; view = null;
+    listFiles();
+    draw();
+  }
+
+  // Encoder speed: counts moved over the last `win` ms, in rpm (28 counts per rev)
+  function encoderRpm(r, winMs) {
+    const n = r.t.length, out = new Float64Array(n);
+    let j = 0;
+    for (let i = 0; i < n; i++) {
+      while (j < i && r.t[i] - r.t[j + 1] >= winMs) j++;
+      const dt = r.t[i] - r.t[j];
+      out[i] = dt > 0 ? (r.pos[i] - r.pos[j]) / dt * 1000 / 28 * 60 : NaN;
+      if (r.t[i] - r.t[0] < winMs) out[i] = NaN;
+    }
+    return out;
+  }
+
+  function niceTicks(lo, hi, count) {
+    const span = hi - lo || 1, step0 = span / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const step = [1, 2, 5, 10].map(m => m * mag).find(s => s >= step0);
+    const ticks = [];
+    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(+v.toFixed(10));
+    return ticks;
+  }
+
+  let layout = null;
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = cv.parentElement.clientWidth, H = Math.max(420, Math.min(720, window.innerHeight - 260));
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    const st = document.getElementById('stats');
+    if (cur < 0) {
+      ctx.fillStyle = css('--text-muted'); ctx.font = '14px system-ui';
+      ctx.fillText('Load flywheel trace CSV files to start.', PAD.l, 40);
+      st.textContent = ''; document.getElementById('title').textContent = '';
+      return;
+    }
+    const tr = traces[cur], r = tr.rows, n = r.t.length;
+    const win = +document.getElementById('win').value;
+    const enc = encoderRpm(r, win);
+    const showHub = document.getElementById('showHub').checked, showEnc = document.getElementById('showEnc').checked;
+    const dots = document.getElementById('showDots').checked;
+    const hasAmps = r.amps.some(a => !isNaN(a));
+    if (!view) view = [r.t[0], r.t[n - 1]];
+    const [x0, x1] = view;
+    const i0 = Math.max(0, lowerBound(r.t, x0) - 1), i1 = Math.min(n - 1, lowerBound(r.t, x1) + 1);
+
+    // Panes: rpm on top (taller), current below; one y-scale per pane
+    const plotW = W - PAD.l - PAD.r;
+    const totalH = H - PAD.t - PAD.b - (hasAmps ? GAP : 0);
+    const rpmH = hasAmps ? totalH * 0.68 : totalH;
+    const panes = [{ y: PAD.t, h: rpmH, kind: 'rpm' }];
+    if (hasAmps) panes.push({ y: PAD.t + rpmH + GAP, h: totalH - rpmH, kind: 'amps' });
+    const X = t => PAD.l + (t - x0) / (x1 - x0) * plotW;
+
+    // y ranges from visible data
+    let lo = Infinity, hi = -Infinity, alo = Infinity, ahi = -Infinity;
+    for (let i = i0; i <= i1; i++) {
+      for (const v of [showHub ? r.hub[i] : NaN, showEnc ? enc[i] : NaN, r.sp[i]]) {
+        if (!isNaN(v) && v > 0) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+      }
+      if (!isNaN(r.amps[i])) { alo = Math.min(alo, r.amps[i]); ahi = Math.max(ahi, r.amps[i]); }
+    }
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    const padY = (hi - lo) * 0.06 || 50; lo -= padY; hi += padY;
+    if (!isFinite(alo)) { alo = 0; ahi = 1; }
+    const padA = (ahi - alo) * 0.08 || 0.5; alo = Math.max(0, alo - padA); ahi += padA;
+    panes[0].lo = lo; panes[0].hi = hi;
+    if (hasAmps) { panes[1].lo = alo; panes[1].hi = ahi; }
+    layout = { tr, enc, panes, X, x0, x1, plotW, W, H, hasAmps, showHub, showEnc };
+
+    const grid = css('--grid'), axis = css('--axis'), muted = css('--text-muted'), sec = css('--text-secondary');
+    ctx.font = '11px system-ui';
+    for (const p of panes) {
+      const Y = v => p.y + p.h - (v - p.lo) / (p.hi - p.lo) * p.h;
+      p.Y = Y;
+      // feeding shading
+      ctx.fillStyle = css('--feed');
+      let s = -1;
+      for (let i = i0; i <= i1 + 1; i++) {
+        const f = i <= i1 && r.feed[i];
+        if (f && s < 0) s = i;
+        if (!f && s >= 0) { const a = X(r.t[s]), b = X(r.t[i - 1]); ctx.fillRect(Math.max(PAD.l, a), p.y, Math.min(PAD.l + plotW, b) - Math.max(PAD.l, a), p.h); s = -1; }
+      }
+      // grid + y labels
+      ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.fillStyle = muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      for (const v of niceTicks(p.lo, p.hi, p.kind === 'rpm' ? 6 : 3)) {
+        const y = Math.round(Y(v)) + 0.5;
+        ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l + plotW, y); ctx.stroke();
+        ctx.fillText(p.kind === 'rpm' ? v.toFixed(0) : v.toFixed(1), PAD.l - 6, y);
+      }
+      ctx.save(); ctx.translate(12, p.y + p.h / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillStyle = sec;
+      ctx.fillText(p.kind === 'rpm' ? 'rpm' : 'amps', 0, 0); ctx.restore();
+      ctx.strokeStyle = axis; ctx.beginPath(); ctx.moveTo(PAD.l, p.y + p.h + 0.5); ctx.lineTo(PAD.l + plotW, p.y + p.h + 0.5); ctx.stroke();
+
+      ctx.save(); ctx.beginPath(); ctx.rect(PAD.l, p.y, plotW, p.h); ctx.clip();
+      if (p.kind === 'rpm') {
+        line(r.t, r.sp, i0, i1, X, Y, css('--setpoint'), 1.5, [5, 4], false);
+        if (showHub) line(r.t, r.hub, i0, i1, X, Y, css('--series-1'), 2, null, dots);
+        if (showEnc) line(r.t, enc, i0, i1, X, Y, css('--series-2'), 2, null, dots);
+      } else {
+        line(r.t, r.amps, i0, i1, X, Y, css('--series-3'), 2, null, dots);
+      }
+      ctx.restore();
+    }
+    // x axis
+    ctx.fillStyle = muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    const last = panes[panes.length - 1];
+    for (const v of niceTicks(x0, x1, 10)) {
+      const x = X(v);
+      ctx.fillText((x1 - x0 < 2000 ? v.toFixed(0) + ' ms' : (v / 1000).toFixed(1) + ' s'), x, last.y + last.h + 6);
+      ctx.strokeStyle = grid; ctx.beginPath();
+      for (const p of panes) { ctx.moveTo(Math.round(x) + 0.5, p.y); ctx.lineTo(Math.round(x) + 0.5, p.y + p.h); }
+      ctx.stroke();
+    }
+    // selection + crosshair
+    if (drag && drag.x1 !== undefined) {
+      ctx.fillStyle = css('--select');
+      ctx.fillRect(Math.min(drag.x0, drag.x1), PAD.t, Math.abs(drag.x1 - drag.x0), last.y + last.h - PAD.t);
+    }
+    if (hoverX !== null) crosshair(hoverX);
+
+    // header + stats
+    const dts = []; for (let i = 1; i < n; i++) dts.push(r.t[i] - r.t[i - 1]); dts.sort((a, b) => a - b);
+    let hubChanges = 0; for (let i = 1; i < n; i++) if (r.hub[i] !== r.hub[i - 1]) hubChanges++;
+    const ampsN = r.amps.reduce((c, a) => c + (isNaN(a) ? 0 : 1), 0);
+    document.getElementById('title').textContent = tr.name;
+    st.textContent = `samples ${n} · median gap ${dts[dts.length >> 1].toFixed(2)} ms · worst gap ${dts[dts.length - 1].toFixed(1)} ms · ` +
+      `hub velocity changes every ${(r.t[n - 1] / Math.max(1, hubChanges)).toFixed(1)} ms on average · current samples ${ampsN} · ` +
+      `target ${r.sp[n - 1].toFixed(0)} rpm · hood ${r.hood[n - 1].toFixed(2)} · battery ${r.volts[n - 1].toFixed(2)} V`;
+  }
+
+  function line(t, v, i0, i1, X, Y, color, w, dash, dots) {
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.setLineDash(dash || []);
+    ctx.beginPath();
+    let pen = false;
+    for (let i = i0; i <= i1; i++) {
+      if (isNaN(v[i])) continue; // current is sampled every n loops: join across gaps
+      const x = X(t[i]), y = Y(v[i]);
+      if (!pen) { ctx.moveTo(x, y); pen = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+    if (dots) {
+      ctx.fillStyle = color;
+      for (let i = i0; i <= i1; i++) if (!isNaN(v[i])) { ctx.beginPath(); ctx.arc(X(t[i]), Y(v[i]), 2, 0, 7); ctx.fill(); }
+    }
+  }
+
+  function lowerBound(a, x) { let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < x) lo = m + 1; else hi = m; } return lo; }
+
+  function nearest(a, x, keep) {
+    let i = Math.min(a.length - 1, lowerBound(a, x));
+    if (i > 0 && Math.abs(a[i - 1] - x) < Math.abs(a[i] - x)) i--;
+    if (!keep) return i;
+    let best = -1;
+    for (let d = 0; d < 400; d++) {
+      for (const k of [i - d, i + d]) if (k >= 0 && k < a.length && keep(k)) { best = k; break; }
+      if (best >= 0) break;
+    }
+    return best;
+  }
+
+  function crosshair(px) {
+    const L = layout; if (!L) return;
+    const r = L.tr.rows, t = L.x0 + (px - PAD.l) / L.plotW * (L.x1 - L.x0);
+    const i = nearest(r.t, t);
+    const x = L.X(r.t[i]);
+    const last = L.panes[L.panes.length - 1];
+    ctx.strokeStyle = css('--text-muted'); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(Math.round(x) + 0.5, PAD.t); ctx.lineTo(Math.round(x) + 0.5, last.y + last.h); ctx.stroke();
+    const ring = (y, c) => { ctx.fillStyle = c; ctx.strokeStyle = css('--surface-1'); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); ctx.stroke(); };
+    const P = L.panes[0];
+    if (L.showHub) ring(P.Y(r.hub[i]), css('--series-1'));
+    if (L.showEnc && !isNaN(L.enc[i])) ring(P.Y(L.enc[i]), css('--series-2'));
+    const ai = L.hasAmps ? nearest(r.t, r.t[i], k => !isNaN(r.amps[k])) : -1;
+    if (ai >= 0) ring(L.panes[1].Y(r.amps[ai]), css('--series-3'));
+    tip.innerHTML = `<b>${r.t[i].toFixed(1)} ms</b>${r.feed[i] ? ' · feeding' : ''}<br>` +
+      `<span class="k">hub velocity</span> ${r.hub[i].toFixed(0)} rpm<br>` +
+      `<span class="k">encoder speed</span> ${isNaN(L.enc[i]) ? '-' : L.enc[i].toFixed(0)} rpm<br>` +
+      `<span class="k">target</span> ${r.sp[i].toFixed(0)} rpm<br>` +
+      (ai >= 0 ? `<span class="k">current</span> ${r.amps[ai].toFixed(2)} A<br>` : '') +
+      `<span class="k">encoder count</span> ${r.pos[i]}`;
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth;
+    tip.style.left = (x + 12 + tw > L.W ? x - 12 - tw : x + 12) + 'px';
+    tip.style.top = PAD.t + 4 + 'px';
+  }
+
+  // Interaction
+  const localX = e => e.clientX - cv.getBoundingClientRect().left;
+  cv.addEventListener('pointerdown', e => { if (cur >= 0) { drag = { x0: localX(e) }; cv.setPointerCapture(e.pointerId); } });
+  cv.addEventListener('pointermove', e => {
+    hoverX = Math.max(PAD.l, Math.min(localX(e), cv.clientWidth - PAD.r));
+    if (drag) drag.x1 = hoverX;
+    draw();
+  });
+  cv.addEventListener('pointerup', () => {
+    if (drag && drag.x1 !== undefined && Math.abs(drag.x1 - drag.x0) > 6 && layout) {
+      const L = layout, toT = px => L.x0 + (px - PAD.l) / L.plotW * (L.x1 - L.x0);
+      view = [toT(Math.min(drag.x0, drag.x1)), toT(Math.max(drag.x0, drag.x1))];
+    }
+    drag = null; draw();
+  });
+  cv.addEventListener('pointerleave', () => { hoverX = null; tip.style.display = 'none'; draw(); });
+  cv.addEventListener('dblclick', () => { view = null; draw(); });
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { select(cur + 1); e.preventDefault(); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { select(cur - 1); e.preventDefault(); }
+  });
+  for (const id of ['win', 'showHub', 'showEnc', 'showDots']) document.getElementById(id).addEventListener('change', draw);
+  window.addEventListener('resize', draw);
+
+  async function loadFiles(files) {
+    for (const f of files) addTrace(f.name.replace(/\.csv$/, ''), await f.text());
+    listFiles();
+    if (cur < 0 && traces.length) select(0); else draw();
+  }
+  document.getElementById('pick').addEventListener('change', e => loadFiles(e.target.files));
+  const drop = document.getElementById('drop');
+  document.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+  document.addEventListener('dragleave', () => drop.classList.remove('over'));
+  document.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); loadFiles(e.dataTransfer.files); });
+
+  try {
+    const embedded = JSON.parse(document.getElementById('embedded-traces').textContent);
+    for (const k of Object.keys(embedded)) addTrace(k, embedded[k]);
+  } catch (e) { console.warn('no embedded traces', e); }
+  listFiles();
+  if (traces.length) select(0); else draw();
+})();
+</script>
+</body>
+</html>
