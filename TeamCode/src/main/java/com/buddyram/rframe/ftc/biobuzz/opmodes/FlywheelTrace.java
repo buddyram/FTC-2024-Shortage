@@ -103,7 +103,7 @@ public class FlywheelTrace extends LinearOpMode {
         double targetRpm = Flywheel.DEFAULT_RPM;
         double setpoint = 0;
         boolean flywheelOn = false;
-        boolean wasReady = false;
+        boolean rumbled = false; // one buzz per spin-up / volley, the speed wobbles in and out of the band
         int currentMode = 0;
         double lastVolts = battery.getVoltage();
         long lastVoltsMs = 0, lastTelemetryMs = 0;
@@ -130,7 +130,7 @@ public class FlywheelTrace extends LinearOpMode {
             if (newSetpoint != setpoint) {
                 setpoint = newSetpoint;
                 rpmMotor.setRPM(setpoint);
-                wasReady = false;
+                rumbled = false;
             }
             boolean shoot = cur.right_bumper;
             if (intake != null) intake.setPower(shoot ? INTAKE_SHOOT_POWER : cur.left_bumper ? INTAKE_LOAD_POWER : 0);
@@ -170,13 +170,16 @@ public class FlywheelTrace extends LinearOpMode {
                 if (tMs - releaseT >= POST_MS) {
                     saveTake(takeStart, n);
                     takeStart = -1;
+                    rumbled = false;
                     releaseT = -1;
                 }
             }
 
             boolean ready = flywheelOn && Math.abs(hubRpm[i] - setpoint) < Flywheel.THRESHOLD;
-            if (ready && !wasReady) gamepad1.rumble(300);
-            wasReady = ready;
+            if (ready && !rumbled && takeStart < 0) {
+                gamepad1.rumble(300);
+                rumbled = true;
+            }
 
             if (tMs - rateStartT >= 1000) {
                 hz = (n - rateStartN) * 1000.0 / (tMs - rateStartT);
