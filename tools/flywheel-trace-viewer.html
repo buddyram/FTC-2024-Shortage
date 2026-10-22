@@ -119,6 +119,7 @@
       <span><span class="sw" style="background:var(--setpoint)"></span>Target (rpm)</span>
       <span><span class="sw" style="background:var(--series-3)"></span>Motor current (A)</span>
       <span><span class="sw box" style="background:var(--feed)"></span>Feeding</span>
+      <span><span class="sw" style="background:var(--text-primary);width:2px;height:10px"></span>Ball detected (30 ms encoder speed 150 rpm under target, confirmed by current over 2 A)</span>
     </div>
     <div class="chart-wrap" id="wrap">
       <canvas id="cv"></canvas>
@@ -210,6 +211,28 @@
     return out;
   }
 
+  // Same rule as the analysis: 30 ms encoder speed falls 150 rpm under target, and current
+  // passes 2 A within 80 ms (filters out encoder timing glitches). One ball per 120 ms at most.
+  function detectBalls(r) {
+    const e30 = encoderRpm(r, 30), e60 = encoderRpm(r, 60), n = r.t.length, out = [];
+    let last = -1e9;
+    for (let i = 0; i < n; i++) {
+      if (!(e30[i] < r.sp[i] - 150) || r.sp[i] <= 0 || r.t[i] - last < 120) continue;
+      let ok = !r.amps.some(a => !isNaN(a)); // no current logged: trust the speed dip
+      let lowest = e30[i];
+      for (let k = i; k < n && r.t[k] - r.t[i] < 80; k++) {
+        if (r.amps[k] >= 2.0) ok = true;
+        if (e30[k] < lowest) lowest = e30[k];
+      }
+      if (!ok) continue;
+      const j = Math.max(0, lowerBound(r.t, r.t[i] - 30));
+      const before = isNaN(e60[j]) ? r.sp[i] : e60[j];
+      out.push({ t: r.t[i], before, drop: before - lowest });
+      last = r.t[i];
+    }
+    return out;
+  }
+
   function niceTicks(lo, hi, count) {
     const span = hi - lo || 1, step0 = span / count;
     const mag = Math.pow(10, Math.floor(Math.log10(step0)));
@@ -237,6 +260,7 @@
     const tr = traces[cur], r = tr.rows, n = r.t.length;
     const win = +document.getElementById('win').value;
     const enc = encoderRpm(r, win);
+    const balls = detectBalls(r);
     const showHub = document.getElementById('showHub').checked, showEnc = document.getElementById('showEnc').checked;
     const dots = document.getElementById('showDots').checked;
     const hasAmps = r.amps.some(a => !isNaN(a));
@@ -317,6 +341,17 @@
       ctx.fillStyle = css('--select');
       ctx.fillRect(Math.min(drag.x0, drag.x1), PAD.t, Math.abs(drag.x1 - drag.x0), last.y + last.h - PAD.t);
     }
+    // ball markers across both panes
+    ctx.strokeStyle = css('--text-primary'); ctx.fillStyle = css('--text-primary'); ctx.lineWidth = 1.5;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = '600 11px system-ui';
+    balls.forEach((b, k) => {
+      if (b.t < x0 || b.t > x1) return;
+      const x = Math.round(X(b.t)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, last.y + last.h); ctx.stroke();
+      ctx.fillText(`ball ${k + 1}`, x + 4, PAD.t + 2);
+      ctx.font = '11px system-ui'; ctx.fillText(`${b.before.toFixed(0)} rpm before`, x + 4, PAD.t + 16);
+      ctx.fillText(`-${b.drop.toFixed(0)} rpm`, x + 4, PAD.t + 30); ctx.font = '600 11px system-ui';
+    });
     if (hoverX !== null) crosshair(hoverX);
 
     // header + stats
