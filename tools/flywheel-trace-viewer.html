@@ -119,7 +119,8 @@
       <span><span class="sw" style="background:var(--setpoint)"></span>Target (rpm)</span>
       <span><span class="sw" style="background:var(--series-3)"></span>Motor current (A)</span>
       <span><span class="sw box" style="background:var(--feed)"></span>Feeding</span>
-      <span><span class="sw" style="background:var(--text-primary);width:2px;height:10px"></span>Ball detected (30 ms encoder speed 150 rpm under target, confirmed by current over 2 A)</span>
+      <span><span class="sw" style="background:var(--text-secondary);height:5px"></span>Feed open (strip along the bottom)</span>
+      <span><span class="sw" style="background:var(--text-primary);width:2px;height:10px"></span>Ball detected: rpm vs target when it hit, rpm lost, how long the feed had been open</span>
     </div>
     <div class="chart-wrap" id="wrap">
       <canvas id="cv"></canvas>
@@ -148,10 +149,11 @@
     const head = lines[0].split(',');
     const col = k => head.indexOf(k);
     const iT = col('t_ms'), iP = col('pos'), iH = col('hub_rpm'), iA = col('amps'), iS = col('setpoint_rpm'),
-      iF = col('feeding'), iHo = col('hood'), iV = col('battery_v');
+      iF = col('feeding'), iHo = col('hood'), iV = col('battery_v'), iG = col('gate'), iB = col('ball');
     const n = lines.length - 1;
     const r = { t: new Float64Array(n), pos: new Float64Array(n), hub: new Float64Array(n), amps: new Float64Array(n),
-      sp: new Float64Array(n), feed: new Uint8Array(n), hood: new Float64Array(n), volts: new Float64Array(n) };
+      sp: new Float64Array(n), feed: new Uint8Array(n), hood: new Float64Array(n), volts: new Float64Array(n),
+      gate: new Uint8Array(n), ball: new Uint8Array(n), hasGate: iG >= 0, hasBall: iB >= 0 };
     for (let i = 0; i < n; i++) {
       const c = lines[i + 1].split(',');
       r.t[i] = +c[iT];
@@ -162,6 +164,8 @@
       r.feed[i] = iF >= 0 ? +c[iF] : 0;
       r.hood[i] = iHo >= 0 ? +c[iHo] : NaN;
       r.volts[i] = iV >= 0 ? +c[iV] : NaN;
+      r.gate[i] = iG >= 0 ? +c[iG] : r.feed[i]; // older takes: feed was open whenever R bumper was held
+      r.ball[i] = iB >= 0 ? +c[iB] : 0;
     }
     const t0 = r.t[0];
     for (let i = 0; i < n; i++) r.t[i] -= t0;
@@ -211,26 +215,33 @@
     return out;
   }
 
-  // Same rule as the analysis: 30 ms encoder speed falls 150 rpm under target, and current
-  // passes 2 A within 80 ms (filters out encoder timing glitches). One ball per 120 ms at most.
+  // Balls: the robot's own detections when the take has them, otherwise the same rule as FlywheelTrace:
+  // 30 ms encoder speed 150 rpm under target for 2 samples in a row, re-armed once back above, 120 ms apart.
+  // "before" is the 60 ms speed ending 30 ms before detection, roughly the speed when the ball touched.
   function detectBalls(r) {
-    const e30 = encoderRpm(r, 30), e60 = encoderRpm(r, 60), n = r.t.length, out = [];
-    let last = -1e9;
-    for (let i = 0; i < n; i++) {
-      if (!(e30[i] < r.sp[i] - 150) || r.sp[i] <= 0 || r.t[i] - last < 120) continue;
-      let ok = !r.amps.some(a => !isNaN(a)); // no current logged: trust the speed dip
-      let lowest = e30[i];
-      for (let k = i; k < n && r.t[k] - r.t[i] < 80; k++) {
-        if (r.amps[k] >= 2.0) ok = true;
-        if (e30[k] < lowest) lowest = e30[k];
+    const e30 = encoderRpm(r, 30), e60 = encoderRpm(r, 60), n = r.t.length, idx = [];
+    if (r.hasBall) {
+      for (let i = 0; i < n; i++) if (r.ball[i]) idx.push(i);
+    } else {
+      let armed = false, below = 0, last = -1e9;
+      for (let i = 0; i < n; i++) {
+        const under = r.sp[i] > 0 && e30[i] < r.sp[i] - 150;
+        if (!under) armed = true;
+        below = under ? below + 1 : 0;
+        if (armed && below >= 2 && r.t[i] - last >= 120) { idx.push(i); armed = false; last = r.t[i]; }
       }
-      if (!ok) continue;
+    }
+    return idx.map(i => {
+      let lowest = e30[i];
+      for (let k = i; k < n && r.t[k] - r.t[i] < 80; k++) if (e30[k] < lowest) lowest = e30[k];
       const j = Math.max(0, lowerBound(r.t, r.t[i] - 30));
       const before = isNaN(e60[j]) ? r.sp[i] : e60[j];
-      out.push({ t: r.t[i], before, drop: before - lowest });
-      last = r.t[i];
-    }
-    return out;
+      // how long the feed had been open (since it last opened) when this ball was seen
+      let g = i;
+      while (g > 0 && r.gate[g - 1]) g--;
+      const openFor = r.gate[i] || (i > 0 && r.gate[i - 1]) ? r.t[i] - r.t[g] : null;
+      return { t: r.t[i], before, drop: before - lowest, sp: r.sp[i], openFor };
+    });
   }
 
   function niceTicks(lo, hi, count) {
@@ -305,6 +316,16 @@
         if (f && s < 0) s = i;
         if (!f && s >= 0) { const a = X(r.t[s]), b = X(r.t[i - 1]); ctx.fillRect(Math.max(PAD.l, a), p.y, Math.min(PAD.l + plotW, b) - Math.max(PAD.l, a), p.h); s = -1; }
       }
+      // feed actually open (gate), as a strip along the bottom of the rpm pane
+      if (p.kind === 'rpm') {
+        ctx.fillStyle = css('--text-secondary');
+        let g = -1;
+        for (let i = i0; i <= i1 + 1; i++) {
+          const f = i <= i1 && r.gate[i];
+          if (f && g < 0) g = i;
+          if (!f && g >= 0) { const a = Math.max(PAD.l, X(r.t[g])), b = Math.min(PAD.l + plotW, X(r.t[i - 1])); ctx.fillRect(a, p.y + p.h - 5, Math.max(1, b - a), 5); g = -1; }
+        }
+      }
       // grid + y labels
       ctx.strokeStyle = grid; ctx.lineWidth = 1; ctx.fillStyle = muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
       for (const v of niceTicks(p.lo, p.hi, p.kind === 'rpm' ? 6 : 3)) {
@@ -348,9 +369,13 @@
       if (b.t < x0 || b.t > x1) return;
       const x = Math.round(X(b.t)) + 0.5;
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, last.y + last.h); ctx.stroke();
-      ctx.fillText(`ball ${k + 1}`, x + 4, PAD.t + 2);
-      ctx.font = '11px system-ui'; ctx.fillText(`${b.before.toFixed(0)} rpm before`, x + 4, PAD.t + 16);
-      ctx.fillText(`-${b.drop.toFixed(0)} rpm`, x + 4, PAD.t + 30); ctx.font = '600 11px system-ui';
+      // labels alternate height so balls close together don't overlap
+      const ly = PAD.t + 2 + (k % 2) * 48;
+      ctx.fillText(`ball ${k + 1}  ${b.before - b.sp >= 0 ? '+' : ''}${(b.before - b.sp).toFixed(0)}`, x + 4, ly);
+      ctx.font = '11px system-ui';
+      ctx.fillText(`drop ${b.drop.toFixed(0)}`, x + 4, ly + 14);
+      if (b.openFor !== null) ctx.fillText(`open ${b.openFor.toFixed(0)} ms`, x + 4, ly + 28);
+      ctx.font = '600 11px system-ui';
     });
     if (hoverX !== null) crosshair(hoverX);
 
@@ -361,7 +386,9 @@
     document.getElementById('title').textContent = tr.name;
     st.textContent = `samples ${n} · median gap ${dts[dts.length >> 1].toFixed(2)} ms · worst gap ${dts[dts.length - 1].toFixed(1)} ms · ` +
       `hub velocity changes every ${(r.t[n - 1] / Math.max(1, hubChanges)).toFixed(1)} ms on average · current samples ${ampsN} · ` +
-      `target ${r.sp[n - 1].toFixed(0)} rpm · hood ${r.hood[n - 1].toFixed(2)} · battery ${r.volts[n - 1].toFixed(2)} V`;
+      `target ${r.sp[n - 1].toFixed(0)} rpm · hood ${r.hood[n - 1].toFixed(2)} · battery ${r.volts[n - 1].toFixed(2)} V` +
+      (balls.length ? ` · ${balls.length} balls, speed vs target when hit: ${balls.map(b => (b.before - b.sp >= 0 ? '+' : '') + (b.before - b.sp).toFixed(0)).join(', ')}` +
+        (balls.length > 1 ? ` (spread ${(Math.max(...balls.map(b => b.before)) - Math.min(...balls.map(b => b.before))).toFixed(0)} rpm)` : '') : '');
   }
 
   function line(t, v, i0, i1, X, Y, color, w, dash, dots) {
