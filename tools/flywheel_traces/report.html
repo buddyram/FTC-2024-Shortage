@@ -120,7 +120,7 @@
       <span><span class="sw" style="background:var(--series-3)"></span>Motor current (A)</span>
       <span><span class="sw box" style="background:var(--feed)"></span>Feeding</span>
       <span><span class="sw" style="background:var(--text-secondary);height:5px"></span>Feed open (strip along the bottom)</span>
-      <span><span class="sw" style="background:var(--text-primary);width:2px;height:10px"></span>Ball detected: rpm vs target when it hit, rpm lost, how long the feed had been open</span>
+      <span><span class="sw" style="background:var(--text-primary);width:2px;height:10px"></span>Ball: rpm vs target when it hit → lowest during the hit (about the release speed), motor current at the hit, how long the feed had been open</span>
     </div>
     <div class="chart-wrap" id="wrap">
       <canvas id="cv"></canvas>
@@ -236,11 +236,15 @@
       for (let k = i; k < n && r.t[k] - r.t[i] < 80; k++) if (e30[k] < lowest) lowest = e30[k];
       const j = Math.max(0, lowerBound(r.t, r.t[i] - 30));
       const before = isNaN(e60[j]) ? r.sp[i] : e60[j];
+      // motor current about when the ball touched (35 ms before detection): high = motor already pushing
+      const jc = Math.max(0, lowerBound(r.t, r.t[i] - 35));
+      let amps = NaN;
+      for (let k = jc; k >= 0 && k > jc - 10; k--) if (!isNaN(r.amps[k])) { amps = r.amps[k]; break; }
       // how long the feed had been open (since it last opened) when this ball was seen
       let g = i;
       while (g > 0 && r.gate[g - 1]) g--;
       const openFor = r.gate[i] || (i > 0 && r.gate[i - 1]) ? r.t[i] - r.t[g] : null;
-      return { t: r.t[i], before, drop: before - lowest, sp: r.sp[i], openFor };
+      return { t: r.t[i], before, drop: before - lowest, low: lowest, sp: r.sp[i], openFor, amps };
     });
   }
 
@@ -371,9 +375,10 @@
       ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, last.y + last.h); ctx.stroke();
       // labels alternate height so balls close together don't overlap
       const ly = PAD.t + 2 + (k % 2) * 48;
-      ctx.fillText(`ball ${k + 1}  ${b.before - b.sp >= 0 ? '+' : ''}${(b.before - b.sp).toFixed(0)}`, x + 4, ly);
+      const sgn = v => (v >= 0 ? '+' : '') + v.toFixed(0);
+      ctx.fillText(`ball ${k + 1}  ${sgn(b.before - b.sp)} → ${sgn(b.low - b.sp)}`, x + 4, ly);
       ctx.font = '11px system-ui';
-      ctx.fillText(`drop ${b.drop.toFixed(0)}`, x + 4, ly + 14);
+      ctx.fillText(isNaN(b.amps) ? '' : `${b.amps.toFixed(1)} A at hit`, x + 4, ly + 14);
       if (b.openFor !== null) ctx.fillText(`open ${b.openFor.toFixed(0)} ms`, x + 4, ly + 28);
       ctx.font = '600 11px system-ui';
     });
@@ -387,8 +392,10 @@
     st.textContent = `samples ${n} · median gap ${dts[dts.length >> 1].toFixed(2)} ms · worst gap ${dts[dts.length - 1].toFixed(1)} ms · ` +
       `hub velocity changes every ${(r.t[n - 1] / Math.max(1, hubChanges)).toFixed(1)} ms on average · current samples ${ampsN} · ` +
       `target ${r.sp[n - 1].toFixed(0)} rpm · hood ${r.hood[n - 1].toFixed(2)} · battery ${r.volts[n - 1].toFixed(2)} V` +
-      (balls.length ? ` · ${balls.length} balls, speed vs target when hit: ${balls.map(b => (b.before - b.sp >= 0 ? '+' : '') + (b.before - b.sp).toFixed(0)).join(', ')}` +
-        (balls.length > 1 ? ` (spread ${(Math.max(...balls.map(b => b.before)) - Math.min(...balls.map(b => b.before))).toFixed(0)} rpm)` : '') : '');
+      (balls.length ? ` · ${balls.length} balls, vs target when hit: ${balls.map(b => (b.before - b.sp >= 0 ? '+' : '') + (b.before - b.sp).toFixed(0)).join(', ')}` +
+        (balls.length > 1 ? ` (spread ${(Math.max(...balls.map(b => b.before)) - Math.min(...balls.map(b => b.before))).toFixed(0)})` : '') +
+        `, lowest: ${balls.map(b => (b.low - b.sp).toFixed(0)).join(', ')}` +
+        (balls.length > 1 ? ` (spread ${(Math.max(...balls.map(b => b.low)) - Math.min(...balls.map(b => b.low))).toFixed(0)})` : '') : '');
   }
 
   function line(t, v, i0, i1, X, Y, color, w, dash, dots) {
