@@ -12,7 +12,8 @@ public class Flywheel extends BaseComponent<Robot> {
     private double target;
     public static final int MAX = 5000;
     public static final int MIN = 0;
-    public static final int THRESHOLD = 50;
+    // At-speed band (+/- rpm). The hub reports speed in ~43 rpm steps, so keep this above ~22 or some targets never count as ready
+    public static final int THRESHOLD = 30;
     public static final double DEFAULT_RPM = 2250; // starting speed for the manual / test opmodes
     // Velocity PIDF for RUN_USING_ENCODER, from the Flywheel PIDF Tuner: F measured by its F calibration,
     // I and D from its best 4-ball shot rounds (I helps the wheel recover between back-to-back shots).
