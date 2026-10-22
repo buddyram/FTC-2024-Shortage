@@ -41,6 +41,7 @@ import java.util.Locale;
  *  TELEOP - feed only while the hub speed is within Flywheel.THRESHOLD, same rule as Teleop
  *  PAUSE  - feed until a ball is seen (encoder speed over 30 ms is BALL_DROP_RPM under target for 2 samples),
  *           then stop for pauseMs (triggers +/- 25 ms) and feed again
+ *  TELEOP+PAUSE - both: after a ball, wait pauseMs, then also wait for the TELEOP speed check
  */
 @TeleOp(name = "BIOBUZZ Flywheel Trace", group = "Biobuzz")
 public class FlywheelTrace extends LinearOpMode {
@@ -48,7 +49,7 @@ public class FlywheelTrace extends LinearOpMode {
     private static final int CPR = 28;
     private static final double[] FEED_POWERS = {0.5, 0.7}; // Intake INTAKING / INTAKING_FAST, L stick button
     private static final double INTAKE_LOAD_POWER = 0.5;
-    private static final String[] FEED_MODES = {"FREE", "TELEOP", "PAUSE"};
+    private static final String[] FEED_MODES = {"FREE", "TELEOP", "PAUSE", "TELEOP+PAUSE"};
     private static final double BALL_WINDOW_MS = 30;  // encoder speed window for ball detection
     private static final double BALL_DROP_RPM = 150;  // under target by this much = a ball hit the wheel
     private static final double BALL_REARM_MS = 120;  // one ball per this long at most
@@ -209,6 +210,9 @@ public class FlywheelTrace extends LinearOpMode {
                 case 2:
                     open = shoot && tMs - lastBallT >= pauseMs;
                     break;
+                case 3:
+                    open = shoot && tMs - lastBallT >= pauseMs && inBand;
+                    break;
                 default:
                     open = shoot;
             }
@@ -253,7 +257,7 @@ public class FlywheelTrace extends LinearOpMode {
                 telemetry.addData("target / rpm", "%.0f / %.0f", setpoint, hubRpm[i]);
                 telemetry.addData("hood", "%.2f", hoodPos);
                 telemetry.addData("feed mode", "%s (TRIANGLE)%s", FEED_MODES[feedMode],
-                        feedMode == 2 ? String.format(Locale.US, ", pause %.0f ms (triggers)", pauseMs) : "");
+                        feedMode >= 2 ? String.format(Locale.US, ", pause %.0f ms (triggers)", pauseMs) : "");
                 telemetry.addData("feed power", "%.1f (L stick button)", FEED_POWERS[feedPower]);
                 telemetry.addData("balls this take", balls);
                 telemetry.addData("current", every == 0 ? "off (SHARE)" : String.format(Locale.US,
@@ -283,8 +287,8 @@ public class FlywheelTrace extends LinearOpMode {
     }
 
     private static String takeTag(int feedMode, int feedPower, double pauseMs) {
-        String tag = FEED_MODES[feedMode].toLowerCase(Locale.US);
-        if (feedMode == 2) tag += Math.round(pauseMs);
+        String tag = FEED_MODES[feedMode].toLowerCase(Locale.US).replace("+", "");
+        if (feedMode >= 2) tag += Math.round(pauseMs);
         return tag + "_p" + Math.round(FEED_POWERS[feedPower] * 10);
     }
 
