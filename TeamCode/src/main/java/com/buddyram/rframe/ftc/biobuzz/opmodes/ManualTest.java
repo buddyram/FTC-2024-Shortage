@@ -214,7 +214,7 @@ public class ManualTest extends LinearOpMode {
         GoBildaPinpointDriver odo = hardwareMap.tryGet(GoBildaPinpointDriver.class, "odo");
         if (odo == null) return null;
         // Same setup as BaseOpmode, keep the two in sync
-        odo.setOffsets(-151.9422952843, -2.8999939136, DistanceUnit.MM);
+        odo.setOffsets(151.9422952843, -2.8999939136, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();

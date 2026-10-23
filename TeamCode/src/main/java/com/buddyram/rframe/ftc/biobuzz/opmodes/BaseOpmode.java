@@ -187,7 +187,8 @@ public abstract class BaseOpmode extends LinearOpMode {
 
         // Pinpoint odometry setup
         GoBildaPinpointDriver odo = hardwareMap.get(GoBildaPinpointDriver.class, "odo");
-        odo.setOffsets(-151.9422952843, -2.8999939136, DistanceUnit.MM);
+        // From the CAD: the forward pod sits 152 mm left of center (left = positive), the strafe pod ~3 mm behind
+        odo.setOffsets(151.9422952843, -2.8999939136, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
         odo.resetPosAndIMU();
