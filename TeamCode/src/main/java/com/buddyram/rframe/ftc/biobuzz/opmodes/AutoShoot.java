@@ -30,9 +30,7 @@ public class AutoShoot extends BaseOpmode {
     private static final double SLOW_SPEED = 0.3;
     private static final double SLOW_DIST = 20;
 
-    private static final int MAX_BALLS = 3;
-    private static final int NO_BALL_TIMEOUT_MS = 2500; // stop if feeding this long with no ball leaving
-    private static final int SHOOT_TIMEOUT_MS = 8000;
+    private static final int SHOOT_TIME_MS = 4000; // feed (whenever the shot is ready) for this long
     private static final int SPIN_UP_TIMEOUT_MS = 3000;
 
     @Override
@@ -67,23 +65,13 @@ public class AutoShoot extends BaseOpmode {
             sleep(10);
         }
 
-        int startBalls = biobuzzBot.getLauncher().wheel.getBallCount();
         long feedStart = System.currentTimeMillis();
-        long lastBall = feedStart;
-        int lastCount = startBalls;
-        while (opModeIsActive()) {
-            int count = biobuzzBot.getLauncher().wheel.getBallCount();
-            long now = System.currentTimeMillis();
-            if (count != lastCount) {
-                lastCount = count;
-                lastBall = now;
-            }
-            if (count - startBalls >= MAX_BALLS || now - lastBall > NO_BALL_TIMEOUT_MS || now - feedStart > SHOOT_TIMEOUT_MS) break;
-
+        int startBalls = biobuzzBot.getLauncher().wheel.getBallCount();
+        while (opModeIsActive() && System.currentTimeMillis() - feedStart < SHOOT_TIME_MS) {
             boolean ready = biobuzzBot.isReadyToShoot();
             biobuzzBot.block = !ready;
             biobuzzBot.jamFix = ready;
-            showStatus("shooting, " + (count - startBalls) + " balls");
+            showStatus("shooting, " + (biobuzzBot.getLauncher().wheel.getBallCount() - startBalls) + " balls");
             sleep(5);
         }
         biobuzzBot.block = true;
