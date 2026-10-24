@@ -18,13 +18,16 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public class AutoShoot extends BaseOpmode {
     // Blue positions. Red is the same field turned 180 degrees around the center (see BaseOpmode.startFor),
     // so these get rotated for red, not mirrored like the old DECODE autos.
-    private static final Vector3D SHOOT_POS = new Vector3D(114, 30, 0); // ~44 in from the blue scoring-side CELL
-    private static final double SHOOT_HEADING = 90;                     // same as the start, turret aims ~-43 deg
+    // Shoot from straight in front of the CELL, square to the HIVE's back board: same x as the CELL,
+    // SHOOT_DISTANCE in toward our wall, facing the HIVE (heading 0 = facing +y) so the turret sits at ~0.
+    private static final double SHOOT_DISTANCE = 36;
+    private static final Vector3D SHOOT_SIDE = new Vector3D(81, 24, 0); // rough spot, only picks which CELL
+    private static final double SHOOT_HEADING = 0;
     private static final Vector3D PARK_POS = new Vector3D(114, 12, 0);
 
     // Drive power (0-1): FAST until within SLOW_DIST in of the target, then SLOW. Teleop-style autos use 1 / 0.3.
-    private static final double FAST_SPEED = 0.5;
-    private static final double SLOW_SPEED = 0.25;
+    private static final double FAST_SPEED = 0.8;
+    private static final double SLOW_SPEED = 0.3;
     private static final double SLOW_DIST = 20;
 
     private static final int MAX_BALLS = 3;
@@ -37,9 +40,13 @@ public class AutoShoot extends BaseOpmode {
         Globals.DID_RUN_AUTO = true;
         boolean isRed = biobuzzBot.isRed;
 
+        // Built from the CELL position so it stays lined up if HIVE_OFFSET changes
+        Vector3D cell = biobuzzBot.goalFor(forAlliance(SHOOT_SIDE, isRed));
+        Vector3D shootPos = new Vector3D(cell.x, cell.y + (isRed ? SHOOT_DISTANCE : -SHOOT_DISTANCE), 0);
+
         // Aim while driving so the turret is already there on arrival
-        biobuzzBot.preloadTurretForPosition(forAlliance(SHOOT_POS, isRed), forAlliance(SHOOT_HEADING, isRed));
-        driveTo(forAlliance(SHOOT_POS, isRed), forAlliance(SHOOT_HEADING, isRed), 2);
+        biobuzzBot.preloadTurretForPosition(shootPos, forAlliance(SHOOT_HEADING, isRed));
+        driveTo(shootPos, forAlliance(SHOOT_HEADING, isRed), 2);
         biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, 0, 0));
 
         // Lock rpm/hood to where we actually stopped, then switch the turret to live aim
