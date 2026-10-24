@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Pose Viewer</title>
+<style>
+  :root {
+    --bg: #f4f4f2; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #d9d9d4;
+    --accent: #1f6feb; --robot: #ff9f1a; --goal: #e5484d; --trail: #1f6feb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161615; --panel: #20201f; --ink: #ececea; --muted: #9a9a94; --line: #3a3a37;
+      --accent: #58a6ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, sans-serif; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
+  @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  .field-wrap { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  canvas { width: 100%; height: auto; display: block; aspect-ratio: 1; cursor: crosshair; }
+  aside { display: flex; flex-direction: column; gap: 12px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  h1 { font-size: 16px; margin: 0 0 4px; }
+  h2 { font-size: 13px; margin: 0 0 8px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .big { font: 600 22px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .muted { color: var(--muted); }
+  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
+  input, select, textarea, button { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; }
+  input[type=number] { width: 72px; }
+  input[type=text] { width: 130px; }
+  textarea { width: 100%; height: 48px; resize: vertical; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #999; margin-right: 6px; }
+  .dot.on { background: #2da44e; }
+  label { user-select: none; }
+</style>
+</head>
+<body>
+<main>
+  <div class="field-wrap">
+    <canvas id="field" width="900" height="900"></canvas>
+  </div>
+  <aside>
+    <section>
+      <h1>Where the robot thinks it is</h1>
+      <div class="big" id="poseText">–</div>
+      <div class="muted" id="goalText"></div>
+      <div class="muted" id="mouseText">Hover the field for coordinates, click to copy</div>
+    </section>
+    <section>
+      <h2>Live (FTC Dashboard)</h2>
+      <div class="row"><span class="dot" id="connDot"></span><span id="connText">Not connected</span></div>
+      <div class="row">
+        <input type="text" id="host" value="192.168.43.1">
+        <button id="connectBtn">Connect</button>
+      </div>
+      <div class="muted" id="opmodeText"></div>
+    </section>
+    <section>
+      <h2>Manual</h2>
+      <div class="row">
+        x <input type="number" id="mx" step="1" value="135">
+        y <input type="number" id="my" step="1" value="8">
+        h <input type="number" id="mh" step="5" value="90">
+      </div>
+      <div class="row"><button id="showBtn">Show</button><span class="muted">or paste the POS line:</span></div>
+      <textarea id="paste" placeholder="((135.06, 7.98, 0.00), (0.00, 0.00, 90.00),..."></textarea>
+    </section>
+    <section>
+      <h2>View</h2>
+      <div class="row"><label><input type="checkbox" id="trailOn" checked> Trail</label><button id="clearBtn">Clear trail</button></div>
+      <div class="row"><label><input type="checkbox" id="goalOn" checked> Aim line to the goal</label></div>
+      <div class="row"><label><input type="checkbox" id="gridOn" checked> 24 in grid</label></div>
+      <div class="row">Rotate field picture
+        <select id="rot"><option value="0">0°</option><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select>
+      </div>
+      <p class="muted" style="margin:6px 0 0">x goes right toward the blue wall, y goes up the picture. Heading 0 faces up, 90 faces left. If the robot shows up in the wrong place, try rotating the picture.</p>
+    </section>
+  </aside>
+</main>
+<script>
+const FIELD = 144;               // inches
+const ROBOT_LEN = 17.9, ROBOT_WID = 16; // from the start-corner wall offsets
+const canvas = document.getElementById('field');
+const ctx = canvas.getContext('2d');
+const img = new Image();
+img.src = 'field-biobuzz.jpg';
+img.onload = draw;
+
+let pose = null, goal = null, trail = [];
+let mouse = null;
+
+const $ = id => document.getElementById(id);
+const S = canvas.width / FIELD;
+// field inches -> canvas px (y up)
+const toPx = (x, y) => [x * S, canvas.height - y * S];
+const toIn = (px, py) => [px / S, (canvas.height - py) / S];
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  const rot = +$('rot').value;
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(-rot * Math.PI / 180);
+  ctx.translate(-canvas.width / 2, -canvas.height / 2);
+  if (img.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  ctx.restore();
+
+  if ($('gridOn').checked) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 1;
+    ctx.font = '13px ui-monospace, Menlo, monospace';
+    for (let v = 24; v < FIELD; v += 24) {
+      const [gx] = toPx(v, 0), [, gy] = toPx(0, v);
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+      ctx.fillText(v, gx + 3, canvas.height - 5);
+      ctx.fillText(v, 4, gy - 4);
+    }
+  }
+
+  if ($('trailOn').checked && trail.length > 1) {
+    ctx.strokeStyle = getCss('--trail');
+    ctx.globalAlpha = 0.7;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    trail.forEach((p, i) => { const [px, py] = toPx(p[0], p[1]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  if (pose && goal && $('goalOn').checked) {
+    const [rx, ry] = toPx(pose.x, pose.y), [gx, gy] = toPx(goal.x, goal.y);
+    ctx.strokeStyle = getCss('--goal');
+    ctx.setLineDash([8, 6]); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(gx, gy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = getCss('--goal');
+    ctx.strokeStyle = '#fff';
+    ctx.beginPath(); ctx.arc(gx, gy, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+
+  if (pose) {
+    const [rx, ry] = toPx(pose.x, pose.y);
+    const h = pose.h * Math.PI / 180;
+    ctx.save();
+    ctx.translate(rx, ry);
+    // heading 0 faces +y (up the screen), CCW positive -> canvas rotation is -h
+    ctx.rotate(-h);
+    ctx.fillStyle = 'rgba(255,159,26,0.35)';
+    ctx.strokeStyle = getCss('--robot');
+    ctx.lineWidth = 3;
+    const w = ROBOT_WID * S, l = ROBOT_LEN * S;
+    ctx.beginPath(); ctx.roundRect(-w / 2, -l / 2, w, l, 4); ctx.fill(); ctx.stroke();
+    // front arrow
+    ctx.fillStyle = getCss('--robot');
+    ctx.beginPath(); ctx.moveTo(0, -l / 2 - 14); ctx.lineTo(-9, -l / 2 + 2); ctx.lineTo(9, -l / 2 + 2); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  if (mouse) {
+    const [mx, my] = toPx(mouse[0], mouse[1]);
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    const t = `(${mouse[0].toFixed(1)}, ${mouse[1].toFixed(1)})`;
+    ctx.font = '13px ui-monospace, Menlo, monospace';
+    const tw = ctx.measureText(t).width;
+    const bx = Math.min(mx + 12, canvas.width - tw - 12), by = Math.max(my - 12, 20);
+    ctx.fillRect(bx - 4, by - 15, tw + 8, 20);
+    ctx.fillStyle = '#fff'; ctx.fillText(t, bx, by);
+  }
+}
+
+function getCss(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+function setPose(x, y, h, gx, gy) {
+  if (![x, y, h].every(Number.isFinite)) return;
+  pose = { x, y, h };
+  goal = Number.isFinite(gx) && Number.isFinite(gy) ? { x: gx, y: gy } : null;
+  const last = trail[trail.length - 1];
+  if (!last || Math.hypot(last[0] - x, last[1] - y) > 0.5) {
+    trail.push([x, y]);
+    if (trail.length > 3000) trail.shift();
+  }
+  $('poseText').textContent = `${x.toFixed(1)}, ${y.toFixed(1)}  ${h.toFixed(0)}°`;
+  $('goalText').textContent = goal ? `aiming at (${goal.x.toFixed(1)}, ${goal.y.toFixed(1)}), ${Math.hypot(goal.x - x, goal.y - y).toFixed(1)} in away` : '';
+  draw();
+}
+
+// ---- live, through FTC Dashboard's websocket ----
+let ws = null, pingTimer = null, lastPacket = 0;
+function connect() {
+  if (ws) ws.close();
+  const host = $('host').value.trim();
+  try { localStorage.setItem('poseViewerHost', host); } catch (e) {}
+  ws = new WebSocket(`ws://${host}:8000`);
+  $('connText').textContent = 'Connecting…';
+  ws.onopen = () => {
+    $('connDot').classList.add('on');
+    $('connText').textContent = `Connected to ${host}`;
+    clearInterval(pingTimer);
+    pingTimer = setInterval(() => ws.readyState === 1 && ws.send(JSON.stringify({ type: 'GET_ROBOT_STATUS' })), 1000);
+  };
+  ws.onclose = () => {
+    $('connDot').classList.remove('on');
+    $('connText').textContent = 'Disconnected, retrying…';
+    clearInterval(pingTimer);
+    setTimeout(() => { if (ws && ws.readyState === 3) connect(); }, 2000);
+  };
+  ws.onmessage = ev => {
+    let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
+    if (msg.type === 'RECEIVE_TELEMETRY') {
+      for (const p of msg.telemetry || []) {
+        const d = p.data || {};
+        if (d.pose_x === undefined) continue;
+        lastPacket = Date.now();
+        setPose(+d.pose_x, +d.pose_y, +d.pose_heading, +d.goal_x, +d.goal_y);
+      }
+    } else if (msg.type === 'RECEIVE_ROBOT_STATUS') {
+      const s = msg.status || {};
+      $('opmodeText').textContent = s.activeOpMode ? `${s.activeOpMode} (${s.activeOpModeStatus || ''})` : '';
+    }
+  };
+}
+setInterval(() => {
+  if (ws && ws.readyState === 1 && lastPacket) {
+    const age = (Date.now() - lastPacket) / 1000;
+    if (age > 2) $('connText').textContent = `Connected, no position for ${age.toFixed(0)} s (start an opmode)`;
+    else $('connText').textContent = `Connected, live`;
+  }
+}, 500);
+
+// ---- manual ----
+$('showBtn').onclick = () => setPose(+$('mx').value, +$('my').value, +$('mh').value);
+['mx', 'my', 'mh'].forEach(id => $(id).addEventListener('input', () => $('showBtn').onclick()));
+$('paste').addEventListener('input', () => {
+  const n = ($('paste').value.match(/-?\d+(\.\d+)?/g) || []).map(Number);
+  if (n.length >= 6) { $('mx').value = n[0]; $('my').value = n[1]; $('mh').value = n[5]; setPose(n[0], n[1], n[5]); }
+  else if (n.length >= 3) { $('mx').value = n[0]; $('my').value = n[1]; $('mh').value = n[2]; setPose(n[0], n[1], n[2]); }
+});
+
+// ---- view ----
+$('connectBtn').onclick = connect;
+$('clearBtn').onclick = () => { trail = []; draw(); };
+['trailOn', 'goalOn', 'gridOn', 'rot'].forEach(id => $(id).addEventListener('change', () => {
+  try { localStorage.setItem('poseViewer_' + id, $(id).type === 'checkbox' ? $(id).checked : $(id).value); } catch (e) {}
+  draw();
+}));
+canvas.addEventListener('mousemove', e => {
+  const r = canvas.getBoundingClientRect();
+  mouse = toIn((e.clientX - r.left) * canvas.width / r.width, (e.clientY - r.top) * canvas.height / r.height);
+  $('mouseText').textContent = `Mouse at (${mouse[0].toFixed(1)}, ${mouse[1].toFixed(1)})`;
+  draw();
+});
+canvas.addEventListener('mouseleave', () => { mouse = null; draw(); });
+canvas.addEventListener('click', () => {
+  if (!mouse) return;
+  const t = `new Vector3D(${mouse[0].toFixed(1)}, ${mouse[1].toFixed(1)}, 0)`;
+  navigator.clipboard?.writeText(t).then(() => { $('mouseText').textContent = `Copied ${t}`; }).catch(() => {});
+});
+
+try {
+  const h = localStorage.getItem('poseViewerHost'); if (h) $('host').value = h;
+  ['trailOn', 'goalOn', 'gridOn'].forEach(id => { const v = localStorage.getItem('poseViewer_' + id); if (v !== null) $(id).checked = v === 'true'; });
+  const r = localStorage.getItem('poseViewer_rot'); if (r !== null) $('rot').value = r;
+} catch (e) {}
+setPose(+$('mx').value, +$('my').value, +$('mh').value);
+connect();
+</script>
+</body>
+</html>

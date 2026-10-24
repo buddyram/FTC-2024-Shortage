@@ -1,5 +1,7 @@
 package com.buddyram.rframe.ftc.biobuzz.opmodes;
 
+import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.buddyram.rframe.BaseLogger;
 import com.buddyram.rframe.CachedOdometry;
 import com.buddyram.rframe.Logger;
@@ -84,6 +86,7 @@ public abstract class BaseOpmode extends LinearOpMode {
                         this.biobuzzBot.autoAim();
                         this.biobuzzBot.adjustFlywheelSpeed();
                     }
+                    sendPoseToDashboard();
                     Thread.yield();
                 }
             }
@@ -108,6 +111,25 @@ public abstract class BaseOpmode extends LinearOpMode {
 
     }
 
+
+    private long lastPoseSentMs = 0;
+
+    /** Pose (and the goal the turret aims at) for tools/robot-pose-viewer.html, through FTC Dashboard, ~20 Hz. */
+    private void sendPoseToDashboard() {
+        long now = System.currentTimeMillis();
+        if (now - lastPoseSentMs < 50) return;
+        lastPoseSentMs = now;
+        Pose3D pose = this.cachedOdometry.get();
+        if (pose == null) return;
+        TelemetryPacket packet = new TelemetryPacket(false);
+        packet.put("pose_x", pose.position.x);
+        packet.put("pose_y", pose.position.y);
+        packet.put("pose_heading", pose.rotation.z);
+        Vector3D goal = this.biobuzzBot.getTargetGoal();
+        packet.put("goal_x", goal.x);
+        packet.put("goal_y", goal.y);
+        FtcDashboard.getInstance().sendTelemetryPacket(packet);
+    }
 
     public abstract void execute() throws RobotException, InterruptedException;
 
