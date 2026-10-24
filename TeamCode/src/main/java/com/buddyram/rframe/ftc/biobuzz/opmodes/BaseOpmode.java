@@ -57,10 +57,11 @@ public abstract class BaseOpmode extends LinearOpMode {
 
     public static final double START_HOOD = 0.55; // starting hood position for the manual / test opmodes
     public static final Pose3D ZERO = new Pose3D(new Vector3D(), new Vector3D(), new Vector3D(), new Vector3D());
-    // Blue start: bottom right corner, back against the wall, facing left (heading 90 = facing -x).
+    // Blue start: bottom right corner, facing left (heading 90 = facing -x), START_FORWARD in out from the wall.
     // Wall offsets are the old Teleop corner reset (7.98, 8.94) swapped, since the robot is turned 90.
+    private static final double START_FORWARD = 24;
     private static final Pose3D BLUE_START = new Pose3D(
-            new Vector3D(144 - 8.94, 7.98, 0), new Vector3D(0, 0, 90), new Vector3D(), new Vector3D());
+            new Vector3D(144 - 8.94 - START_FORWARD, 7.98, 0), new Vector3D(0, 0, 90), new Vector3D(), new Vector3D());
 
     /**
      * Start pose for the alliance. The BIOBUZZ field is rotated, not mirrored, for red (loading zones,
