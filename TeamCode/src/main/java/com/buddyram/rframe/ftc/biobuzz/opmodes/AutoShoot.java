@@ -4,7 +4,8 @@ import com.buddyram.rframe.drive.HolonomicDriveInstruction;
 import com.buddyram.rframe.RobotException;
 import com.buddyram.rframe.Utils;
 import com.buddyram.rframe.Vector3D;
-import com.buddyram.rframe.ftc.biobuzz.BotUtilsNew;
+import com.buddyram.rframe.ftc.DriveToAndRotateAction;
+import com.buddyram.rframe.ftc.biobuzz.BiobuzzBot;
 import com.buddyram.rframe.ftc.biobuzz.Globals;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
@@ -21,6 +22,11 @@ public class AutoShoot extends BaseOpmode {
     private static final double SHOOT_HEADING = 90;                     // same as the start, turret aims ~-43 deg
     private static final Vector3D PARK_POS = new Vector3D(114, 12, 0);
 
+    // Drive power (0-1): FAST until within SLOW_DIST in of the target, then SLOW. Teleop-style autos use 1 / 0.3.
+    private static final double FAST_SPEED = 0.5;
+    private static final double SLOW_SPEED = 0.25;
+    private static final double SLOW_DIST = 20;
+
     private static final int MAX_BALLS = 3;
     private static final int NO_BALL_TIMEOUT_MS = 2500; // stop if feeding this long with no ball leaving
     private static final int SHOOT_TIMEOUT_MS = 8000;
@@ -33,7 +39,7 @@ public class AutoShoot extends BaseOpmode {
 
         // Aim while driving so the turret is already there on arrival
         biobuzzBot.preloadTurretForPosition(forAlliance(SHOOT_POS, isRed), forAlliance(SHOOT_HEADING, isRed));
-        BotUtilsNew.driveAndRotateTo(forAlliance(SHOOT_POS, isRed), forAlliance(SHOOT_HEADING, isRed), 2).run(biobuzzBot);
+        driveTo(forAlliance(SHOOT_POS, isRed), forAlliance(SHOOT_HEADING, isRed), 2);
         biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, 0, 0));
 
         // Lock rpm/hood to where we actually stopped, then switch the turret to live aim
@@ -43,7 +49,7 @@ public class AutoShoot extends BaseOpmode {
         if (biobuzzBot.getLauncher() != null) shoot();
 
         biobuzzBot.overrideDistance = null;
-        BotUtilsNew.driveAndRotateTo(forAlliance(PARK_POS, isRed), forAlliance(SHOOT_HEADING, isRed)).run(biobuzzBot);
+        driveTo(forAlliance(PARK_POS, isRed), forAlliance(SHOOT_HEADING, isRed), 3);
         biobuzzBot.getDrive().drive(new HolonomicDriveInstruction(0, 0, 0));
     }
 
@@ -75,6 +81,10 @@ public class AutoShoot extends BaseOpmode {
         }
         biobuzzBot.block = true;
         biobuzzBot.jamFix = false;
+    }
+
+    private void driveTo(Vector3D target, double heading, double accuracy) throws RobotException {
+        new DriveToAndRotateAction<BiobuzzBot>(target, accuracy, (dist) -> dist > SLOW_DIST ? FAST_SPEED : SLOW_SPEED, heading).run(biobuzzBot);
     }
 
     private void showStatus(String state) {
