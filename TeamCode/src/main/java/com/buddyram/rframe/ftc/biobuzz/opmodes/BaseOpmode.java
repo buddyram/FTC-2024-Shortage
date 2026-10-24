@@ -23,6 +23,7 @@ import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Hood;
 import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Launcher;
 import com.buddyram.rframe.ftc.biobuzz.Robot.launcher.Turret;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -191,16 +192,27 @@ public abstract class BaseOpmode extends LinearOpMode {
         odo.setOffsets(151.9422952843, -2.8999939136, DistanceUnit.MM);
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
-        odo.resetPosAndIMU();
-        Thread.sleep(300);
 
         GoBildaPinpointOdometry pinpointOdometry = new GoBildaPinpointOdometry(odo);
 
-        // Set starting position
-        if (Globals.POSITION != null) {
-            pinpointOdometry.setPosition(Globals.POSITION);
-            telemetry.addData("Odometry", "used cached position");
+        // Autos always start from the start corner. Anything else carries on from the last opmode: the Pinpoint
+        // keeps tracking between opmodes, so don't reset it (that re-zeroes the IMU and loses any motion after
+        // the last saved pose). Only if it doesn't match the saved pose (it rebooted) do we fall back to that.
+        boolean carryOver = Globals.POSITION != null && !getClass().isAnnotationPresent(Autonomous.class);
+        if (carryOver) {
+            Pose3D pinpointPose = pinpointOdometry.get();
+            double moved = pinpointPose.position.distance(Globals.POSITION.position);
+            double turned = Math.abs(Utils.normalizeAngle(pinpointPose.rotation.z - Globals.POSITION.rotation.z));
+            if (turned > 180) turned = 360 - turned;
+            if (moved < 6 && turned < 10) {
+                telemetry.addData("Odometry", "kept Pinpoint position from last opmode");
+            } else {
+                pinpointOdometry.setPosition(Globals.POSITION);
+                telemetry.addData("Odometry", "Pinpoint was reset, used saved position");
+            }
         } else {
+            odo.resetPosAndIMU();
+            Thread.sleep(500); // IMU calibration takes ~0.25 s, a position written during it can be lost
             if (isRed != 1) {
                 pinpointOdometry.setPosition(new Pose3D(
                         getBlueStartPosition(),

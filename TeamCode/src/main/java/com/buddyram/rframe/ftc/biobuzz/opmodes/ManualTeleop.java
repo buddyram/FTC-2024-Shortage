@@ -36,8 +36,8 @@ public class ManualTeleop extends BaseOpmode {
         boolean hasTurret = launcher != null && launcher.turret != null;
         boolean hasFlywheel = launcher != null && launcher.wheel != null;
 
-        // Same corner start as BaseOpmode, rotated for red
-        this.biobuzzBot.odometry.setPosition(BaseOpmode.startFor(this.biobuzzBot.isRed));
+        // Start position comes from BaseOpmode: carried over from auto / the last opmode, else the start corner.
+        // TRIANGLE puts it back in the start corner.
 
         boolean autoAim = true;
         boolean autoShooter = false;
