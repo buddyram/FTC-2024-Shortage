@@ -23,7 +23,9 @@ public class AutoShoot extends BaseOpmode {
     private static final double SHOOT_DISTANCE = 48;
     private static final Vector3D SHOOT_SIDE = new Vector3D(117, 60, 0); // rough spot, only picks which CELL
     private static final double SHOOT_HEADING = 90;
-    private static final Vector3D PARK_POS = new Vector3D(114, 12, 0);
+    // PARK = at least partly in our LOADING ZONE (manual 10.5.4): 11 in deep off the blue alliance wall
+    // (x = 144 on the real field) and one tile wide, 24-48 in from the audience wall. Center the robot in it.
+    private static final Vector3D PARK_POS = new Vector3D(132, 36, 0);
 
     // Drive power (0-1): FAST until within SLOW_DIST in of the target, then SLOW. Teleop-style autos use 1 / 0.3.
     private static final double FAST_SPEED = 0.8;
