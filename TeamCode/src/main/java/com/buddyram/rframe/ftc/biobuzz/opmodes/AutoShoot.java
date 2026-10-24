@@ -20,7 +20,7 @@ public class AutoShoot extends BaseOpmode {
     // so these get rotated for red, not mirrored like the old DECODE autos.
     // Shoot from straight in front of the CELL, square to the HIVE's back board: same y as the CELL,
     // SHOOT_DISTANCE in toward the start side, facing the HIVE (heading 90 = facing -x) so the turret sits at ~0.
-    private static final double SHOOT_DISTANCE = 36;
+    private static final double SHOOT_DISTANCE = 48;
     private static final Vector3D SHOOT_SIDE = new Vector3D(117, 60, 0); // rough spot, only picks which CELL
     private static final double SHOOT_HEADING = 90;
     private static final Vector3D PARK_POS = new Vector3D(114, 12, 0);
@@ -30,13 +30,21 @@ public class AutoShoot extends BaseOpmode {
     private static final double SLOW_SPEED = 0.3;
     private static final double SLOW_DIST = 20;
 
-    private static final int SHOOT_TIME_MS = 4000; // feed (whenever the shot is ready) for this long
+    // Fixed shot instead of the distance table
+    private static final double HOOD = 0.55;
+    private static final double FLYWHEEL_RPM = 2100;
+
+    private static final int SHOOT_TIME_MS = 5000; // feed (whenever the shot is ready) for this long
     private static final int SPIN_UP_TIMEOUT_MS = 3000;
 
     @Override
     public void execute() throws RobotException, InterruptedException {
         Globals.DID_RUN_AUTO = true;
         boolean isRed = biobuzzBot.isRed;
+
+        // Spin up on the way there
+        biobuzzBot.overrideHood = HOOD;
+        biobuzzBot.overrideRPM = FLYWHEEL_RPM;
 
         // Built from the CELL position so it stays lined up if HIVE_OFFSET changes
         Vector3D cell = biobuzzBot.goalFor(forAlliance(SHOOT_SIDE, isRed));
