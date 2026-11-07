@@ -73,6 +73,7 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
     public double turretOffset = 0;
     public boolean jamFix = false;
     public boolean fastFeed = false; // feed at INTAKING_FAST instead of INTAKING while jamFix is on
+    public volatile boolean outtakeOn = false;
 
     public Odometry<Pose3D> getApriltagOdometry() {
         return apriltagOdometry;
@@ -343,11 +344,14 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
         return new HolonomicDriveInstruction(rotationInstruction, driveSpeedInstruction, driveAngleInstruction);
     }
 
-
     public void controlIntake() {
-        if (this.launcher == null || this.intake == null) return;
-        this.launcher.blocker.setAngle(this.block ? this.launcher.blocker.OPEN : this.launcher.blocker.CLOSED);
-        if (jamFix) {
+    if (this.launcher == null || this.intake == null) return;
+    this.launcher.blocker.setAngle(this.block || outtakeOn ? this.launcher.blocker.OPEN : this.launcher.blocker.CLOSED);
+    if (outtakeOn) {
+        this.intake.enableMode(Intake.Modes.OUTTAKING);
+        return;
+    }
+   if (jamFix) {
             this.intake.enableMode(fastFeed ? Intake.Modes.INTAKING_FAST : Intake.Modes.INTAKING);
             return;
         }
@@ -355,7 +359,6 @@ public class BiobuzzBot implements Navigatable<HolonomicDriveTrain> {
             this.intake.enableMode(Intake.Modes.IDLE);
         }
     }
-
     private void logPos(String label) {
         Pose3D pos = this.odometry.get();
         System.out.println("[AUTO] " + label + " pos=(" +
