@@ -12,6 +12,8 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 public class Teleop extends BaseOpmode {
     private boolean adjustmentMode = false;
     private Gamepad previousGamepad1 = new Gamepad();
+
+    private Gamepad previousGamepad2 = new Gamepad(); // gamepad 2 stuff
     private long dpadHoldStartLR = 0;
     private long lastAdjustTimeLR = 0;
     private long dpadHoldStartUD = 0;
@@ -23,8 +25,23 @@ public class Teleop extends BaseOpmode {
     @Override
     public void execute() throws RobotException, InterruptedException {
         Gamepad currentGamepad1 = new Gamepad();
+        Gamepad currentGamepad2 = new Gamepad(); // gamepad 2 stuff
+        currentGamepad2.copy(gamepad2); // gamepad 2 stuff
+
         Globals.DID_RUN_AUTO = false;
         while (this.biobuzzBot.isActive()) {
+            //gamepad2
+            previousGamepad2.copy(currentGamepad2);
+            currentGamepad2.copy(gamepad2);
+            if (currentGamepad2.circle) {
+                telemetry.addLine("Circle");
+            } else if (currentGamepad2.square) {
+                telemetry.addLine("Square");
+            }
+
+
+
+            //
             previousGamepad1.copy(currentGamepad1);
             currentGamepad1.copy(gamepad1);
 
