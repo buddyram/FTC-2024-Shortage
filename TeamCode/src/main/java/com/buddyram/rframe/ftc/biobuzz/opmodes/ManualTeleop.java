@@ -24,7 +24,7 @@ public class ManualTeleop extends BaseOpmode {
     private static final double TURRET_DEG_PER_S = 90.0;
     private static final double RPM_PER_S = 1000.0;
     private static final double HOOD_PER_S = 0.25;
-    private static final int FLYWHEEL_OFF = -1000000; // same as Teleop's CIRCLE, clamps the RPM to 0
+    private static final int FLYWHEEL_OFF = -1000000; // same as Teleop's triangle, clamps the RPM to 0
 
     @Override
     public void execute() throws RobotException, InterruptedException {
@@ -36,19 +36,18 @@ public class ManualTeleop extends BaseOpmode {
         boolean hasTurret = launcher != null && launcher.turret != null;
         boolean hasFlywheel = launcher != null && launcher.wheel != null;
 
-        // Start position comes from BaseOpmode: carried over from auto / the last opmode, else the start corner.
-        // TRIANGLE puts it back in the start corner.
+        // Start position comes from BaseOpmode: carried over from auto / the last opmode, else the start corner.f
 
         boolean autoAim = true;
         boolean autoShooter = false;
         boolean flywheelOn = false;
+        boolean intakeOn = false;
         double manualTurret = 0;
         double rpm = Flywheel.DEFAULT_RPM;
         double hoodPos = BaseOpmode.START_HOOD;
         double rpmOffset = 0;
         this.biobuzzBot.aimOn = true;
         ElapsedTime timer = new ElapsedTime();
-
         while (this.biobuzzBot.isActive()) {
             previousGamepad1.copy(currentGamepad1);
             currentGamepad1.copy(gamepad1);
@@ -59,12 +58,9 @@ public class ManualTeleop extends BaseOpmode {
             if (currentGamepad1.cross && !previousGamepad1.cross) {
                 this.biobuzzBot.odometry.setPosition(BaseOpmode.ZERO);
             }
-            if (currentGamepad1.triangle && !previousGamepad1.triangle) {
-                this.biobuzzBot.odometry.setPosition(BaseOpmode.startFor(this.biobuzzBot.isRed));
-            }
 
             // Turret: auto-aim with trigger trim, or fully manual through overrideAngle
-            if (currentGamepad1.square && !previousGamepad1.square) {
+            if (currentGamepad1.share && !previousGamepad1.share) {
                 autoAim = !autoAim;
                 // Pick up manual aim from wherever the turret is now so it doesn't jump
                 if (!autoAim && hasTurret) manualTurret = launcher.turret.getCurrentAngle();
@@ -80,9 +76,12 @@ public class ManualTeleop extends BaseOpmode {
                 this.biobuzzBot.overrideAngle = manualTurret;
             }
 
+            if (currentGamepad1.circle && !previousGamepad1.circle) {
+                intakeOn = !intakeOn;
+            }
             // Flywheel / hood: D-pad sets them directly in manual, or trims the distance-based values in auto
             if (currentGamepad1.share && !previousGamepad1.share) autoShooter = !autoShooter;
-            if (currentGamepad1.circle && !previousGamepad1.circle) flywheelOn = !flywheelOn;
+            if (currentGamepad1.triangle && !previousGamepad1.triangle) flywheelOn = !flywheelOn;
             double rpmStep = ((currentGamepad1.dpad_up ? 1 : 0) - (currentGamepad1.dpad_down ? 1 : 0)) * RPM_PER_S * dt;
             double hoodStep = ((currentGamepad1.dpad_right ? 1 : 0) - (currentGamepad1.dpad_left ? 1 : 0)) * HOOD_PER_S * dt;
             if (autoShooter) {
@@ -104,9 +103,9 @@ public class ManualTeleop extends BaseOpmode {
 
             // Holding R bumper only feeds while the shot is ready, so every ball leaves at the same speed
             boolean ready = rumbleWhenReadyToShoot();
-            boolean feeding = currentGamepad1.right_bumper && ready;
+            boolean feeding = flywheelOn && currentGamepad1.right_bumper && ready;
             this.biobuzzBot.block = !feeding;
-            this.biobuzzBot.jamFix = currentGamepad1.left_bumper || feeding;
+            this.biobuzzBot.jamFix = intakeOn || feeding;
             this.biobuzzBot.fastFeed = feeding;
 
             runDrive(currentGamepad1);
@@ -119,12 +118,12 @@ public class ManualTeleop extends BaseOpmode {
             telemetry.addData(">> DISTANCE TO GOAL", "%.1f in (%.2f ft)", dist, dist / 12);
             telemetry.addData(">> AIMING AT", "%s HIVE, %s side CELL (%.1f, %.1f)", this.biobuzzBot.isRed ? "RED" : "BLUE",
                     this.biobuzzBot.isAimingAtScoringCell() ? "scoring" : "audience", goal.x, goal.y);
-            telemetry.addLine("SQUARE aim on/off, SHARE flywheel+hood auto/manual, CIRCLE flywheel on/off");
-            telemetry.addLine("OPTIONS center turret / clear trims, TRIANGLE odo to start, CROSS odo to 0,0,0");
+            telemetry.addLine("share aim on/off, SHARE flywheel+hood auto/manual, TRIANGLE flywheel on/off");
+            telemetry.addLine("OPTIONS center turret / clear trims");
             telemetry.addData("alliance", this.biobuzzBot.isRed ? "RED" : "BLUE");
             telemetry.addData("pos x / y (in)", "%.2f / %.2f", pose.position.x, pose.position.y);
             telemetry.addData("heading (deg)", "%.2f", pose.rotation.z);
-            telemetry.addData("auto-aim", autoAim ? "ON (SQUARE)" : "off (SQUARE)");
+            telemetry.addData("auto-aim", autoAim ? "ON (share)" : "off (share)");
             String reach = aimAngle < Turret.MIN_ANGLE || aimAngle > Turret.MAX_ANGLE ? " OUT OF RANGE" : "";
             telemetry.addData("auto-aim angle (deg)", "%.1f%s", aimAngle, reach);
             telemetry.addData("auto-aim offset (deg)", "%.1f", this.biobuzzBot.turretOffset);
@@ -135,7 +134,7 @@ public class ManualTeleop extends BaseOpmode {
             }
             telemetry.addData("flywheel + hood", autoShooter ? "AUTO from distance (SHARE)" : "manual (SHARE)");
             if (hasFlywheel) {
-                telemetry.addData("flywheel", flywheelOn ? (launcher.wheel.isReady() ? "ON - ready" : "ON - spinning up") : "off (CIRCLE)");
+                telemetry.addData("flywheel", flywheelOn ? (launcher.wheel.isReady() ? "ON - ready" : "ON - spinning up") : "off (triangle)");
                 telemetry.addData("flywheel set / actual (RPM)", "%.0f / %.0f", launcher.wheel.getTarget(), launcher.wheel.getRPM());
                 if (autoShooter) telemetry.addData("RPM offset", "%.0f", rpmOffset);
             }
@@ -146,7 +145,7 @@ public class ManualTeleop extends BaseOpmode {
                 telemetry.addData("hood", "%.3f", hoodPos);
             }
             telemetry.addData("feed", feeding ? "SHOOTING" : currentGamepad1.right_bumper ? "waiting until ready"
-                    : currentGamepad1.left_bumper ? "intaking" : "idle");
+                    : intakeOn ? "intaking" : "idle");
             telemetry.addData("balls shot", launcher.wheel.getBallCount());
             telemetry.update();
         }
