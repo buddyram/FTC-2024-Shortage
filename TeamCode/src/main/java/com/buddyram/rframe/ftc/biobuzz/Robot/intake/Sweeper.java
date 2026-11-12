@@ -23,14 +23,14 @@ public class Sweeper extends BaseComponent<Robot> {
     }
 
     public void intaking() {
-        motor.setPower(0.5);
+        motor.setPower(-0.5);
     }
 
     public void intakingFast() {
-        motor.setPower(0.7);
+        motor.setPower(-0.7);
     }
 
     public void outtaking() {
-        motor.setPower(-0.2);
+        motor.setPower(0.5);
     }
 }

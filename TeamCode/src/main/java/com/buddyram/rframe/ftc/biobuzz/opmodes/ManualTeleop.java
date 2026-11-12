@@ -40,10 +40,11 @@ public class ManualTeleop extends BaseOpmode {
 
         boolean autoAim = true;
         boolean autoShooter = true;
+        boolean autoRpm = false;
         boolean flywheelOn = false;
         boolean intakeOn = false;
         double manualTurret = 0;
-        double rpm = Flywheel.DEFAULT_RPM;
+        double rpm = 2100;
         double hoodPos = BaseOpmode.START_HOOD;
         double rpmOffset = 0;
         this.biobuzzBot.aimOn = true;
@@ -59,8 +60,8 @@ public class ManualTeleop extends BaseOpmode {
                 outtakeTimer.reset();
             }
             boolean outtaking = currentGamepad1.cross && outtakeTimer.seconds() > 0.2;
-            if (!currentGamepad1.cross && previousGamepad1.cross && outtakeTimer.seconds() <= 0.2) {
-                intakeOn = false;
+            if (!currentGamepad1.cross && previousGamepad1.cross) {
+                intakeOn = outtakeTimer.seconds() > 0.2;
             }
 
             this.biobuzzBot.outtakeOn = outtaking;
@@ -74,11 +75,12 @@ public class ManualTeleop extends BaseOpmode {
             if (currentGamepad1.left_bumper && !previousGamepad1.left_bumper) {
                 autoAim = true;
                 autoShooter = true;
+                autoRpm = true;
                 this.biobuzzBot.turretOffset = 0;
                 rpmOffset = 0;
                 this.biobuzzBot.hoodOffset = 0;
             }
-            double triggers = currentGamepad1.left_trigger - currentGamepad1.right_trigger;
+            double triggers = currentGamepad1.right_trigger - currentGamepad1.left_trigger;
             if (autoAim) {
                 this.biobuzzBot.overrideAngle = null;
                 this.biobuzzBot.turretOffset += triggers * TURRET_DEG_PER_S * dt;
@@ -89,15 +91,26 @@ public class ManualTeleop extends BaseOpmode {
 
             if (!currentGamepad1.cross && !previousGamepad1.cross && currentGamepad1.circle && !previousGamepad1.circle) {
                 intakeOn = !intakeOn;
+
             }
             // Flywheel / hood: D-pad sets them directly in manual, or trims the distance-based values in auto
             if (currentGamepad1.triangle && !previousGamepad1.triangle) flywheelOn = !flywheelOn;
             double rpmStep = ((currentGamepad1.dpad_up ? 1 : 0) - (currentGamepad1.dpad_down ? 1 : 0)) * RPM_PER_S * dt;
             double hoodStep = ((currentGamepad1.dpad_right ? 1 : 0) - (currentGamepad1.dpad_left ? 1 : 0)) * HOOD_PER_S * dt;
             if (autoShooter) {
-                rpmOffset += rpmStep;
+                if (autoRpm) {
+                    rpmOffset += rpmStep;
+                } else {
+                    rpm = Range.clip(rpm + rpmStep, Flywheel.MIN, Flywheel.MAX);
+                }
                 this.biobuzzBot.hoodOffset += hoodStep;
-                this.biobuzzBot.overrideRPM = null;
+                if (!flywheelOn) {
+                    this.biobuzzBot.overrideRPM = 0.0;
+                } else if (autoRpm) {
+                    this.biobuzzBot.overrideRPM = null;
+                } else {
+                    this.biobuzzBot.overrideRPM = rpm;
+                }
                 this.biobuzzBot.overrideHood = null;
                 this.biobuzzBot.speed = flywheelOn ? (int) rpmOffset : FLYWHEEL_OFF;
             } else {
@@ -140,11 +153,12 @@ public class ManualTeleop extends BaseOpmode {
                         autoAim ? Range.clip(aimAngle, Turret.MIN_ANGLE, Turret.MAX_ANGLE) : manualTurret,
                         launcher.turret.getCurrentAngle());
             }
-            telemetry.addData("flywheel + hood", autoShooter ? "AUTO from distance + trims" : "manual");
+            telemetry.addData("flywheel mode", autoRpm ? "AUTO from distance + trim" : "MANUAL RPM (starts at 2100)");
+            telemetry.addData("hood mode", autoShooter ? "AUTO from distance + trim" : "manual");
             if (hasFlywheel) {
                 telemetry.addData("flywheel", flywheelOn ? (launcher.wheel.isReady() ? "ON - ready" : "ON - spinning up") : "OFF (TRIANGLE)");
                 telemetry.addData("flywheel set / actual (RPM)", "%.0f / %.0f", launcher.wheel.getTarget(), launcher.wheel.getRPM());
-                if (autoShooter) telemetry.addData("RPM offset", "%.0f", rpmOffset);
+                if (autoRpm) telemetry.addData("RPM offset", "%.0f", rpmOffset);
             }
             if (autoShooter) {
                 telemetry.addData("hood (offset)", "%.3f (%.3f)",
