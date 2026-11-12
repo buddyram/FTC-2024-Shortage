@@ -217,7 +217,7 @@ public class FlywheelTrace extends LinearOpMode {
                     open = shoot;
             }
             gateOpen[i] = open;
-            if (intake != null) intake.setPower(open ? FEED_POWERS[feedPower] : cur.left_bumper ? INTAKE_LOAD_POWER : 0);
+            if (intake != null) intake.setPower(open ? -FEED_POWERS[feedPower] : cur.left_bumper ? -INTAKE_LOAD_POWER : 0);
             if (blocker != null) blocker.setAngle(open ? blocker.CLOSED : blocker.OPEN);
 
             // Takes: one per R bumper press
